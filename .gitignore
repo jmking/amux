@@ -1,0 +1,17 @@
+.DS_Store
+
+# build products
+macos/.build/
+macos/dist/Amux.app/Contents/MacOS/amux
+macos/dist/Amux.app/Contents/Resources/amux_amux.bundle
+macos/dist/*.dmg
+macos/dist/*.zip
+
+# never commit signing material or local secrets
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+.env
+.env.*
+*.local
