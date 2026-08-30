@@ -138,7 +138,16 @@ macos/Sources/amux/
   About.swift         about panel
 ```
 
-## Notes
+## Contributing
+
+Issues and pull requests are welcome. Fork the repo, make your change on a
+branch, and open a PR against `main`.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
+
+amux depends on [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm), also MIT.
 
 Agent logos are trademarks of their respective owners and are used here only to
 identify which agent is running in a pane.
