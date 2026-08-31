@@ -186,6 +186,48 @@ func acceptFirstMouse(_ view: NSView) {
     object_setClass(view, subclass)
 }
 
+/// Holds the live drag session so the drop tracker can decide whether the drag
+/// image slides home.
+///
+/// AppKit slides a drag image back to where it started whenever a drag ends
+/// without an AppKit drop. amux never accepts one through AppKit's protocol --
+/// drags have to cross WKWebView panes, which AppKit will not route into, so a
+/// pointer tracker applies the drop instead. Every successful drag therefore
+/// also looked like a failure, and the tab graphic flew back to its old spot
+/// while the panes were already animating into their new places.
+///
+/// SwiftUI owns the session and .onDrag does not hand it over, so take it from
+/// the only place it appears: the NSView call that creates it.
+@MainActor
+enum DragSession {
+    static weak var current: NSDraggingSession?
+    private static var installed = false
+
+    static func installSlideBackControl() {
+        guard !installed else { return }
+        installed = true
+        let sel = #selector(NSView.beginDraggingSession(with:event:source:))
+        guard let method = class_getInstanceMethod(NSView.self, sel) else { return }
+        typealias Original = @convention(c)
+            (AnyObject, Selector, [NSDraggingItem], NSEvent, any NSDraggingSource) -> NSDraggingSession
+        let original = unsafeBitCast(method_getImplementation(method), to: Original.self)
+        let block: @convention(block)
+            (AnyObject, [NSDraggingItem], NSEvent, any NSDraggingSource) -> NSDraggingSession = {
+                view, items, event, source in
+                let session = original(view, sel, items, event, source)
+                MainActor.assumeIsolated { DragSession.current = session }
+                return session
+            }
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    /// A drag heading somewhere real should just land; one heading nowhere should
+    /// still visibly return, so the gesture reads as refused rather than lost.
+    static func setWillLand(_ landing: Bool) {
+        current?.animatesToStartingPositionsOnCancelOrFail = !landing
+    }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, NSMenuDelegate {
     var model: AppModel? {
@@ -202,6 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
         UNUserNotificationCenter.current().delegate = self
         setupStatusItem()
+        DragSession.installSlideBackControl()
         // Pane/tab drags must never turn into window moves: macOS treats
         // non-interactive chrome as a window-drag handle by default.
         NotificationCenter.default.addObserver(

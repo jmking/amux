@@ -396,6 +396,7 @@ final class AppModel: ObservableObject {
     /// Called the moment a drop completes so highlights clear immediately
     /// instead of waiting for the mouse-up watchdog.
     func endDrag() {
+        DragSession.current = nil
         if let dragKeyMonitor { NSEvent.removeMonitor(dragKeyMonitor); self.dragKeyMonitor = nil }
         dragWatch?.invalidate()
         dragWatch = nil
@@ -566,6 +567,7 @@ final class AppModel: ObservableObject {
                 trackedDropIndex = nil
             }
         }
+        DragSession.setWillLand(trackedDropPane != nil || trackedDropGroup != nil)
     }
 
     private func finishTrackedDrop() {
@@ -587,6 +589,7 @@ final class AppModel: ObservableObject {
             return hypot(m.x - o.x, m.y - o.y) > 6
         } ?? true
         dragOrigin = nil
+        DragSession.current = nil
         dragActive = false
         trackedDropPane = nil
         trackedDropEdge = nil
