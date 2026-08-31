@@ -468,6 +468,7 @@ final class AppModel: ObservableObject {
     private var started = false
 
     func start() {
+
         guard !started else { return }
         started = true
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
@@ -655,7 +656,18 @@ final class AppModel: ObservableObject {
         return rt
     }
 
-    func webPaneChanged() { publish() }
+    private var webPublishPending = false
+    /// Coalesced: a page in a redirect or refresh loop can finish navigations
+    /// many times a second, and each publish re-evaluates the whole app,
+    /// menu bar included. One publish per 100ms is plenty for a title update.
+    func webPaneChanged() {
+        guard !webPublishPending else { return }
+        webPublishPending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.webPublishPending = false
+            self?.publish()
+        }
+    }
 
     func worldRuntime(for paneId: String) -> WorldRuntime {
         if let rt = worldRuntimes[paneId] { return rt }

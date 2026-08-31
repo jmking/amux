@@ -211,9 +211,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // non-interactive chrome as a window-drag handle by default.
         NotificationCenter.default.addObserver(
             forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { note in
-            if let window = note.object as? NSWindow, window.canBecomeMain {
-                window.isMovableByWindowBackground = false
-                if let content = window.contentView { acceptFirstMouse(content) }
+            MainActor.assumeIsolated {
+                if let window = note.object as? NSWindow, window.canBecomeMain {
+                    window.isMovableByWindowBackground = false
+                    if let content = window.contentView { acceptFirstMouse(content) }
+                }
             }
         }
         // also catch the very first window, which may already be key

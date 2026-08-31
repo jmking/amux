@@ -53,7 +53,9 @@ final class LineTailer {
 /// Content blocks in a transcript's assistant records say what the model did:
 /// `thinking` for reasoning, `tool_use`/`tool_result` for work, paired by id so
 /// each call yields a duration.
-final class ClaudeReader {
+/// @unchecked: created on the main actor, then touched exclusively on the
+/// model's serial poll queue — the queue is the synchronisation.
+final class ClaudeReader: @unchecked Sendable {
     private let tailer = LineTailer()
     private var pending: [String: (Date, String)] = [:]
     private var lastResolve = Date.distantPast
@@ -171,7 +173,8 @@ extension ISO8601DateFormatter {
 /// Rollouts carry `event_msg` records whose `item_completed` payload names the
 /// kind of work directly: Reasoning, CommandExecution, FileChange, WebSearch.
 /// No inference needed, unlike Claude where we classify by tool name.
-final class CodexReader {
+/// @unchecked: same single-serial-queue discipline as ClaudeReader.
+final class CodexReader: @unchecked Sendable {
     private let tailer = LineTailer()
     private var lastResolve = Date.distantPast
     private var cwd: String?

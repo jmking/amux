@@ -30,8 +30,23 @@ final class WebPaneRuntime: NSObject, ObservableObject {
         if let url {
             self.url = url
             self.editingURL = false
-            view.load(URLRequest(url: url))
+            // Deliberately NOT loaded here. Restore creates runtimes for every
+            // saved pane, including workspaces that are never focused this
+            // session; a windowless WKWebView churns (the swift.org pane in an
+            // unfocused space finished ~12 navigations/second, each one
+            // publishing and re-evaluating the whole app). The first attach to
+            // a real view loads it instead.
+            pendingLoad = url
         }
+    }
+
+    private var pendingLoad: URL?
+
+    /// Called when the view is actually placed in the hierarchy.
+    func ensureLoaded() {
+        guard let target = pendingLoad else { return }
+        pendingLoad = nil
+        view.load(URLRequest(url: target))
     }
 
     func navigate(_ input: String) {
@@ -49,6 +64,7 @@ final class WebPaneRuntime: NSObject, ObservableObject {
         guard let target else { return }
         editingURL = false
         url = target
+        pendingLoad = nil
         view.load(URLRequest(url: target))
     }
 
@@ -89,6 +105,14 @@ extension WebPaneRuntime: @MainActor WKNavigationDelegate {
         isLoading = false
     }
 
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        // no automatic reload: if the process dies repeatedly, reloading in a
+        // loop is the failure mode, not the fix. The user reloads from the
+        // toolbar when they care.
+        isLoading = false
+        NSLog("amux: web content process for \(id) terminated (\(url?.absoluteString ?? "blank"))")
+    }
+
     private func syncState() {
         canGoBack = view.canGoBack
         canGoForward = view.canGoForward
@@ -102,6 +126,12 @@ struct WebHost: NSViewRepresentable {
     let runtime: WebPaneRuntime
     let paneId: String
     let model: AppModel
+    /// Background tabs stay mounted at opacity 0, but a WKWebView cannot see
+    /// SwiftUI opacity — it believes it is on screen and keeps compositing,
+    /// running rAF loops and animations. A handful of hidden pages burned ~40%
+    /// of a core at idle. isHidden is visible to WebKit, which then suspends
+    /// rendering for real.
+    var isActive: Bool = true
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
@@ -111,6 +141,7 @@ struct WebHost: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSView, context: Context) {
         if runtime.view.superview !== nsView { attach(to: nsView) }
+        if runtime.view.isHidden == isActive { runtime.view.isHidden = !isActive }
     }
 
     private func attach(to container: NSView) {
@@ -119,6 +150,7 @@ struct WebHost: NSViewRepresentable {
         v.frame = container.bounds
         v.autoresizingMask = [.width, .height]
         container.addSubview(v)
+        runtime.ensureLoaded()
     }
 }
 

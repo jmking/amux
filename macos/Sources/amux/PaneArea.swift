@@ -554,7 +554,7 @@ struct PaneView: View {
                 BrowserToolbar(runtime: model.webRuntime(for: leaf.paneId),
                                paneId: leaf.paneId, model: model, focused: focused)
                 WebHost(runtime: model.webRuntime(for: leaf.paneId),
-                        paneId: leaf.paneId, model: model)
+                        paneId: leaf.paneId, model: model, isActive: isActive)
             } else {
                 header
                 TerminalHost(paneTerminal: model.terminal(for: leaf.paneId))

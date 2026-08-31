@@ -14,14 +14,29 @@ import AppKit
 
 /// Owns the Metal view for a world pane. Held by the model so the scene
 /// survives tab switches instead of being rebuilt on every re-render.
+/// The MTKView tells the runtime when it enters or leaves a window, which the
+/// run policy needs: a view SwiftUI has unmounted (workspace switch) or whose
+/// window is hidden must not keep a render loop alive.
+final class WorldMTKView: MTKView {
+    var onWindowChange: (() -> Void)?
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onWindowChange?()
+    }
+}
+
 final class WorldRuntime {
-    let view: MTKView
-    private let renderer: WorldRenderer?
+    let view: WorldMTKView
+    private var renderer: WorldRenderer?
     private var timer: Timer?
+    private var occlusionObserver: NSObjectProtocol?
     private var demoTick = 0
     /// Prototype affordance: fake agents cycling every phase, so the behaviours
     /// can be reviewed without five live agents.
-    var demoMode = false { didSet { if oldValue != demoMode { renderer?.resetStats() } } }
+    var demoMode = false { didSet { if oldValue != demoMode { renderer?.resetStats(); applyRunPolicy() } } }
+    /// Whether the pane's tab is the visible one, pushed in by WorldHost.
+    var tabActive = true { didSet { if oldValue != tabActive { applyRunPolicy() } } }
+    private var hasContent = false
     weak var model: AppModel?
 
     func resetStats() { renderer?.resetStats() }
@@ -32,22 +47,39 @@ final class WorldRuntime {
     init(model: AppModel?) {
         self.model = model
         let device = MTLCreateSystemDefaultDevice()
-        view = MTKView(frame: .zero, device: device)
+        view = WorldMTKView(frame: .zero, device: device)
         view.colorPixelFormat = .bgra8Unorm
         view.depthStencilPixelFormat = .depth32Float
         view.clearColor = MTLClearColor(red: 0.078, green: 0.078, blue: 0.09, alpha: 1)
-        view.isPaused = false
+        // paused until the renderer exists and the policy decides to run
+        view.isPaused = true
         view.enableSetNeedsDisplay = false
         // match the display rather than assuming 60: this panel is ProMotion,
         // where a frame budget is 8.3ms, not 16.7
         view.preferredFramesPerSecond = Int((NSScreen.main?.maximumFramesPerSecond).map(Double.init) ?? 60)
 
-        renderer = device.flatMap { WorldRenderer(device: $0) }
-        if let renderer {
-            view.delegate = renderer
+        view.onWindowChange = { [weak self] in
+            guard let self else { return }
+            self.watchOcclusion(of: self.view.window)
+            self.applyRunPolicy()
+        }
+
+        // Shader compilation takes long enough to notice; doing it inline meant
+        // the first world pane stalled the SwiftUI body that created it.
+        if let device {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let r = WorldRenderer(device: device)
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.renderer = r
+                    if let r { self.view.delegate = r } else {
+                        NSLog("amux: world shader failed to build, pane will not render")
+                    }
+                    self.sync()
+                }
+            }
         } else {
             NSLog("amux: Metal unavailable, world pane will not render")
-            view.isPaused = true
         }
 
         // Only the roster and phases are pushed from here; all motion is in the
@@ -59,7 +91,37 @@ final class WorldRuntime {
         timer = t
     }
 
-    deinit { timer?.invalidate() }
+    deinit {
+        timer?.invalidate()
+        if let occlusionObserver { NotificationCenter.default.removeObserver(occlusionObserver) }
+    }
+
+    private func watchOcclusion(of window: NSWindow?) {
+        if let occlusionObserver { NotificationCenter.default.removeObserver(occlusionObserver) }
+        occlusionObserver = window.map { w in
+            NotificationCenter.default.addObserver(
+                forName: NSWindow.didChangeOcclusionStateNotification, object: w, queue: .main
+            ) { [weak self] _ in MainActor.assumeIsolated { self?.applyRunPolicy() } }
+        }
+    }
+
+    /// One place decides whether the render loop runs. It runs only when the
+    /// renderer exists, the view is in a window that is actually visible, the
+    /// tab is the focused one, and there is something animated to show — an
+    /// empty room is drawn once and then costs nothing.
+    private func applyRunPolicy() {
+        let windowVisible = view.window.map {
+            $0.occlusionState.contains(.visible) && $0.isVisible
+        } ?? false
+        let shouldRun = renderer != nil && windowVisible && tabActive
+            && (hasContent || demoMode)
+        if view.isPaused == shouldRun {
+            view.isPaused = !shouldRun
+            if shouldRun { renderer?.resetStats() }
+        }
+        // a paused pane still needs its static frame (floor, resting avatars)
+        if !shouldRun, renderer != nil, view.window != nil { view.draw() }
+    }
 
     private static let demoCast: [(String, String)] = [
         ("claude", "reviewer"), ("codex", "migrator"),
@@ -78,6 +140,10 @@ final class WorldRuntime {
 
     @MainActor func sync() {
         guard let renderer else { return }
+        defer {
+            hasContent = demoMode || !(model?.state?.agents ?? []).isEmpty
+            applyRunPolicy()
+        }
         if demoMode {
             demoTick += 1
             let cast = Self.demoCast
@@ -116,10 +182,7 @@ struct WorldHost: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSView, context: Context) {
         if runtime.view.superview !== nsView { attach(to: nsView) }
-        if runtime.view.isPaused == isActive {
-            runtime.view.isPaused = !isActive
-            if isActive { runtime.resetStats() }
-        }
+        runtime.tabActive = isActive
     }
 
     private func attach(to container: NSView) {
