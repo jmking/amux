@@ -21,7 +21,7 @@ struct PaneAgent: Codable, Equatable {
 
 struct PaneLeaf: Codable, Equatable {
     var paneId: String
-    var kind: String        // "term" | "web"
+    var kind: String        // "term" | "web" | "world"
     var label: String?
     var proc: String?
     var agent: PaneAgent?
@@ -264,6 +264,13 @@ final class AppModel: ObservableObject {
 
     var runtimes: [String: PaneRuntime] = [:]
     var webRuntimes: [String: WebPaneRuntime] = [:]
+    var worldRuntimes: [String: WorldRuntime] = [:]
+
+    // Prototype: normalised activity read from what the agents record about
+    // themselves. See AgentSources.swift.
+    let eventLog = AgentEventLog()
+    private var claudeReaders: [String: ClaudeReader] = [:]
+    private var codexReaders: [String: CodexReader] = [:]
     var currentDragPayload: String?
     @Published var dragActive = false
 
@@ -650,6 +657,39 @@ final class AppModel: ObservableObject {
 
     func webPaneChanged() { publish() }
 
+    func worldRuntime(for paneId: String) -> WorldRuntime {
+        if let rt = worldRuntimes[paneId] { return rt }
+        let rt = WorldRuntime(model: self)
+        worldRuntimes[paneId] = rt
+        return rt
+    }
+
+    /// Prototype affordance: cycle fake agents through every behaviour in every
+    /// open world pane, so the visualisation can be reviewed without standing up
+    /// five real agents.
+    func toggleWorldDemo() {
+        let on = !(worldRuntimes.values.first?.demoMode ?? false)
+        for rt in worldRuntimes.values { rt.demoMode = on }
+    }
+
+    /// Opens the agent world as a new tab in the focused space.
+    func newWorldTab() {
+        guard let wsId = focusedWorkspace?.id, let wi = wsIndex(wsId) else { return }
+        var ws = workspaces[wi]
+        var tab = TabState(id: "\(ws.id):t\(ws.nextTabNum)", label: "World",
+                           cwd: ws.cwd, focusedPaneId: nil, zoomedPaneId: nil, layout: nil)
+        ws.nextTabNum += 1
+        let paneId = "\(ws.id):p\(ws.nextPaneNum)"
+        ws.nextPaneNum += 1
+        tab.layout = .pane(PaneLeaf(paneId: paneId, kind: "world"))
+        tab.focusedPaneId = paneId
+        ws.tabs.append(tab)
+        ws.focusedTabId = tab.id
+        workspaces[wi] = ws
+        focusedWorkspaceId = ws.id
+        publish()
+    }
+
     /// cmux-style: a browser opens as a new tab in the focused space.
     func newBrowserTab(url: URL? = nil) {
         guard let wsId = focusedWorkspace?.id, let wi = wsIndex(wsId) else { return }
@@ -762,6 +802,9 @@ final class AppModel: ObservableObject {
         runtimes.removeValue(forKey: paneId)
         webRuntimes[paneId]?.detach()
         webRuntimes.removeValue(forKey: paneId)
+        worldRuntimes.removeValue(forKey: paneId)
+        claudeReaders.removeValue(forKey: paneId)
+        codexReaders.removeValue(forKey: paneId)
         paneFrames.removeValue(forKey: paneId)
         removePaneFromLayout(paneId)
         publish()
@@ -793,6 +836,7 @@ final class AppModel: ObservableObject {
             runtimes.removeValue(forKey: pid)
             webRuntimes[pid]?.detach()
             webRuntimes.removeValue(forKey: pid)
+            worldRuntimes.removeValue(forKey: pid)
             paneFrames.removeValue(forKey: pid)
         }
         ws.tabs.remove(at: ti)
@@ -816,6 +860,7 @@ final class AppModel: ObservableObject {
                 runtimes.removeValue(forKey: pid)
                 webRuntimes[pid]?.detach()
                 webRuntimes.removeValue(forKey: pid)
+                worldRuntimes.removeValue(forKey: pid)
                 paneFrames.removeValue(forKey: pid)
             }
         }
@@ -1186,7 +1231,35 @@ final class AppModel: ObservableObject {
                     if let cwd = cwds[pid] { self.runtimes[paneId]?.cachedCwd = cwd }
                 }
                 self.applyDetection(table: table, shellPids: shellPids)
+                self.pollAgentSources()
             }
+        }
+    }
+
+    /// Reads whatever the live agents have appended since the last tick. Runs on
+    /// a background queue: both readers touch the filesystem, and the perf rule
+    /// in this app is that nothing like that happens on the main thread.
+    private func pollAgentSources() {
+        let live: [(String, String, String?)] = (state?.agents ?? []).compactMap {
+            guard $0.kind == "claude" || $0.kind == "codex" else { return nil }
+            return ($0.paneId, $0.kind, runtimes[$0.paneId]?.cachedCwd)
+        }
+        guard !live.isEmpty else { return }
+        for (paneId, kind, _) in live where kind == "claude" && claudeReaders[paneId] == nil {
+            claudeReaders[paneId] = ClaudeReader()
+        }
+        for (paneId, kind, _) in live where kind == "codex" && codexReaders[paneId] == nil {
+            codexReaders[paneId] = CodexReader()
+        }
+        let claude = claudeReaders, codex = codexReaders
+        DispatchQueue.global(qos: .utility).async {
+            var batch: [AgentEvent] = []
+            for (paneId, kind, cwd) in live {
+                if kind == "claude" { batch += claude[paneId]?.poll(paneId: paneId, cwd: cwd) ?? [] }
+                else { batch += codex[paneId]?.poll(paneId: paneId, cwd: cwd) ?? [] }
+            }
+            guard !batch.isEmpty else { return }
+            Task { @MainActor [weak self] in self?.eventLog.append(contentsOf: batch) }
         }
     }
 
@@ -1544,6 +1617,10 @@ final class AppModel: ObservableObject {
                 let url = node.url.flatMap { URL(string: $0) }
                 webRuntimes[paneId] = WebPaneRuntime(id: paneId, url: url, model: self)
                 return .pane(PaneLeaf(paneId: paneId, kind: "web"))
+            }
+            if node.kind == "world" {
+                // the runtime is built lazily by worldRuntime(for:) on first render
+                return .pane(PaneLeaf(paneId: paneId, kind: "world"))
             }
             var isDir: ObjCBool = false
             let cwd = (node.cwd != nil

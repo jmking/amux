@@ -157,6 +157,12 @@ struct AmuxApp: App {
             Button("About amux") { AboutWindow.shared.show(mode: mode) }
         }
 
+        CommandGroup(after: .newItem) {
+            Button("New Agent World Tab") { model.newWorldTab() }
+                .keyboardShortcut("y", modifiers: [.command, .shift])
+            Button("Toggle Agent World Demo") { model.toggleWorldDemo() }
+        }
+
         // Help
         CommandGroup(replacing: .help) {
             Button("amux on GitHub") { NSWorkspace.shared.open(amuxRepoURL) }

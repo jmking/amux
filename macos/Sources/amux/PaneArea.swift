@@ -172,6 +172,7 @@ struct TabChip: View {
     @State private var springTask: Task<Void, Never>?
 
     private var tabIcon: String {
+        if case .pane(let leaf)? = tab.layout, leaf.kind == "world" { return "cube.transparent" }
         if case .pane(let leaf)? = tab.layout, leaf.kind == "web" { return "globe" }
         return "terminal"
     }
@@ -545,7 +546,10 @@ struct PaneView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if leaf.kind == "web" {
+            if leaf.kind == "world" {
+                WorldToolbar(model: model, paneId: leaf.paneId)
+                WorldHost(runtime: model.worldRuntime(for: leaf.paneId))
+            } else if leaf.kind == "web" {
                 BrowserToolbar(runtime: model.webRuntime(for: leaf.paneId),
                                paneId: leaf.paneId, model: model, focused: focused)
                 WebHost(runtime: model.webRuntime(for: leaf.paneId),
