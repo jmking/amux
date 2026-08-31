@@ -368,6 +368,7 @@ final class AppModel: ObservableObject {
 
     /// Called from every onDrag: while a drag is in flight, web panes float an
     /// invisible drop-catcher so WKWebView can't claim the session.
+    private var dragOrigin: CGPoint?
     private weak var dragSourceWindow: NSWindow?
     private var dragKeyMonitor: Any?
 
@@ -384,17 +385,12 @@ final class AppModel: ObservableObject {
             }
             return event
         }
-        startDropTracking()
+        dragOrigin = NSEvent.mouseLocation
         dragWatch?.invalidate()
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] timer in
-            if NSEvent.pressedMouseButtons & 1 == 0 {
-                timer.invalidate()
-                Task { @MainActor in self?.finishTrackedDrop() }
-            }
-        }
-        // .common so it keeps firing inside AppKit's modal drag tracking loop
-        RunLoop.main.add(timer, forMode: .common)
-        dragWatch = timer
+        dragWatch = nil
+        // startDropTracking adds its timer in .common mode so it keeps firing
+        // inside AppKit's modal drag tracking loop, and it owns mouse-up now.
+        startDropTracking()
     }
 
     /// Called the moment a drop completes so highlights clear immediately
@@ -432,10 +428,30 @@ final class AppModel: ObservableObject {
     // the button comes up. The tab bar keeps its own .onDrop: it is ordinary
     // SwiftUI and sits outside every pane frame, so the two never overlap.
 
+    /// Tracks the pointer during a drag and applies the drop the moment the
+    /// button comes up.
+    ///
+    /// The button state and the pointer position are sampled together, in the
+    /// same instant, before hopping to the main actor. That pairing is the whole
+    /// point. Mouse-up used to be polled by a separate 4Hz timer while this one
+    /// kept refreshing the target at 60Hz, so for up to 250ms after the button
+    /// came up the target was still being rewritten to wherever the pointer had
+    /// drifted. A drag that parked on its target before letting go worked; a
+    /// normal one landed wherever the cursor coasted to afterwards.
     private func startDropTracking() {
         dropTracker?.invalidate()
-        let t = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.updateTrackedDrop() }
+        let t = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] timer in
+            let down = NSEvent.pressedMouseButtons & 1 != 0
+            let screenPoint = NSEvent.mouseLocation
+            Task { @MainActor in
+                guard let self else { timer.invalidate(); return }
+                if down {
+                    self.updateTrackedDrop(screenPoint: screenPoint)
+                } else {
+                    timer.invalidate()
+                    self.finishTrackedDrop()
+                }
+            }
         }
         RunLoop.main.add(t, forMode: .common)
         dropTracker = t
@@ -443,7 +459,7 @@ final class AppModel: ObservableObject {
 
     /// The mouse in the same space as `paneFrames` (SwiftUI's .global, which is
     /// the window's content view with a top-left origin).
-    private func pointerInWindow() -> CGPoint? {
+    private func pointerInWindow(screenPoint: CGPoint? = nil) -> CGPoint? {
         // The drag started with a mouse-down in the pane window, so the window
         // captured at beginDrag is the right coordinate space. Falling back to
         // "first visible window" picked the About window when it was open.
@@ -451,7 +467,7 @@ final class AppModel: ObservableObject {
                 ?? NSApp.keyWindow
                 ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }),
               let content = win.contentView else { return nil }
-        let p = win.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let p = win.convertPoint(fromScreen: screenPoint ?? NSEvent.mouseLocation)
         return CGPoint(x: p.x, y: content.bounds.height - p.y)
     }
 
@@ -518,8 +534,8 @@ final class AppModel: ObservableObject {
         return nil
     }
 
-    private func updateTrackedDrop() {
-        guard dragActive, let p = pointerInWindow() else { return }
+    private func updateTrackedDrop(screenPoint: CGPoint? = nil) {
+        guard dragActive, let p = pointerInWindow(screenPoint: screenPoint) else { return }
         // Short and lightly damped: the highlight should chase the pointer
         // between edges without feeling loose.
         let motion = SwiftUI.Animation.spring(response: 0.17, dampingFraction: 0.82)
@@ -558,15 +574,26 @@ final class AppModel: ObservableObject {
         let stripGroup = trackedDropGroup
         let stripIndex = trackedDropIndex
         let payload = currentDragPayload
+        // beginDrag installs a key monitor as well as the tracker, and this only
+        // tore down the tracker, so every drag left another live Escape monitor.
+        if let dragKeyMonitor { NSEvent.removeMonitor(dragKeyMonitor); self.dragKeyMonitor = nil }
+        dragWatch?.invalidate()
+        dragWatch = nil
         dropTracker?.invalidate()
         dropTracker = nil
+        // A press that never travelled is a click, not a drop.
+        let travelled = dragOrigin.map { o in
+            let m = NSEvent.mouseLocation
+            return hypot(m.x - o.x, m.y - o.y) > 6
+        } ?? true
+        dragOrigin = nil
         dragActive = false
         trackedDropPane = nil
         trackedDropEdge = nil
         trackedDropGroup = nil
         trackedDropIndex = nil
         currentDragPayload = nil
-        guard let payload else { return }
+        guard let payload, travelled else { return }
         let settleStrip = SwiftUI.Animation.spring(response: 0.28, dampingFraction: 0.86)
         // dropped on a tab strip: join that pane's tabs at the insertion point
         if let stripGroup {
