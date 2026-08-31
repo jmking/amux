@@ -287,9 +287,22 @@ final class AppModel: ObservableObject {
 
     /// Called from every onDrag: while a drag is in flight, web panes float an
     /// invisible drop-catcher so WKWebView can't claim the session.
+    private weak var dragSourceWindow: NSWindow?
+    private var dragKeyMonitor: Any?
+
     func beginDrag(_ payload: String) {
         currentDragPayload = payload
+        dragSourceWindow = NSApp.keyWindow
         dragActive = true
+        // Escape cancels: without this, AppKit snaps the drag image back but
+        // our pointer tracker still applies the move on mouse-up.
+        dragKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 {
+                self?.endDrag()
+                return nil
+            }
+            return event
+        }
         startDropTracking()
         dragWatch?.invalidate()
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] timer in
@@ -306,6 +319,7 @@ final class AppModel: ObservableObject {
     /// Called the moment a drop completes so highlights clear immediately
     /// instead of waiting for the mouse-up watchdog.
     func endDrag() {
+        if let dragKeyMonitor { NSEvent.removeMonitor(dragKeyMonitor); self.dragKeyMonitor = nil }
         dragWatch?.invalidate()
         dragWatch = nil
         dropTracker?.invalidate()
@@ -347,7 +361,12 @@ final class AppModel: ObservableObject {
     /// The mouse in the same space as `paneFrames` (SwiftUI's .global, which is
     /// the window's content view with a top-left origin).
     private func pointerInWindow() -> CGPoint? {
-        guard let win = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }),
+        // The drag started with a mouse-down in the pane window, so the window
+        // captured at beginDrag is the right coordinate space. Falling back to
+        // "first visible window" picked the About window when it was open.
+        guard let win = dragSourceWindow
+                ?? NSApp.keyWindow
+                ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }),
               let content = win.contentView else { return nil }
         let p = win.convertPoint(fromScreen: NSEvent.mouseLocation)
         return CGPoint(x: p.x, y: content.bounds.height - p.y)
@@ -965,10 +984,15 @@ final class AppModel: ObservableObject {
 
     func movePane(_ paneId: String, toEdge edge: String, of targetPaneId: String) {
         guard paneId != targetPaneId, let (swi, sti) = locate(paneId),
-              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId) else { return }
+              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId),
+              // validate the destination BEFORE detaching: a target that
+              // vanished mid-drag must abort the move, not orphan the pane
+              locate(targetPaneId) != nil else { return }
         detachLeaf(paneId)
         guard let (twi, tti) = locate(targetPaneId) else { publish(); return }
         var ws = workspaces[twi]
+        // dropping into a zoomed tab must land visibly, not behind the zoom
+        ws.tabs[tti].zoomedPaneId = nil
         let dir = (edge == "left" || edge == "right") ? "row" : "column"
         let movedFirst = (edge == "left" || edge == "up")
         ws.tabs[tti].layout = ws.tabs[tti].layout?.rewriting(paneId: targetPaneId) { old in
@@ -984,11 +1008,13 @@ final class AppModel: ObservableObject {
     func movePane(_ paneId: String, toTab tabId: String) {
         guard let (swi, sti) = locate(paneId),
               workspaces[swi].tabs[sti].id != tabId,
-              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId) else { return }
+              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId),
+              workspaces.contains(where: { $0.tabs.contains { $0.id == tabId } }) else { return }
         detachLeaf(paneId)
         guard let twi = workspaces.firstIndex(where: { $0.tabs.contains { $0.id == tabId } }),
               let tti = workspaces[twi].tabs.firstIndex(where: { $0.id == tabId }) else { publish(); return }
         var ws = workspaces[twi]
+        ws.tabs[tti].zoomedPaneId = nil
         ws.tabs[tti].layout = ws.tabs[tti].layout.map {
             .split(dir: "row", ratio: 0.5, a: $0, b: .pane(leaf))
         } ?? .pane(leaf)
@@ -999,7 +1025,8 @@ final class AppModel: ObservableObject {
 
     func movePane(_ paneId: String, toWorkspace wsId: String) {
         guard let (swi, sti) = locate(paneId),
-              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId) else { return }
+              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId),
+              wsIndex(wsId) != nil else { return }
         detachLeaf(paneId)
         guard let wi = wsIndex(wsId) else { publish(); return }
         var ws = workspaces[wi]
@@ -1047,6 +1074,7 @@ final class AppModel: ObservableObject {
         }
         guard let (twi, tti) = locate(targetPaneId) else { publish(); return }
         var ws = workspaces[twi]
+        ws.tabs[tti].zoomedPaneId = nil
         let e = edge == "center" ? "right" : edge
         let dir = (e == "left" || e == "right") ? "row" : "column"
         let movedFirst = (e == "left" || e == "up")
