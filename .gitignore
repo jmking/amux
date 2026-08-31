@@ -15,3 +15,6 @@ macos/dist/*.zip
 .env
 .env.*
 *.local
+
+# per-release scratch notes, passed to `gh release create --notes-file`
+NOTES.md
