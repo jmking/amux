@@ -238,7 +238,6 @@ final class AppModel: ObservableObject {
     }
     @Published var lastError: String?
     @Published var paletteOpen = false
-    @Published var tourStep: Int? = nil
     @Published var sidebarCollapsed = UserDefaults.standard.bool(forKey: "sidebarCollapsed") {
         didSet { UserDefaults.standard.set(sidebarCollapsed, forKey: "sidebarCollapsed") }
     }
@@ -701,7 +700,7 @@ final class AppModel: ObservableObject {
         let focused = focusedTab?.focusedPaneId
         guard focused != lastFocusedPaneId else { return }
         lastFocusedPaneId = focused
-        guard activeSheet == nil, !paletteOpen, tourStep == nil else { return }
+        guard activeSheet == nil, !paletteOpen else { return }
         if let focused { makeTerminalKey(focused) }
     }
 

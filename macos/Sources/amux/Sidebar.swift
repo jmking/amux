@@ -112,7 +112,6 @@ struct SidebarView: View {
                             }
                         }
                     }
-                    .tourAnchor(.spaces)
 
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
@@ -135,7 +134,6 @@ struct SidebarView: View {
 
                         agentRows
                     }
-                    .tourAnchor(.agents)
                 }
             }
             Spacer(minLength: 0)

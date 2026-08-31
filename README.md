@@ -57,7 +57,7 @@ open it as a new space, so parallel agents don't fight over one checkout.
 long as anything is `working` or `blocked`, and drops it the moment they go quiet.
 
 **Everything has three routes.** Click it, use the menu, or press `Cmd+K` for the
-command palette. A guided tour runs on first launch and lives in the Help menu.
+command palette. Nothing is keyboard-only.
 
 ## Keyboard
 
@@ -132,7 +132,6 @@ macos/Sources/amux/
   Sidebar.swift       spaces and agents
   WebPane.swift       WebKit browser panes
   Palette.swift       command palette
-  Tour.swift          first run tour
   Sheets.swift        dialogs
   Theme.swift         palettes, terminal themes, agent marks
   About.swift         about panel

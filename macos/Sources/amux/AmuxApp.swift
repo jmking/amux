@@ -16,11 +16,6 @@ struct AmuxApp: App {
                 .onAppear {
                     model.start()
                     appDelegate.model = model
-                    if !UserDefaults.standard.bool(forKey: "tourSeen") {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                            if model.tourStep == nil { model.tourStep = 0 }
-                        }
-                    }
                 }
                 .onChange(of: mode) { _, _ in
                     let theme = TermThemes.effectiveFromDefaults()
@@ -164,7 +159,6 @@ struct AmuxApp: App {
 
         // Help
         CommandGroup(replacing: .help) {
-            Button("Welcome Tour") { model.tourStep = 0 }
             Button("amux on GitHub") { NSWorkspace.shared.open(amuxRepoURL) }
         }
     }
@@ -406,11 +400,6 @@ struct RootView: View {
             }
         }
         .background(pal.bg)
-        .overlayPreferenceValue(TourAnchorKey.self) { anchors in
-            GeometryReader { proxy in
-                TourOverlay(model: model, anchors: anchors, proxy: proxy)
-            }
-        }
         .sheet(item: $model.activeSheet) { sheet in
             sheetView(sheet)
                 .environment(\.palette, pal)

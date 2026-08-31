@@ -56,7 +56,6 @@ struct TabBarView: View {
                         if let focused = ws.focusedTabId { proxy.scrollTo(focused) }
                     }
                 }
-                .tourAnchor(.tabBar)
             }
             Spacer()
             HStack(spacing: 10) {
@@ -72,12 +71,7 @@ struct TabBarView: View {
                     if let p = model.actionPaneId { model.splitPane(p, direction: "down") }
                 }
                 Divider().frame(height: 14).overlay(pal.line2)
-                bellButton.tourAnchor(.bell)
-                Button { model.tourStep = 0 } label: {
-                    Image(systemName: "questionmark.circle").font(.system(size: 11))
-                }
-                .buttonStyle(.plain).foregroundStyle(pal.faint)
-                .help("Welcome tour")
+                bellButton
             }
             .font(.system(size: 11))
             .foregroundStyle(pal.faint2)
@@ -631,7 +625,6 @@ struct PaneView: View {
         .frame(height: 26)
         .background(pal.panel.opacity(0.55))
         .contentShape(Rectangle())
-        .modifier(FocusedTourAnchor(active: focused))
         .onDrag { model.beginDrag("pane:\(leaf.paneId)"); return PaneDrag.provider("pane:\(leaf.paneId)") }
         .contextMenu { paneMenu }
         .help("Drag to move this pane · drop on another pane's edge to snap, middle to swap")
@@ -693,15 +686,6 @@ struct PaneView: View {
     }
 }
 
-/// Applies the pane-header tour anchor only on the focused pane, so the tour
-/// highlights exactly one header.
-private struct FocusedTourAnchor: ViewModifier {
-    let active: Bool
-    func body(content: Content) -> some View {
-        if active { content.tourAnchor(.paneHeader) } else { content }
-    }
-}
-
 // MARK: - Empty state
 
 struct EmptyStateView: View {
@@ -728,10 +712,6 @@ struct EmptyStateView: View {
                     .background(RoundedRectangle(cornerRadius: 4).fill(pal.spot))
             }
             .buttonStyle(.plain)
-            Button("take the welcome tour") { model.tourStep = 0 }
-                .buttonStyle(.plain)
-                .font(Fonts.uiMonoSmall)
-                .foregroundStyle(pal.faint2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

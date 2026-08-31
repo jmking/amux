@@ -110,7 +110,6 @@ struct CommandPaletteView: View {
             let d = UserDefaults.standard
             d.set((d.string(forKey: "mode") ?? "dark") == "dark" ? "light" : "dark", forKey: "mode")
         })
-        acts.append(PaletteAction(label: "welcome tour", kind: "action") { model.tourStep = 0 })
         if let st = model.state {
             for ws in st.workspaces {
                 acts.append(PaletteAction(label: "go to space: \(ws.label)", kind: "space") {
