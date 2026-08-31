@@ -59,7 +59,22 @@ final class AgentAvatar {
         root.addChildNode(orb)
         root.addChildNode(marker)
         root.addChildNode(Self.nameplate(label))
-        reslot(slot, of: total)
+        reslot(slot, of: total, animated: false)
+
+        // arriving agents scale up rather than popping into existence
+        root.scale = SCNVector3Zero
+        root.runAction(.sequence([
+            .scale(to: 1.12, duration: 0.22),
+            .scale(to: 1.0, duration: 0.10)]))
+    }
+
+    /// Shrinks away and takes its node with it, so a departing agent reads as
+    /// leaving rather than blinking out.
+    func retire() {
+        root.removeAllActions()
+        root.runAction(.sequence([
+            .scale(to: 0, duration: 0.28),
+            .removeFromParentNode()]))
     }
 
     private static func nameplate(_ text: String) -> SCNNode {
@@ -151,16 +166,21 @@ final class AgentAvatar {
         }
     }
 
-    func reslot(_ slot: Int, of total: Int) {
+    func reslot(_ slot: Int, of total: Int, animated: Bool = true) {
         let rows = max(1, Int(ceil(Double(total) / Double(perRow))))
         let row = slot / perRow
         // the last row is usually short; centre it on its own width
         let inRow = min(perRow, total - row * perRow)
         let col = slot % perRow
-        root.position = SCNVector3(
+        let target = SCNVector3(
             (CGFloat(col) - CGFloat(inRow - 1) / 2) * deskSpacing,
             0,
             (CGFloat(row) - CGFloat(rows - 1) / 2) * deskSpacing)
+        guard animated else { root.position = target; return }
+        // the grid reflows when anyone joins or leaves: glide, do not teleport
+        let dx = abs(root.position.x - target.x), dz = abs(root.position.z - target.z)
+        guard dx > 0.001 || dz > 0.001 else { return }
+        root.runAction(.move(to: target, duration: 0.45))
     }
 }
 
@@ -173,6 +193,7 @@ final class WorldRuntime {
     private var avatars: [String: AgentAvatar] = [:]
     private var timer: Timer?
     private var demoTick = 0
+    private var lastChange = Date.distantPast
     /// Prototype affordance: fake agents cycling every phase, so the behaviours
     /// can be reviewed without five live agents.
     var demoMode = false { didSet { if oldValue != demoMode { resetAvatars() } } }
@@ -226,6 +247,10 @@ final class WorldRuntime {
         let cam = SCNNode()
         cam.camera = SCNCamera()
         cam.camera?.fieldOfView = 42
+        // fieldOfView applies to the larger axis by default, so a world pane
+        // split narrow would crop the outer avatars. Pin it horizontally: the
+        // grid is wider than it is deep, so fitting the width fits the room.
+        cam.camera?.projectionDirection = .horizontal
         cam.camera?.wantsHDR = true
         cam.position = SCNVector3(0, 6.5, 12.5)
         cam.eulerAngles = SCNVector3(-0.42, 0, 0)
@@ -238,9 +263,12 @@ final class WorldRuntime {
     /// Reconciles the avatars against the live agent list, then pushes each one
     /// the phase it should be playing.
     private func resetAvatars() {
-        for (_, a) in avatars { a.root.removeFromParentNode() }
+        // retire() rather than a bare remove, so leaving demo mode exercises the
+        // same departure the real agent path uses
+        for (_, a) in avatars { a.retire() }
         avatars.removeAll()
         demoTick = 0
+        lastChange = Date()
     }
 
     private static let demoCast: [(String, String)] = [
@@ -277,8 +305,9 @@ final class WorldRuntime {
         let live = Set(agents.map(\.paneId))
 
         for (paneId, avatar) in avatars where !live.contains(paneId) {
-            avatar.root.removeFromParentNode()
+            avatar.retire()
             avatars.removeValue(forKey: paneId)
+            lastChange = Date()
         }
 
         for (slot, a) in agents.enumerated() {
@@ -291,6 +320,7 @@ final class WorldRuntime {
                                      label: a.name ?? a.tab, slot: slot, of: agents.count)
                 avatars[a.paneId] = avatar
                 agentRoot.addChildNode(avatar.root)
+                lastChange = Date()
             }
             // an event is a sharper signal than the coarse state, when we have one
             if let e = model.eventLog.latestPhase(paneId: a.paneId, within: 8) {
@@ -368,6 +398,18 @@ struct WorldToolbar: View {
         .frame(height: 34)
         .background(pal.panel)
         .contentShape(Rectangle())
+        .onDrag {
+            model.beginDrag("pane:\(paneId)")
+            return PaneDrag.provider("pane:\(paneId)")
+        }
+        .contextMenu {
+            Button("Split right") { model.splitPane(paneId, direction: "right") }
+            Button("Split down") { model.splitPane(paneId, direction: "down") }
+            Button("Zoom") { model.zoomPane(paneId) }
+            Divider()
+            Button("Close pane", role: .destructive) { model.requestClosePane(paneId) }
+        }
+        .help("Drag to move this pane · drop on another pane's edge to snap")
     }
 
     private var summary: String {
