@@ -1189,7 +1189,11 @@ final class AppModel: ObservableObject {
     /// Dropping a tab on another pane's edge pulls it out into a new group
     /// beside that one.
     func movePane(_ paneId: String, toEdge edge: String, of targetPaneId: String) {
-        guard paneId != targetPaneId, let (swi, _) = locate(paneId),
+        // paneId == targetPaneId is allowed: that is a tab being pulled out of
+        // its own pane into a split beside it. finishTrackedDrop has already
+        // checked a tab would be left behind. The leaf and the target group are
+        // both resolved before the detach, so the group is still found after it.
+        guard let (swi, _) = locate(paneId),
               let leaf = workspaces[swi].layout?.leaf(for: paneId),
               let (twi, targetGroupId) = locate(targetPaneId), twi == swi else { return }
         var ws = workspaces[swi]
