@@ -498,10 +498,10 @@ struct PaneView: View {
             }
         }
         .background(Color(nsColor: TermThemes.effective(termThemeName, mode: mode).bgNS))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: Palette.Radius.card))
         .overlay(dropHighlight)
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: Palette.Radius.card)
                 .strokeBorder(focused ? pal.spot : pal.line2, lineWidth: 1))
         .onHover { hovering = $0 }
         .background(PaneFrameReporter(model: model, paneId: leaf.paneId))
@@ -517,9 +517,9 @@ struct PaneView: View {
         if let e = activeDropEdge {
             GeometryReader { geo in
                 let r = highlightRect(e, in: geo.size)
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: Palette.Radius.row)
                     .fill(pal.spot.opacity(0.22))
-                    .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(pal.spot, lineWidth: 1.5))
+                    .overlay(RoundedRectangle(cornerRadius: Palette.Radius.row).strokeBorder(pal.spot, lineWidth: 1.5))
                     .frame(width: r.width, height: r.height)
                     .offset(x: r.minX, y: r.minY)
             }
@@ -646,7 +646,7 @@ struct EmptyStateView: View {
         VStack(spacing: 14) {
             (Text("Give your agents\nsomewhere to ").foregroundColor(pal.ink)
                 + Text("live.").foregroundColor(pal.spot))
-                .font(.system(size: 32, weight: .black))
+                .font(.system(size: 28, weight: .semibold))
                 .multilineTextAlignment(.center)
             Text("A space is a project directory with tabs and terminal panes inside.\nCreate one, then start agents in any pane — amux watches them\nand tells you who needs you.")
                 .font(.system(size: 12))
@@ -656,10 +656,10 @@ struct EmptyStateView: View {
                 model.activeSheet = .newSpace
             } label: {
                 Text("+ new space")
-                    .font(Fonts.uiMono.weight(.bold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(pal.spotInk)
                     .padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(pal.spot))
+                    .background(RoundedRectangle(cornerRadius: Palette.Radius.row).fill(pal.spot))
             }
             .buttonStyle(.plain)
         }

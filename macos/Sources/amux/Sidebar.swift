@@ -30,11 +30,12 @@ struct SectionHeader: View {
     @Environment(\.palette) private var pal
 
     var body: some View {
-        HStack(spacing: 4) {
-            Text("—").foregroundStyle(pal.spot)
-            Text(title.uppercased()).tracking(2.2).foregroundStyle(pal.faint2)
-        }
-        .font(Fonts.uiMonoSmall)
+        // No accent glyph: colour is reserved for the state dots, so the
+        // headers stay quiet and the eye goes to the rows.
+        Text(title.uppercased())
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(1.6)
+            .foregroundStyle(pal.faint2)
     }
 }
 
@@ -87,7 +88,7 @@ struct SidebarView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             SectionHeader(title: "spaces")
                             Spacer()
@@ -113,7 +114,7 @@ struct SidebarView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             SectionHeader(title: "agents")
                             Spacer()
@@ -121,9 +122,9 @@ struct SidebarView: View {
                                 model.agentSortPriority.toggle()
                             } label: {
                                 Text(model.agentSortPriority ? "priority" : "grouped")
-                                    .font(Fonts.uiMonoTiny)
-                                    .padding(.horizontal, 7).padding(.vertical, 2)
-                                    .overlay(Capsule().strokeBorder(pal.line2))
+                                    .font(.system(size: 10, weight: .medium))
+                                    .padding(.horizontal, 8).padding(.vertical, 3)
+                                    .background(Capsule().fill(pal.mass.opacity(0.7)))
                             }
                             .buttonStyle(.plain)
                             .foregroundStyle(pal.faint2)
@@ -217,19 +218,21 @@ struct SpaceRow: View {
                 StateDot(state: model.workspaceAggregateState(ws))
             }
         }
-        .padding(.horizontal, 8).padding(.vertical, 5)
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        // Every row is a card, not just the hovered one: a list of soft slabs
+        // reads calmer than one highlight jumping around an empty column.
         .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(active || hovering || dropTargeted ? pal.mass : .clear))
+            RoundedRectangle(cornerRadius: Palette.Radius.row)
+                .fill(pal.mass.opacity(active ? 1 : (hovering || dropTargeted ? 0.7 : 0.4))))
         .overlay(alignment: .leading) {
             if active {
-                RoundedRectangle(cornerRadius: 1).fill(pal.spot)
-                    .frame(width: 2).padding(.vertical, 5)
+                RoundedRectangle(cornerRadius: 1.5).fill(pal.spot)
+                    .frame(width: 3).padding(.vertical, 8)
             }
         }
-        .overlay(RoundedRectangle(cornerRadius: 4)
+        .overlay(RoundedRectangle(cornerRadius: Palette.Radius.row)
             .strokeBorder(dropTargeted ? pal.spot : .clear, lineWidth: 1.5))
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 10)
         .contentShape(Rectangle())
         .onTapGesture { model.focus(workspaceId: ws.id) }
         .onHover { hovering = $0 }
@@ -289,9 +292,10 @@ struct AgentRowView: View {
             Spacer()
             StateDot(state: agent.state)
         }
-        .padding(.horizontal, 8).padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 4).fill(hovering ? pal.mass : .clear))
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: Palette.Radius.row)
+            .fill(pal.mass.opacity(hovering ? 0.7 : 0.4)))
+        .padding(.horizontal, 10)
         .contentShape(Rectangle())
         .onTapGesture {
             model.focus(workspaceId: agent.wsId, tabId: agent.tabId, paneId: agent.paneId)

@@ -17,29 +17,39 @@ struct Palette {
     let spot: SwiftUI.Color
     let spotInk: SwiftUI.Color
 
-    // near-black chrome, hairlines, the user's macOS accent
+    // Soft charcoal rather than near-black, so panels read as raised surfaces
+    // instead of holes. Colour is spent almost entirely on the state dots: the
+    // accent is desaturated and only marks selection.
     static let darkMode = Palette(
-        bg: SwiftUI.Color(hex: 0x131313), panel: SwiftUI.Color(hex: 0x1b1b1b), mass: SwiftUI.Color(hex: 0x282828),
-        ink: SwiftUI.Color(hex: 0xededed), dim: SwiftUI.Color(hex: 0xc8c8c8), faint: SwiftUI.Color(hex: 0x9a9a9a),
-        faint2: SwiftUI.Color(hex: 0x767676), line: SwiftUI.Color(hex: 0x222222), line2: SwiftUI.Color(hex: 0x2f2f2f),
-        spot: SwiftUI.Color(hex: 0x73daca), spotInk: SwiftUI.Color(hex: 0x131313))
+        bg: SwiftUI.Color(hex: 0x18181a), panel: SwiftUI.Color(hex: 0x232326), mass: SwiftUI.Color(hex: 0x313137),
+        ink: SwiftUI.Color(hex: 0xf0f0f2), dim: SwiftUI.Color(hex: 0xd2d2d8), faint: SwiftUI.Color(hex: 0x9a9aa3),
+        faint2: SwiftUI.Color(hex: 0x7a7a83), line: SwiftUI.Color(hex: 0x2a2a2e), line2: SwiftUI.Color(hex: 0x3a3a41),
+        spot: SwiftUI.Color(hex: 0x6dbfae), spotInk: SwiftUI.Color(hex: 0x18181a))
 
-    // standard neutral light: white ground, grey hairlines, no colour cast
+    // The same restraint in reverse: warm-neutral greys, no colour cast.
     static let lightMode = Palette(
-        bg: SwiftUI.Color(hex: 0xfbfbfc), panel: SwiftUI.Color(hex: 0xf2f2f4), mass: SwiftUI.Color(hex: 0xe4e4e7),
-        ink: SwiftUI.Color(hex: 0x17181a), dim: SwiftUI.Color(hex: 0x3a3c40), faint: SwiftUI.Color(hex: 0x6b6e73),
-        faint2: SwiftUI.Color(hex: 0x93969b), line: SwiftUI.Color(hex: 0xe6e6e9), line2: SwiftUI.Color(hex: 0xd7d8dc),
+        bg: SwiftUI.Color(hex: 0xfafafb), panel: SwiftUI.Color(hex: 0xf1f1f3), mass: SwiftUI.Color(hex: 0xe5e5e9),
+        ink: SwiftUI.Color(hex: 0x1c1d20), dim: SwiftUI.Color(hex: 0x3f4145), faint: SwiftUI.Color(hex: 0x6e7176),
+        faint2: SwiftUI.Color(hex: 0x94979c), line: SwiftUI.Color(hex: 0xe8e8eb), line2: SwiftUI.Color(hex: 0xdadade),
         spot: SwiftUI.Color(nsColor: .controlAccentColor), spotInk: .white)
+
+    /// Corner radii. Rounder than typical AppKit chrome: the rows read as soft
+    /// cards rather than list cells.
+    enum Radius {
+        static let row: CGFloat = 8
+        static let card: CGFloat = 12
+        static let chip: CGFloat = 6
+    }
 }
 
 enum AgentStateColor {
     static func color(_ state: String, light: Bool = false) -> SwiftUI.Color {
         switch state {
-        case "working": return SwiftUI.Color(hex: light ? 0xb07d12 : 0xd3a027)
-        case "idle": return SwiftUI.Color(hex: light ? 0x2c9150 : 0x5fae74)
-        case "blocked": return SwiftUI.Color(hex: light ? 0xc0392b : 0xc73e3e)
-        case "done": return SwiftUI.Color(hex: light ? 0x179186 : 0x94e2d5)
-        default: return SwiftUI.Color(hex: light ? 0x8e9196 : 0x908f96)
+        case "working": return SwiftUI.Color(hex: light ? 0xb5811c : 0xd9ad4a)
+        case "idle": return SwiftUI.Color(hex: light ? 0x358f56 : 0x6dba82)
+        case "blocked": return SwiftUI.Color(hex: light ? 0xc2493c : 0xd4635d)
+        case "done": return SwiftUI.Color(hex: light ? 0x2a8f86 : 0x8fd9cd)
+        default: return SwiftUI.Color(hex: light ? 0x909398 : 0x86868f)
         }
     }
 }
@@ -216,7 +226,7 @@ struct AgentChip: View {
                 .font(.system(size: size * 0.55, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)
-                .background(RoundedRectangle(cornerRadius: 4).fill(SwiftUI.Color(hex: brand.color)))
+                .background(RoundedRectangle(cornerRadius: Palette.Radius.chip).fill(SwiftUI.Color(hex: brand.color)))
                 .accessibilityLabel(kind)
         }
     }

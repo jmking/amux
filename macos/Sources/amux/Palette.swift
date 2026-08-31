@@ -18,7 +18,7 @@ struct CommandPaletteView: View {
         VStack(spacing: 0) {
             TextField("type a command or jump to a space, tab, or agent…", text: $query)
                 .textFieldStyle(.plain)
-                .font(.system(size: 14, design: .monospaced))
+                .font(.system(size: 14))
                 .foregroundStyle(pal.ink)
                 .padding(14)
                 .focused($focused)
@@ -36,7 +36,7 @@ struct CommandPaletteView: View {
                                 .foregroundStyle(pal.faint2)
                         }
                         .padding(.horizontal, 11).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 4)
+                        .background(RoundedRectangle(cornerRadius: Palette.Radius.row)
                             .fill(i == selection ? pal.mass : .clear))
                         .foregroundStyle(i == selection ? pal.ink : pal.dim)
                         .contentShape(Rectangle())
@@ -53,9 +53,9 @@ struct CommandPaletteView: View {
         }
         .frame(width: 540)
         .background(pal.panel)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(pal.line2))
-        .shadow(color: .black.opacity(0.4), radius: 30, y: 12)
+        .clipShape(RoundedRectangle(cornerRadius: Palette.Radius.card))
+        .overlay(RoundedRectangle(cornerRadius: Palette.Radius.card).strokeBorder(pal.line2))
+        .shadow(color: .black.opacity(0.32), radius: 36, y: 14)
         .onAppear { focused = true }
         .onKeyPress(.downArrow) {
             selection = min(selection + 1, max(0, matches.count - 1)); return .handled
