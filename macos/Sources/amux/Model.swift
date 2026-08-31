@@ -455,12 +455,22 @@ final class AppModel: ObservableObject {
         return CGPoint(x: p.x, y: content.bounds.height - p.y)
     }
 
+    /// Which edge of a pane the pointer is nearest, measured in points.
+    ///
+    /// This used to compare fractions of the pane's width and height, which is
+    /// wrong whenever a pane is not roughly square: in a 1245x211 browser pane
+    /// every horizontal fraction is tiny, so "left" beat "down" along almost the
+    /// whole bottom of the pane and a vertical split was unreachable except dead
+    /// centre. Distances are the thing the eye is judging, so compare those.
+    /// The middle 40% x 40% is still centre, so joining a pane's tabs by
+    /// dropping on its body stays easy to hit.
     private func edgeFor(_ point: CGPoint, in frame: CGRect) -> String {
-        let fx = (point.x - frame.minX) / max(frame.width, 1)
-        let fy = (point.y - frame.minY) / max(frame.height, 1)
-        if fx > 0.3 && fx < 0.7 && fy > 0.3 && fy < 0.7 { return "center" }
+        let dl = point.x - frame.minX, dr = frame.maxX - point.x
+        let dt = point.y - frame.minY, db = frame.maxY - point.y
+        let padX = frame.width * 0.3, padY = frame.height * 0.3
+        if dl > padX && dr > padX && dt > padY && db > padY { return "center" }
         let candidates: [(String, CGFloat)] = [
-            ("left", fx), ("right", 1 - fx), ("up", fy), ("down", 1 - fy),
+            ("left", dl), ("right", dr), ("up", dt), ("down", db),
         ]
         return candidates.min { $0.1 < $1.1 }!.0
     }
@@ -497,7 +507,13 @@ final class AppModel: ObservableObject {
         }
         for paneId in candidates {
             guard let f = paneFrames[paneId], f.contains(point) else { continue }
-            return (paneId, f)
+            // Edges belong to the pane's content. Measuring them over the whole
+            // pane counted the tab strip as part of the top edge, which pushed
+            // the "up" band down out of reach in a short pane.
+            guard let g = layout.groupContaining(paneId: paneId),
+                  let strip = stripFrames[g.groupId], strip.maxY > f.minY else { return (paneId, f) }
+            return (paneId, CGRect(x: f.minX, y: strip.maxY,
+                                   width: f.width, height: max(f.maxY - strip.maxY, 1)))
         }
         return nil
     }
@@ -578,7 +594,12 @@ final class AppModel: ObservableObject {
             }
         } else if payload.hasPrefix("tab:") {
             let src = String(payload.dropFirst(4))
-            guard src != target else { return }
+            // Dropping a tab on its own pane's edge splits that pane and takes
+            // the tab with it, which is only meaningful if a tab is left behind.
+            if src == target,
+               (locateGroup(src).flatMap { focusedWorkspace?.layout?.group(id: $0.1)?.tabs.count } ?? 1) < 2 {
+                return
+            }
             withAnimation(settle) {
                 if edge == "center" { movePane(src, intoGroupOf: target) }
                 else { movePane(src, toEdge: edge, of: target) }
