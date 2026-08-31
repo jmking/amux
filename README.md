@@ -39,13 +39,18 @@ means it finished while you were looking somewhere else.
 **You get told when something happens.** Background agents that finish or get
 stuck raise a notification and a chime. Click it to jump straight to that pane.
 
-**Spaces, tabs, panes.** A space is a project directory, usually a branch. Tabs
-are views inside it. Panes are terminals. Each space shows its git branch, how
-many files are dirty, and how far ahead of upstream it is.
+**Spaces, panes, tabs.** A space is a project directory, usually a branch, and it
+has one layout. Panes divide that layout, and each pane holds its own tabs with
+its own strip across the top, so a tab belongs to the pane you put it in rather
+than to the window. Each space shows its git branch, how many files are dirty,
+and how far ahead of upstream it is.
 
-**Drag panes anywhere.** Grab a pane by its header and drop it on another pane's
-edge to snap it in as a split, on its middle to swap the two, on a tab to move it
-there, or on a space in the sidebar to send it across. Tabs reorder by dragging.
+**Drag tabs anywhere.** Grab a tab and drop it on a pane's edge to split that pane
+and take the tab with it, on its middle to move the tab in, on another pane's strip
+to join its tabs at the point you are hovering, or on a space in the sidebar to send
+it across. Dropping on a pane's own edge pulls the tab out beside it. Edge targets
+are picked by distance, so the top and bottom of a wide pane are as easy to hit as
+its sides.
 
 **Browser panes.** Hit `Shift+Cmd+B` for a WebKit pane, so your dev server sits
 next to the agent building it. URLs persist with the layout.
@@ -97,13 +102,16 @@ prompt means idle. An agent that finishes while you are not looking is marked
 `done` until you focus its tab, which is what makes the sidebar behave like an
 inbox rather than a status list.
 
-**Layout** is a binary tree of splits. Moves, swaps and merges rewrite the tree in
-a single traversal, so a pane keeps its process no matter where it lands.
+**Layout** is a binary tree of splits whose leaves are panes, and a pane is a group
+of tabs plus which one is showing. Moves and merges rewrite the tree in a single
+traversal, so a tab keeps its process no matter where it lands, and a pane that
+loses its last tab collapses out of the tree.
 
-**State** lives in `~/.config/amux/state.json`. Spaces, tabs, split ratios, pane
-directories and browser URLs are restored on launch, with fresh shells.
+**State** lives in `~/.config/amux/state.json`. Spaces, panes, their tabs, split
+ratios, working directories and browser URLs are restored on launch, with fresh
+shells.
 
-**Performance.** Every tab in a space stays mounted and switching only flips
+**Performance.** Every tab in a pane stays mounted and switching only flips
 visibility, so terminals are never torn down and rebuilt. Directory and git
 lookups are batched onto a background tick, so nothing blocks the main thread.
 
