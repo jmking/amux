@@ -136,7 +136,6 @@ struct WorldToolbar: View {
     @ObservedObject var model: AppModel
     let paneId: String
     @Environment(\.palette) private var pal
-    @State private var demoOn = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -159,27 +158,6 @@ struct WorldToolbar: View {
             Text(summary)
                 .font(.system(size: 11))
                 .foregroundStyle(pal.faint2)
-            // shown so the frame budget can be checked rather than claimed.
-            // Needs its own clock: nothing in the model changes per frame.
-            TimelineView(.periodic(from: .now, by: 0.5)) { _ in
-                Text(frameStat)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(frameOK ? pal.faint2 : AgentStateColor.color("blocked"))
-            }
-            .help("Last frame and worst frame over the recent window")
-            Button {
-                let rt = model.worldRuntime(for: paneId)
-                rt.demoMode.toggle()
-                demoOn = rt.demoMode
-            } label: {
-                Text("demo")
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(demoOn ? pal.spot.opacity(0.8) : pal.mass.opacity(0.7)))
-                    .foregroundStyle(demoOn ? pal.spotInk : pal.faint)
-            }
-            .buttonStyle(.plain)
-            .help("Cycle fake agents through every behaviour")
             Divider().frame(height: 14).overlay(pal.line2)
             PaneChromeButtons(model: model, paneId: paneId)
         }
@@ -202,20 +180,6 @@ struct WorldToolbar: View {
             Button("Close pane", role: .destructive) { model.requestClosePane(paneId) }
         }
         .help("Drag to move this pane · drop on another pane's edge to snap")
-    }
-
-    /// Worst frame in the recent window, which is the number that matters: an
-    /// average can look fine while every tenth frame is dropped.
-    private var frameOK: Bool {
-        let worst = model.worldRuntime(for: paneId).worstGpuMs
-        return worst == 0 || worst < 8.3     // a 120Hz budget, not a 60Hz one
-    }
-
-    private var frameStat: String {
-        let rt = model.worldRuntime(for: paneId)
-        guard rt.lastFrameMs > 0 else { return "" }
-        let fps = rt.lastFrameMs > 0 ? 1000 / rt.lastFrameMs : 0
-        return String(format: "%.0f fps · gpu worst %.2fms", fps, rt.worstGpuMs)
     }
 
     private var summary: String {
