@@ -266,6 +266,16 @@ final class AppModel: ObservableObject {
     var webRuntimes: [String: WebPaneRuntime] = [:]
     var currentDragPayload: String?
     @Published var dragActive = false
+
+    /// Window-space frames of every pane, republished from each pane's layout.
+    /// Not @Published: it is written during view update and only ever read by
+    /// the drop tracker below.
+    var paneFrames: [String: CGRect] = [:]
+    /// Drop target chosen by our own tracking rather than by AppKit. Only web
+    /// panes use this; see `startDropTracking`.
+    @Published var trackedDropPane: String?
+    @Published var trackedDropEdge: String?
+    private var dropTracker: Timer?
     private var dragWatch: Timer?
 
     /// Called from every onDrag: while a drag is in flight, web panes float an
@@ -273,13 +283,12 @@ final class AppModel: ObservableObject {
     func beginDrag(_ payload: String) {
         currentDragPayload = payload
         dragActive = true
-        PaneDropShield.dragActive = true
+        startDropTracking()
         dragWatch?.invalidate()
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] timer in
             if NSEvent.pressedMouseButtons & 1 == 0 {
                 timer.invalidate()
-                PaneDropShield.dragActive = false
-                Task { @MainActor in self?.dragActive = false }
+                Task { @MainActor in self?.finishTrackedDrop() }
             }
         }
         // .common so it keeps firing inside AppKit's modal drag tracking loop
@@ -292,9 +301,106 @@ final class AppModel: ObservableObject {
     func endDrag() {
         dragWatch?.invalidate()
         dragWatch = nil
-        PaneDropShield.dragActive = false
+        dropTracker?.invalidate()
+        dropTracker = nil
         dragActive = false
+        trackedDropPane = nil
+        trackedDropEdge = nil
         currentDragPayload = nil
+    }
+
+    // MARK: drop tracking
+    //
+    // Panes do their own drop targeting rather than using SwiftUI's .onDrop.
+    //
+    // AppKit will not route a drag into the region a WKWebView occupies: the
+    // web view wins the hit test, and nothing registered above or around it
+    // receives the dragging messages, not a sibling overlay, not the container
+    // that owns the web view, and not SwiftUI's own drop view, which never even
+    // sees a validateDrop for that pane. Dragging out of a browser pane failed
+    // the same way, so a browser could be neither a drop source nor a target.
+    //
+    // SwiftUI's .onDrop does work for terminal panes, but running two
+    // mechanisms means two sets of behaviour to keep in step, so panes use this
+    // one path. The drag is bracketed by beginDrag/endDrag, and a timer in
+    // .common mode keeps ticking inside AppKit's modal drag loop, so we can
+    // follow the pointer, highlight the edge under it, and apply the move when
+    // the button comes up. The tab bar keeps its own .onDrop: it is ordinary
+    // SwiftUI and sits outside every pane frame, so the two never overlap.
+
+    private func startDropTracking() {
+        dropTracker?.invalidate()
+        let t = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.updateTrackedDrop() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        dropTracker = t
+    }
+
+    /// The mouse in the same space as `paneFrames` (SwiftUI's .global, which is
+    /// the window's content view with a top-left origin).
+    private func pointerInWindow() -> CGPoint? {
+        guard let win = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }),
+              let content = win.contentView else { return nil }
+        let p = win.convertPoint(fromScreen: NSEvent.mouseLocation)
+        return CGPoint(x: p.x, y: content.bounds.height - p.y)
+    }
+
+    private func edgeFor(_ point: CGPoint, in frame: CGRect) -> String {
+        let fx = (point.x - frame.minX) / max(frame.width, 1)
+        let fy = (point.y - frame.minY) / max(frame.height, 1)
+        if fx > 0.3 && fx < 0.7 && fy > 0.3 && fy < 0.7 { return "center" }
+        let candidates: [(String, CGFloat)] = [
+            ("left", fx), ("right", 1 - fx), ("up", fy), ("down", 1 - fy),
+        ]
+        return candidates.min { $0.1 < $1.1 }!.0
+    }
+
+    private func pane(at point: CGPoint) -> (String, CGRect)? {
+        guard let tab = focusedTab else { return nil }
+        if let zoomed = tab.zoomedPaneId {
+            guard let f = paneFrames[zoomed], f.contains(point) else { return nil }
+            return (zoomed, f)
+        }
+        for paneId in tab.layout?.paneIds ?? [] {
+            guard let f = paneFrames[paneId], f.contains(point) else { continue }
+            return (paneId, f)
+        }
+        return nil
+    }
+
+    private func updateTrackedDrop() {
+        guard dragActive, let p = pointerInWindow() else { return }
+        if let (paneId, frame) = pane(at: p) {
+            let e = edgeFor(p, in: frame)
+            if trackedDropPane != paneId { trackedDropPane = paneId }
+            if trackedDropEdge != e { trackedDropEdge = e }
+        } else if trackedDropPane != nil {
+            trackedDropPane = nil
+            trackedDropEdge = nil
+        }
+    }
+
+    private func finishTrackedDrop() {
+        let target = trackedDropPane
+        let edge = trackedDropEdge
+        let payload = currentDragPayload
+        dropTracker?.invalidate()
+        dropTracker = nil
+        dragActive = false
+        trackedDropPane = nil
+        trackedDropEdge = nil
+        currentDragPayload = nil
+        guard let target, let edge, let payload else { return }
+        if payload.hasPrefix("pane:") {
+            let src = String(payload.dropFirst(5))
+            guard src != target else { return }
+            if edge == "center" { swapPanes(src, target) }
+            else { movePane(src, toEdge: edge, of: target) }
+        } else if payload.hasPrefix("tab:") {
+            mergeTab(String(payload.dropFirst(4)),
+                     toEdge: edge == "center" ? "right" : edge, of: target)
+        }
     }
 
     /// Pane commands should still work when nothing has been clicked yet.
@@ -639,6 +745,7 @@ final class AppModel: ObservableObject {
         runtimes.removeValue(forKey: paneId)
         webRuntimes[paneId]?.detach()
         webRuntimes.removeValue(forKey: paneId)
+        paneFrames.removeValue(forKey: paneId)
         removePaneFromLayout(paneId)
         publish()
     }
@@ -669,6 +776,7 @@ final class AppModel: ObservableObject {
             runtimes.removeValue(forKey: pid)
             webRuntimes[pid]?.detach()
             webRuntimes.removeValue(forKey: pid)
+            paneFrames.removeValue(forKey: pid)
         }
         ws.tabs.remove(at: ti)
         if ws.focusedTabId == tabId { ws.focusedTabId = ws.tabs.first?.id }
@@ -691,6 +799,7 @@ final class AppModel: ObservableObject {
                 runtimes.removeValue(forKey: pid)
                 webRuntimes[pid]?.detach()
                 webRuntimes.removeValue(forKey: pid)
+                paneFrames.removeValue(forKey: pid)
             }
         }
         closeWorkspaceRecord(wsId)

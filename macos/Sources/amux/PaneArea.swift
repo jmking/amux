@@ -454,54 +454,19 @@ private struct DividerView: View {
 
 // MARK: - Pane drop (drag to snap / move / swap)
 
-private struct PaneDropDelegate: DropDelegate {
+/// Publishes a pane's window-space frame so the model's drop tracker can tell
+/// which pane the pointer is over. Kept as its own view with explicit types:
+/// inlining it pushed this file past the type-checker's budget.
+private struct PaneFrameReporter: View {
+    @ObservedObject var model: AppModel
     let paneId: String
-    let model: AppModel
-    let size: CGSize
-    @Binding var edge: String?
-    @Binding var stamp: Date
 
-    private func edgeFor(_ location: CGPoint) -> String {
-        let fx = location.x / max(size.width, 1)
-        let fy = location.y / max(size.height, 1)
-        if fx > 0.3 && fx < 0.7 && fy > 0.3 && fy < 0.7 { return "center" }
-        let candidates: [(String, CGFloat)] = [
-            ("left", fx), ("right", 1 - fx), ("up", fy), ("down", 1 - fy),
-        ]
-        return candidates.min { $0.1 < $1.1 }!.0
-    }
-
-    func dropEntered(info: DropInfo) {
-        edge = edgeFor(info.location)
-        stamp = Date()
-    }
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        edge = edgeFor(info.location)
-        stamp = Date()
-        return DropProposal(operation: .move)
-    }
-    func dropExited(info: DropInfo) { edge = nil }
-
-    func performDrop(info: DropInfo) -> Bool {
-        let e = edgeFor(info.location)
-        edge = nil
-        model.endDrag()
-        loadDragPayload(info.itemProviders(for: [PaneDrag.type])) { payload in
-            if payload.hasPrefix("pane:") {
-                let src = String(payload.dropFirst(5))
-                guard src != paneId else { return }
-                if e == "center" {
-                    model.swapPanes(src, paneId)
-                } else {
-                    model.movePane(src, toEdge: e, of: paneId)
-                }
-            } else if payload.hasPrefix("tab:") {
-                // dropping a tab onto a pane merges the tab's panes in at that edge
-                let src = String(payload.dropFirst(4))
-                model.mergeTab(src, toEdge: e == "center" ? "right" : e, of: paneId)
-            }
+    var body: some View {
+        GeometryReader { (geo: GeometryProxy) -> Color in
+            let f: CGRect = geo.frame(in: .global)
+            model.paneFrames[paneId] = f
+            return Color.clear
         }
-        return true
     }
 }
 
@@ -518,8 +483,6 @@ struct PaneView: View {
     @AppStorage("termTheme") private var termThemeName = "amux"
     @AppStorage("mode") private var mode = "dark"
     @State private var hovering = false
-    @State private var dropEdge: String?
-    @State private var dropStamp = Date()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -527,8 +490,7 @@ struct PaneView: View {
                 BrowserToolbar(runtime: model.webRuntime(for: leaf.paneId),
                                paneId: leaf.paneId, model: model, focused: focused)
                 WebHost(runtime: model.webRuntime(for: leaf.paneId),
-                        paneId: leaf.paneId, model: model, isActive: isActive,
-                        onEdge: { dropEdge = $0 })
+                        paneId: leaf.paneId, model: model)
             } else {
                 header
                 TerminalHost(paneTerminal: model.terminal(for: leaf.paneId))
@@ -542,29 +504,17 @@ struct PaneView: View {
             RoundedRectangle(cornerRadius: 6)
                 .strokeBorder(focused ? pal.spot : pal.line2, lineWidth: 1))
         .onHover { hovering = $0 }
-        .onChange(of: size) { _, _ in dropEdge = nil }
-        .onChange(of: leaf) { _, _ in dropEdge = nil }
-        // every pane drops its highlight the instant the drag ends
-        .onChange(of: model.dragActive) { _, active in if !active { dropEdge = nil } }
-        // SwiftUI never reports a cancelled drag, so expire highlights that stop
-        // receiving dropUpdated events (they resume instantly on real movement)
-        .task(id: dropEdge) {
-            guard dropEdge != nil else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 400_000_000)
-                if Date().timeIntervalSince(dropStamp) > 1.0 {
-                    dropEdge = nil
-                    return
-                }
-            }
-        }
-        .onDrop(of: [PaneDrag.type],
-                delegate: PaneDropDelegate(paneId: leaf.paneId, model: model,
-                                           size: size, edge: $dropEdge, stamp: $dropStamp))
+        .background(PaneFrameReporter(model: model, paneId: leaf.paneId))
+    }
+
+    /// Every pane takes its drop edge from the model's pointer tracking. See
+    /// AppModel's "drop tracking" section for why SwiftUI's .onDrop is not used.
+    private var activeDropEdge: String? {
+        model.trackedDropPane == leaf.paneId ? model.trackedDropEdge : nil
     }
 
     @ViewBuilder private var dropHighlight: some View {
-        if let e = dropEdge {
+        if let e = activeDropEdge {
             GeometryReader { geo in
                 let r = highlightRect(e, in: geo.size)
                 RoundedRectangle(cornerRadius: 5)

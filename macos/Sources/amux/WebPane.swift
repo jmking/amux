@@ -97,89 +97,11 @@ extension WebPaneRuntime: @MainActor WKNavigationDelegate {
 
 
 // MARK: - AppKit drop shield
-//
-// WKWebView is a real NSView registered as a drag destination, and AppKit
-// resolves drop targets by hit-testing actual views — a SwiftUI .onDrop overlay
-// never wins that contest. So we park a transparent NSView above the web view
-// that is invisible to clicks (hitTest returns nil) but becomes the drag
-// destination while an in-app pane drag is running.
-final class PaneDropShield: NSView {
-    nonisolated(unsafe) static var dragActive = false
-
-    var paneId: String = ""
-    weak var model: AppModel?
-    var onEdge: ((String?) -> Void)?
-    /// Panes in background tabs stay mounted; they must not swallow drops.
-    var isActive: Bool = true
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        registerForDraggedTypes([NSPasteboard.PasteboardType(PaneDrag.typeID)])
-    }
-    required init?(coder: NSCoder) { fatalError("not used") }
-
-    override var isFlipped: Bool { true }
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        (Self.dragActive && isActive) ? super.hitTest(point) : nil
-    }
-
-    private func edge(at point: NSPoint) -> String {
-        let fx = point.x / max(bounds.width, 1)
-        let fy = point.y / max(bounds.height, 1)
-        if fx > 0.3 && fx < 0.7 && fy > 0.3 && fy < 0.7 { return "center" }
-        let candidates: [(String, CGFloat)] = [
-            ("left", fx), ("right", 1 - fx), ("up", fy), ("down", 1 - fy),
-        ]
-        return candidates.min { $0.1 < $1.1 }!.0
-    }
-
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        onEdge?(edge(at: convert(sender.draggingLocation, from: nil)))
-        return .move
-    }
-
-    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        onEdge?(edge(at: convert(sender.draggingLocation, from: nil)))
-        return .move
-    }
-
-    override func draggingExited(_ sender: NSDraggingInfo?) {
-        onEdge?(nil)
-    }
-
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let e = edge(at: convert(sender.draggingLocation, from: nil))
-        onEdge?(nil)
-        Self.dragActive = false
-        guard let data = sender.draggingPasteboard.data(
-                forType: NSPasteboard.PasteboardType(PaneDrag.typeID)),
-              let payload = String(data: data, encoding: .utf8),
-              let model else { return false }
-        let target = paneId
-        Task { @MainActor in
-            model.endDrag()
-            if payload.hasPrefix("pane:") {
-                let src = String(payload.dropFirst(5))
-                guard src != target else { return }
-                if e == "center" { model.swapPanes(src, target) }
-                else { model.movePane(src, toEdge: e, of: target) }
-            } else if payload.hasPrefix("tab:") {
-                model.mergeTab(String(payload.dropFirst(4)),
-                               toEdge: e == "center" ? "right" : e, of: target)
-            }
-        }
-        return true
-    }
-}
-
 /// Hosts the persistent WKWebView, re-parenting across SwiftUI re-renders.
 struct WebHost: NSViewRepresentable {
     let runtime: WebPaneRuntime
     let paneId: String
     let model: AppModel
-    var isActive: Bool = true
-    let onEdge: (String?) -> Void
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
@@ -188,15 +110,7 @@ struct WebHost: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        if runtime.view.superview !== nsView {
-            attach(to: nsView)
-        }
-        if let shield = nsView.subviews.compactMap({ $0 as? PaneDropShield }).first {
-            shield.paneId = paneId
-            shield.model = model
-            shield.onEdge = onEdge
-            shield.isActive = isActive
-        }
+        if runtime.view.superview !== nsView { attach(to: nsView) }
     }
 
     private func attach(to container: NSView) {
@@ -205,14 +119,6 @@ struct WebHost: NSViewRepresentable {
         v.frame = container.bounds
         v.autoresizingMask = [.width, .height]
         container.addSubview(v)
-
-        let shield = PaneDropShield(frame: container.bounds)
-        shield.autoresizingMask = [.width, .height]
-        shield.paneId = paneId
-        shield.model = model
-        shield.onEdge = onEdge
-        shield.isActive = isActive
-        container.addSubview(shield, positioned: .above, relativeTo: v)
     }
 }
 
