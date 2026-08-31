@@ -489,6 +489,7 @@ struct PaneChromeButtons: View {
                 if let ws = model.focusedWorkspace { model.newTab(ws) }
             }
             btn("globe", "New browser tab (⇧⌘B)") { model.newBrowserTab() }
+            btn("cube.transparent", "New agent world tab (⇧⌘Y)") { model.newWorldTab() }
             btn("rectangle.split.2x1", "Split right (⌘D)") {
                 model.splitPane(paneId, direction: "right")
             }
