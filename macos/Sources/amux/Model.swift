@@ -357,6 +357,12 @@ final class AppModel: ObservableObject {
     /// panes use this; see `startDropTracking`.
     @Published var trackedDropPane: String?
     @Published var trackedDropEdge: String?
+    /// Strip drops are a separate target from pane drops: a strip sits inside
+    /// its pane's frame, so it has to be tested first and win.
+    var stripFrames: [String: CGRect] = [:]     // groupId -> strip rect
+    var chipFrames: [String: CGRect] = [:]      // paneId  -> tab chip rect
+    @Published var trackedDropGroup: String?
+    @Published var trackedDropIndex: Int?
     private var dropTracker: Timer?
     private var dragWatch: Timer?
 
@@ -402,6 +408,8 @@ final class AppModel: ObservableObject {
         dragActive = false
         trackedDropPane = nil
         trackedDropEdge = nil
+        trackedDropGroup = nil
+        trackedDropIndex = nil
         currentDragPayload = nil
     }
 
@@ -459,6 +467,26 @@ final class AppModel: ObservableObject {
 
     /// Drop targets are the panes actually on screen: the visible tab of each
     /// group, or just the zoomed group when one is zoomed.
+    /// Which tab strip the pointer is over, and where in its run of chips the
+    /// dragged tab would land.
+    private func strip(at point: CGPoint) -> (String, Int)? {
+        guard let ws = focusedWorkspace, let layout = ws.layout else { return nil }
+        let visible: [PaneGroup]
+        if let z = ws.zoomedGroupId, let g = layout.group(id: z) { visible = [g] }
+        else { visible = layout.groups }
+        for g in visible {
+            guard let f = stripFrames[g.groupId], f.contains(point) else { continue }
+            // insert before the first chip whose midpoint is right of the pointer
+            var index = g.tabs.count
+            for (i, leaf) in g.tabs.enumerated() {
+                guard let c = chipFrames[leaf.paneId] else { continue }
+                if point.x < c.midX { index = i; break }
+            }
+            return (g.groupId, index)
+        }
+        return nil
+    }
+
     private func pane(at point: CGPoint) -> (String, CGRect)? {
         guard let ws = focusedWorkspace, let layout = ws.layout else { return nil }
         let candidates: [String]
@@ -479,18 +507,31 @@ final class AppModel: ObservableObject {
         // Short and lightly damped: the highlight should chase the pointer
         // between edges without feeling loose.
         let motion = SwiftUI.Animation.spring(response: 0.17, dampingFraction: 0.82)
-        if let (paneId, frame) = pane(at: p) {
+        if let (groupId, index) = strip(at: p) {
+            if trackedDropGroup != groupId || trackedDropIndex != index || trackedDropPane != nil {
+                withAnimation(motion) {
+                    trackedDropGroup = groupId
+                    trackedDropIndex = index
+                    trackedDropPane = nil
+                    trackedDropEdge = nil
+                }
+            }
+        } else if let (paneId, frame) = pane(at: p) {
             let e = edgeFor(p, in: frame)
-            if trackedDropPane != paneId || trackedDropEdge != e {
+            if trackedDropPane != paneId || trackedDropEdge != e || trackedDropGroup != nil {
                 withAnimation(motion) {
                     trackedDropPane = paneId
                     trackedDropEdge = e
+                    trackedDropGroup = nil
+                    trackedDropIndex = nil
                 }
             }
-        } else if trackedDropPane != nil {
+        } else if trackedDropPane != nil || trackedDropGroup != nil {
             withAnimation(motion) {
                 trackedDropPane = nil
                 trackedDropEdge = nil
+                trackedDropGroup = nil
+                trackedDropIndex = nil
             }
         }
     }
@@ -498,14 +539,32 @@ final class AppModel: ObservableObject {
     private func finishTrackedDrop() {
         let target = trackedDropPane
         let edge = trackedDropEdge
+        let stripGroup = trackedDropGroup
+        let stripIndex = trackedDropIndex
         let payload = currentDragPayload
         dropTracker?.invalidate()
         dropTracker = nil
         dragActive = false
         trackedDropPane = nil
         trackedDropEdge = nil
+        trackedDropGroup = nil
+        trackedDropIndex = nil
         currentDragPayload = nil
-        guard let target, let edge, let payload else { return }
+        guard let payload else { return }
+        let settleStrip = SwiftUI.Animation.spring(response: 0.28, dampingFraction: 0.86)
+        // dropped on a tab strip: join that pane's tabs at the insertion point
+        if let stripGroup {
+            let src = String(payload.dropFirst(payload.hasPrefix("tab:") ? 4 : 5))
+            withAnimation(settleStrip) {
+                if let (_, g) = locateGroup(src), g == stripGroup {
+                    moveTab(src, toIndex: stripIndex ?? 0)
+                } else {
+                    moveTab(src, toGroup: stripGroup, atIndex: stripIndex)
+                }
+            }
+            return
+        }
+        guard let target, let edge else { return }
         // Panes are laid out with animatable frame and offset, so animating the
         // tree rewrite makes them slide into their new places. Kept brief: the
         // panes resize as they move, and a terminal resize is not free.
@@ -1179,6 +1238,10 @@ final class AppModel: ObservableObject {
 
     /// Whether two panes live in the same group, which decides between a
     /// reorder and a move when a tab chip is dropped on another.
+    /// The workspace index and group id holding a pane, exposed for the drop
+    /// tracker's strip handling.
+    func locateGroup(_ paneId: String) -> (Int, String)? { locate(paneId) }
+
     func sameGroup(_ a: String, _ b: String) -> Bool {
         guard let (_, ga) = locate(a), let (_, gb) = locate(b) else { return false }
         return ga == gb

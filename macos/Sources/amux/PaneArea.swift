@@ -151,7 +151,6 @@ struct TabChip: View {
     let active: Bool
     @Environment(\.palette) private var pal
     @State private var hovering = false
-    @State private var dropTargeted = false
 
     private var tabIcon: String {
         switch leaf.kind {
@@ -197,11 +196,7 @@ struct TabChip: View {
         .background(UnevenRoundedRectangle(
             topLeadingRadius: 7, bottomLeadingRadius: 0,
             bottomTrailingRadius: 0, topTrailingRadius: 7)
-            .fill(active ? pal.mass : (hovering || dropTargeted ? pal.panel : .clear)))
-        .overlay(UnevenRoundedRectangle(
-            topLeadingRadius: 7, bottomLeadingRadius: 0,
-            bottomTrailingRadius: 0, topTrailingRadius: 7)
-            .strokeBorder(dropTargeted ? pal.spot : .clear, lineWidth: 1.5))
+            .fill(active ? pal.mass : (hovering ? pal.panel : .clear)))
         .contentShape(Rectangle())
         // A count:2 gesture stacked on a count:1 makes SwiftUI wait out the whole
         // double-click interval before it will admit a click was single. Recognize
@@ -217,22 +212,7 @@ struct TabChip: View {
         } preview: {
             DragChip(icon: tabIcon, label: title).environment(\.palette, pal)
         }
-        .onDrop(of: [PaneDrag.type], isTargeted: $dropTargeted) { providers in
-            model.endDrag()
-            loadDragPayload(providers) { payload in
-                guard payload.hasPrefix("tab:") || payload.hasPrefix("pane:") else { return }
-                let src = String(payload.dropFirst(payload.hasPrefix("tab:") ? 4 : 5))
-                guard src != leaf.paneId else { return }
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                    if model.sameGroup(src, leaf.paneId) {
-                        model.moveTab(src, toIndex: index)
-                    } else {
-                        model.moveTab(src, toGroup: group.groupId, atIndex: index)
-                    }
-                }
-            }
-            return true
-        }
+        .background(FrameReporter { model.chipFrames[leaf.paneId] = $0 })
         .contextMenu {
             Button("Rename tab…") {
                 model.activeSheet = .rename(.pane(id: leaf.paneId, current: leaf.label ?? ""))
@@ -286,18 +266,34 @@ struct PaneTabStrip: View {
         .background(focused ? pal.panel : pal.panel.opacity(0.6))
         .contentShape(Rectangle())
         .onTapGesture { model.focusGroup(group.groupId) }
-        // dropping a tab onto the strip moves it into this pane
-        .onDrop(of: [PaneDrag.type], isTargeted: nil) { providers in
-            model.endDrag()
-            loadDragPayload(providers) { payload in
-                guard payload.hasPrefix("tab:") || payload.hasPrefix("pane:") else { return }
-                let src = String(payload.dropFirst(payload.hasPrefix("tab:") ? 4 : 5))
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                    model.moveTab(src, toGroup: group.groupId)
-                }
+        .background(FrameReporter { model.stripFrames[group.groupId] = $0 })
+        .overlay(alignment: .leading) { insertCaret }
+    }
+
+    /// Where a dragged tab would land in this strip.
+    @ViewBuilder private var insertCaret: some View {
+        if model.trackedDropGroup == group.groupId, let idx = model.trackedDropIndex {
+            GeometryReader { geo in
+                let x = caretX(idx, in: geo)
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(pal.spot)
+                    .frame(width: 2)
+                    .offset(x: x - 1)
             }
-            return true
+            .allowsHitTesting(false)
+            .transition(.opacity)
         }
+    }
+
+    private func caretX(_ idx: Int, in geo: GeometryProxy) -> CGFloat {
+        let origin = geo.frame(in: .global).minX
+        if idx < group.tabs.count, let c = model.chipFrames[group.tabs[idx].paneId] {
+            return c.minX - origin
+        }
+        if let last = group.tabs.last, let c = model.chipFrames[last.paneId] {
+            return c.maxX - origin
+        }
+        return 6
     }
 }
 
@@ -581,6 +577,18 @@ struct PaneChromeButtons: View {
 /// Publishes a pane's window-space frame so the model's drop tracker can tell
 /// which pane the pointer is over. Kept as its own view with explicit types:
 /// inlining it pushed this file past the type-checker's budget.
+/// Publishes a view's window-space frame through a closure. Explicit types:
+/// inlining a GeometryReader here pushed this file past the type-checker.
+struct FrameReporter: View {
+    let report: (CGRect) -> Void
+    var body: some View {
+        GeometryReader { (geo: GeometryProxy) -> Color in
+            report(geo.frame(in: .global))
+            return Color.clear
+        }
+    }
+}
+
 private struct PaneFrameReporter: View {
     @ObservedObject var model: AppModel
     let paneId: String
@@ -675,12 +683,11 @@ struct PaneView: View {
         (leaf.label ?? agent.name ?? agent.kind) == agent.kind
     }
 
+    /// Only start-agent: the pane's tab strip carries the shared cluster, so
+    /// repeating it here would show every button twice.
     private var paneButtons: some View {
-        HStack(spacing: 2) {
-            // starting an agent only means anything in a terminal, so it stays
-            // here rather than moving into the cluster every pane kind shares
-            headBtn("faceid", "Start agent… (⇧⌘A)") { model.activeSheet = .startAgent(paneId: leaf.paneId) }
-            PaneChromeButtons(model: model, paneId: leaf.paneId, size: 9.5)
+        headBtn("faceid", "Start agent… (⇧⌘A)") {
+            model.activeSheet = .startAgent(paneId: leaf.paneId)
         }
     }
 
