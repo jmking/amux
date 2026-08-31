@@ -246,7 +246,12 @@ struct TabChip: View {
             model.activeSheet = .rename(.tab(id: tab.id, current: tab.label))
         })
         .onHover { hovering = $0 }
-        .onDrag { model.beginDrag("tab:\(tab.id)"); return PaneDrag.provider("tab:\(tab.id)") }
+        .onDrag {
+            model.beginDrag("tab:\(tab.id)")
+            return PaneDrag.provider("tab:\(tab.id)")
+        } preview: {
+            DragChip(icon: tabIcon, label: tab.label).environment(\.palette, pal)
+        }
         .onDrop(of: [PaneDrag.type], isTargeted: $dropTargeted) { providers in
             model.endDrag()
             loadDragPayload(providers) { payload in
@@ -454,6 +459,29 @@ private struct DividerView: View {
 
 // MARK: - Pane drop (drag to snap / move / swap)
 
+/// What follows the cursor during a drag. SwiftUI's default preview is a
+/// full-size translucent snapshot of the grabbed view, which for a pane header
+/// is a wide slab that obscures the drop target you are aiming at. cmux shows a
+/// small chip instead, and it reads much better.
+struct DragChip: View {
+    let icon: String
+    let label: String
+    @Environment(\.palette) private var pal
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.system(size: 11))
+            Text(label).font(.system(size: 12, weight: .medium)).lineLimit(1)
+        }
+        .foregroundStyle(pal.ink)
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: Palette.Radius.row).fill(pal.mass))
+        .overlay(RoundedRectangle(cornerRadius: Palette.Radius.row)
+            .strokeBorder(pal.line2, lineWidth: 1))
+        .fixedSize()
+    }
+}
+
 /// Split, zoom and close, shared by every pane kind so a browser or a world
 /// pane offers the same controls as a terminal rather than being a dead end.
 struct PaneChromeButtons: View {
@@ -559,6 +587,7 @@ struct PaneView: View {
                     .offset(x: r.minX, y: r.minY)
             }
             .allowsHitTesting(false)
+            .transition(.opacity.combined(with: .scale(scale: 0.97)))
         }
     }
 
@@ -610,7 +639,13 @@ struct PaneView: View {
         .frame(height: 26)
         .background(pal.panel.opacity(0.55))
         .contentShape(Rectangle())
-        .onDrag { model.beginDrag("pane:\(leaf.paneId)"); return PaneDrag.provider("pane:\(leaf.paneId)") }
+        .onDrag {
+            model.beginDrag("pane:\(leaf.paneId)")
+            return PaneDrag.provider("pane:\(leaf.paneId)")
+        } preview: {
+            DragChip(icon: "terminal", label: leaf.label ?? shortPath(leaf.cwd ?? ""))
+                .environment(\.palette, pal)
+        }
         .contextMenu { paneMenu }
         .help("Drag to move this pane · drop on another pane's edge to snap, middle to swap")
     }

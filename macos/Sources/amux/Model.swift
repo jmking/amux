@@ -371,13 +371,22 @@ final class AppModel: ObservableObject {
 
     private func updateTrackedDrop() {
         guard dragActive, let p = pointerInWindow() else { return }
+        // Short and lightly damped: the highlight should chase the pointer
+        // between edges without feeling loose.
+        let motion = SwiftUI.Animation.spring(response: 0.17, dampingFraction: 0.82)
         if let (paneId, frame) = pane(at: p) {
             let e = edgeFor(p, in: frame)
-            if trackedDropPane != paneId { trackedDropPane = paneId }
-            if trackedDropEdge != e { trackedDropEdge = e }
+            if trackedDropPane != paneId || trackedDropEdge != e {
+                withAnimation(motion) {
+                    trackedDropPane = paneId
+                    trackedDropEdge = e
+                }
+            }
         } else if trackedDropPane != nil {
-            trackedDropPane = nil
-            trackedDropEdge = nil
+            withAnimation(motion) {
+                trackedDropPane = nil
+                trackedDropEdge = nil
+            }
         }
     }
 
@@ -392,14 +401,22 @@ final class AppModel: ObservableObject {
         trackedDropEdge = nil
         currentDragPayload = nil
         guard let target, let edge, let payload else { return }
+        // Panes are laid out with animatable frame and offset, so animating the
+        // tree rewrite makes them slide into their new places. Kept brief: the
+        // panes resize as they move, and a terminal resize is not free.
+        let settle = SwiftUI.Animation.spring(response: 0.28, dampingFraction: 0.86)
         if payload.hasPrefix("pane:") {
             let src = String(payload.dropFirst(5))
             guard src != target else { return }
-            if edge == "center" { swapPanes(src, target) }
-            else { movePane(src, toEdge: edge, of: target) }
+            withAnimation(settle) {
+                if edge == "center" { swapPanes(src, target) }
+                else { movePane(src, toEdge: edge, of: target) }
+            }
         } else if payload.hasPrefix("tab:") {
-            mergeTab(String(payload.dropFirst(4)),
-                     toEdge: edge == "center" ? "right" : edge, of: target)
+            withAnimation(settle) {
+                mergeTab(String(payload.dropFirst(4)),
+                         toEdge: edge == "center" ? "right" : edge, of: target)
+            }
         }
     }
 

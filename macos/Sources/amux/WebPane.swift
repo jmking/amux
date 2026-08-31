@@ -143,6 +143,9 @@ struct BrowserToolbar: View {
                 .onDrag {
                     model.beginDrag("pane:\(paneId)")
                     return PaneDrag.provider("pane:\(paneId)")
+                } preview: {
+                    DragChip(icon: "globe", label: runtime.domain.isEmpty ? "browser" : runtime.domain)
+                        .environment(\.palette, pal)
                 }
                 .help("Drag to move this browser pane")
             navButton("chevron.left", enabled: runtime.canGoBack) { runtime.goBack() }
@@ -210,6 +213,9 @@ struct BrowserToolbar: View {
         .onDrag {
             model.beginDrag("pane:\(paneId)")
             return PaneDrag.provider("pane:\(paneId)")
+        } preview: {
+            DragChip(icon: "globe", label: runtime.domain.isEmpty ? "browser" : runtime.domain)
+                .environment(\.palette, pal)
         }
         .contextMenu {
             Button("Copy URL") {
