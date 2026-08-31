@@ -19,7 +19,7 @@ struct PaneAgent: Codable, Equatable {
     var state: String
 }
 
-struct PaneLeaf: Codable, Equatable {
+struct PaneLeaf: Codable, Equatable, Identifiable {
     var paneId: String
     var kind: String        // "term" | "web" | "world"
     var label: String?
@@ -27,6 +27,8 @@ struct PaneLeaf: Codable, Equatable {
     var agent: PaneAgent?
     var cwd: String?        // shown in the pane header
     var branch: String?     // git branch for that cwd, when it is a repo
+
+    var id: String { paneId }
 
     init(paneId: String, kind: String = "term", label: String? = nil,
          proc: String? = nil, agent: PaneAgent? = nil,
@@ -41,39 +43,113 @@ struct PaneLeaf: Codable, Equatable {
     }
 }
 
+/// A pane in the layout is a tab container, the way cmux arranges things: the
+/// split tree holds groups, and each group shows one of its tabs at a time.
+/// Tabs keep their paneId as identity, so every runtime registry stays keyed by
+/// pane exactly as before.
+struct PaneGroup: Codable, Equatable, Identifiable {
+    var groupId: String
+    var tabs: [PaneLeaf]
+    var focusedPaneId: String
+
+    var id: String { groupId }
+    var focused: PaneLeaf? { tabs.first { $0.paneId == focusedPaneId } ?? tabs.first }
+
+    init(groupId: String, tabs: [PaneLeaf], focusedPaneId: String? = nil) {
+        self.groupId = groupId
+        self.tabs = tabs
+        self.focusedPaneId = focusedPaneId ?? tabs.first?.paneId ?? ""
+    }
+}
+
 indirect enum LayoutNode: Equatable {
-    case pane(PaneLeaf)
+    case group(PaneGroup)
     case split(dir: String, ratio: Double, a: LayoutNode, b: LayoutNode)
 
+    /// Every pane in every tab of every group, not just the visible ones.
     var paneIds: [String] {
         switch self {
-        case .pane(let l): return [l.paneId]
+        case .group(let g): return g.tabs.map(\.paneId)
         case .split(_, _, let a, let b): return a.paneIds + b.paneIds
         }
     }
 
+    var groupIds: [String] {
+        switch self {
+        case .group(let g): return [g.groupId]
+        case .split(_, _, let a, let b): return a.groupIds + b.groupIds
+        }
+    }
+
+    var groups: [PaneGroup] {
+        switch self {
+        case .group(let g): return [g]
+        case .split(_, _, let a, let b): return a.groups + b.groups
+        }
+    }
+
+    /// The visible tab of each group: what is actually on screen.
+    var visiblePaneIds: [String] {
+        groups.compactMap { $0.focused?.paneId }
+    }
+
     func leaf(for paneId: String) -> PaneLeaf? {
         switch self {
-        case .pane(let l): return l.paneId == paneId ? l : nil
+        case .group(let g): return g.tabs.first { $0.paneId == paneId }
         case .split(_, _, let a, let b): return a.leaf(for: paneId) ?? b.leaf(for: paneId)
         }
     }
 
-    /// Replace the leaf holding `paneId` using `transform`; nil removes it
-    /// (collapsing the parent split).
-    func rewriting(paneId: String, _ transform: (LayoutNode) -> LayoutNode?) -> LayoutNode? {
+    func group(id: String) -> PaneGroup? {
         switch self {
-        case .pane(let l):
-            return l.paneId == paneId ? transform(self) : self
+        case .group(let g): return g.groupId == id ? g : nil
+        case .split(_, _, let a, let b): return a.group(id: id) ?? b.group(id: id)
+        }
+    }
+
+    func groupContaining(paneId: String) -> PaneGroup? {
+        switch self {
+        case .group(let g): return g.tabs.contains { $0.paneId == paneId } ? g : nil
+        case .split(_, _, let a, let b):
+            return a.groupContaining(paneId: paneId) ?? b.groupContaining(paneId: paneId)
+        }
+    }
+
+    /// Replace the group with `groupId` using `transform`; nil removes it
+    /// (collapsing the parent split).
+    func rewriting(groupId: String, _ transform: (LayoutNode) -> LayoutNode?) -> LayoutNode? {
+        switch self {
+        case .group(let g):
+            return g.groupId == groupId ? transform(self) : self
         case .split(let dir, let ratio, let a, let b):
-            let na = a.rewriting(paneId: paneId, transform)
-            let nb = b.rewriting(paneId: paneId, transform)
+            let na = a.rewriting(groupId: groupId, transform)
+            let nb = b.rewriting(groupId: groupId, transform)
             switch (na, nb) {
             case (nil, nil): return nil
             case (let x?, nil): return x
             case (nil, let y?): return y
             case (let x?, let y?): return .split(dir: dir, ratio: ratio, a: x, b: y)
             }
+        }
+    }
+
+    /// Rewrite the group in place, keeping it a group. Returns nil when the
+    /// transform empties it of tabs, which collapses the split.
+    func mappingGroup(id: String, _ transform: (PaneGroup) -> PaneGroup?) -> LayoutNode? {
+        rewriting(groupId: id) { node in
+            guard case .group(let g) = node else { return node }
+            guard let next = transform(g), !next.tabs.isEmpty else { return nil }
+            return .group(next)
+        }
+    }
+
+    /// Rewrite every group, for decoration passes.
+    func mappingAllGroups(_ transform: (PaneGroup) -> PaneGroup) -> LayoutNode {
+        switch self {
+        case .group(let g): return .group(transform(g))
+        case .split(let dir, let ratio, let a, let b):
+            return .split(dir: dir, ratio: ratio,
+                          a: a.mappingAllGroups(transform), b: b.mappingAllGroups(transform))
         }
     }
 
@@ -86,15 +162,6 @@ indirect enum LayoutNode: Equatable {
         if head == "a" { return .split(dir: dir, ratio: r, a: a.updatingRatio(path: rest, ratio: ratio), b: b) }
         return .split(dir: dir, ratio: r, a: a, b: b.updatingRatio(path: rest, ratio: ratio))
     }
-}
-
-struct TabState: Equatable {
-    var id: String
-    var label: String
-    var cwd: String
-    var focusedPaneId: String?
-    var zoomedPaneId: String?
-    var layout: LayoutNode?
 }
 
 struct WorktreeInfo: Codable, Equatable {
@@ -110,10 +177,18 @@ struct WorkspaceState: Equatable {
     var git: GitInfo?
     var worktreeInfo: WorktreeInfo?
     var icon: String?
-    var focusedTabId: String?
-    var tabs: [TabState]
+    var layout: LayoutNode?
+    var focusedGroupId: String?
+    var zoomedGroupId: String?
     var nextTabNum = 1
     var nextPaneNum = 1
+    var nextGroupNum = 1
+
+    var focusedGroup: PaneGroup? {
+        guard let layout else { return nil }
+        return focusedGroupId.flatMap { layout.group(id: $0) } ?? layout.groups.first
+    }
+    var focusedPaneId: String? { focusedGroup?.focusedPaneId }
 
     var worktree: Bool { worktreeInfo != nil }
 }
@@ -167,7 +242,7 @@ enum ActiveSheet: Identifiable {
     case runCommand(paneId: String)
     case newWorktree(repo: String?)
     case confirmCloseSpace(WorkspaceState)
-    case confirmCloseTab(TabState)
+    case confirmCloseGroup(PaneGroup)
     case confirmClosePane(paneId: String, agent: PaneAgent)
     case rename(RenameTarget)
     case spaceEmoji(WorkspaceState)
@@ -179,7 +254,7 @@ enum ActiveSheet: Identifiable {
         case .runCommand(let p): return "run-\(p)"
         case .newWorktree: return "worktree"
         case .confirmCloseSpace(let w): return "closeWs-\(w.id)"
-        case .confirmCloseTab(let t): return "closeTab-\(t.id)"
+        case .confirmCloseGroup(let g): return "closeGroup-\(g.groupId)"
         case .confirmClosePane(let p, _): return "closePane-\(p)"
         case .rename: return "rename"
         case .spaceEmoji(let w): return "emoji-\(w.id)"
@@ -382,13 +457,17 @@ final class AppModel: ObservableObject {
         return candidates.min { $0.1 < $1.1 }!.0
     }
 
+    /// Drop targets are the panes actually on screen: the visible tab of each
+    /// group, or just the zoomed group when one is zoomed.
     private func pane(at point: CGPoint) -> (String, CGRect)? {
-        guard let tab = focusedTab else { return nil }
-        if let zoomed = tab.zoomedPaneId {
-            guard let f = paneFrames[zoomed], f.contains(point) else { return nil }
-            return (zoomed, f)
+        guard let ws = focusedWorkspace, let layout = ws.layout else { return nil }
+        let candidates: [String]
+        if let z = ws.zoomedGroupId, let g = layout.group(id: z) {
+            candidates = [g.focusedPaneId]
+        } else {
+            candidates = layout.visiblePaneIds
         }
-        for paneId in tab.layout?.paneIds ?? [] {
+        for paneId in candidates {
             guard let f = paneFrames[paneId], f.contains(point) else { continue }
             return (paneId, f)
         }
@@ -439,16 +518,18 @@ final class AppModel: ObservableObject {
                 else { movePane(src, toEdge: edge, of: target) }
             }
         } else if payload.hasPrefix("tab:") {
+            let src = String(payload.dropFirst(4))
+            guard src != target else { return }
             withAnimation(settle) {
-                mergeTab(String(payload.dropFirst(4)),
-                         toEdge: edge == "center" ? "right" : edge, of: target)
+                if edge == "center" { movePane(src, intoGroupOf: target) }
+                else { movePane(src, toEdge: edge, of: target) }
             }
         }
     }
 
     /// Pane commands should still work when nothing has been clicked yet.
     var actionPaneId: String? {
-        focusedTab?.focusedPaneId ?? focusedTab?.layout?.paneIds.first
+        focusedWorkspace?.focusedPaneId ?? focusedWorkspace?.layout?.visiblePaneIds.first
     }
     private var lastFocusedPaneId: String?
 
@@ -523,14 +604,12 @@ final class AppModel: ObservableObject {
         guard let window, let hit = window.contentView?.hitTest(point) else { return }
         for (paneId, wrt) in webRuntimes {
             guard hit === wrt.view || hit.isDescendant(of: wrt.view) else { continue }
-            for ws in workspaces {
-                for tab in ws.tabs where tab.layout?.leaf(for: paneId) != nil {
-                    if tab.focusedPaneId != paneId || ws.focusedTabId != tab.id
-                        || focusedWorkspaceId != ws.id {
-                        focus(workspaceId: ws.id, tabId: tab.id, paneId: paneId)
-                    }
-                    return
+            for ws in workspaces where ws.layout?.leaf(for: paneId) != nil {
+                if ws.layout?.groupContaining(paneId: paneId)?.focusedPaneId != paneId
+                    || focusedWorkspaceId != ws.id {
+                    focus(workspaceId: ws.id, paneId: paneId)
                 }
+                return
             }
             return
         }
@@ -539,14 +618,12 @@ final class AppModel: ObservableObject {
             if window.firstResponder !== rt.view {
                 window.makeFirstResponder(rt.view)
             }
-            for ws in workspaces {
-                for tab in ws.tabs where tab.layout?.leaf(for: paneId) != nil {
-                    if tab.focusedPaneId != paneId || ws.focusedTabId != tab.id
-                        || focusedWorkspaceId != ws.id {
-                        focus(workspaceId: ws.id, tabId: tab.id, paneId: paneId)
-                    }
-                    return
+            for ws in workspaces where ws.layout?.leaf(for: paneId) != nil {
+                if ws.layout?.groupContaining(paneId: paneId)?.focusedPaneId != paneId
+                    || focusedWorkspaceId != ws.id {
+                    focus(workspaceId: ws.id, paneId: paneId)
                 }
+                return
             }
             return
         }
@@ -567,10 +644,8 @@ final class AppModel: ObservableObject {
             }
         }
         for wi in workspaces.indices {
-            for ti in workspaces[wi].tabs.indices {
-                if let layout = workspaces[wi].tabs[ti].layout {
-                    workspaces[wi].tabs[ti].layout = decorate(layout)
-                }
+            if let layout = workspaces[wi].layout {
+                workspaces[wi].layout = decorate(layout)
             }
         }
         state = ServerState(
@@ -584,37 +659,41 @@ final class AppModel: ObservableObject {
     }
 
     private func decorate(_ node: LayoutNode) -> LayoutNode {
-        switch node {
-        case .pane(var leaf):
-            if leaf.kind == "web" {
-                if let wrt = webRuntimes[leaf.paneId] {
-                    leaf.label = wrt.title
-                    leaf.proc = "web"
+        node.mappingAllGroups { g in
+            var g = g
+            g.tabs = g.tabs.map { leaf in
+                var leaf = leaf
+                if leaf.kind == "web" {
+                    if let wrt = webRuntimes[leaf.paneId] {
+                        leaf.label = wrt.title
+                        leaf.proc = "web"
+                    }
+                } else if leaf.kind == "world" {
+                    leaf.label = leaf.label ?? "agent world"
+                } else if let rt = runtimes[leaf.paneId] {
+                    leaf.label = rt.label
+                    leaf.proc = rt.procName
+                    leaf.agent = rt.agent
+                    leaf.cwd = rt.cachedCwd
+                    leaf.branch = rt.cachedCwd.flatMap { branchByDir[$0] }
                 }
-            } else if let rt = runtimes[leaf.paneId] {
-                leaf.label = rt.label
-                leaf.proc = rt.procName
-                leaf.agent = rt.agent
-                leaf.cwd = rt.cachedCwd
-                leaf.branch = rt.cachedCwd.flatMap { branchByDir[$0] }
+                return leaf
             }
-            return .pane(leaf)
-        case .split(let dir, let ratio, let a, let b):
-            return .split(dir: dir, ratio: ratio, a: decorate(a), b: decorate(b))
+            return g
         }
     }
 
     private func agentRows() -> [AgentRow] {
         var rows: [AgentRow] = []
         for ws in workspaces {
-            for tab in ws.tabs {
-                for paneId in tab.layout?.paneIds ?? [] {
-                    if let rt = runtimes[paneId], let agent = rt.agent {
-                        rows.append(AgentRow(
-                            paneId: paneId, wsId: ws.id, tabId: tab.id,
-                            workspace: ws.label, tab: tab.label,
-                            kind: agent.kind, name: agent.name, state: agent.state))
-                    }
+            for g in ws.layout?.groups ?? [] {
+                for leaf in g.tabs {
+                    guard let rt = runtimes[leaf.paneId], let agent = rt.agent else { continue }
+                    rows.append(AgentRow(
+                        paneId: leaf.paneId, wsId: ws.id, tabId: g.groupId,
+                        workspace: ws.label,
+                        tab: leaf.label ?? agent.name ?? agent.kind,
+                        kind: agent.kind, name: agent.name, state: agent.state))
                 }
             }
         }
@@ -627,10 +706,7 @@ final class AppModel: ObservableObject {
         workspaces.first { $0.id == focusedWorkspaceId }
     }
 
-    var focusedTab: TabState? {
-        guard let ws = focusedWorkspace else { return nil }
-        return ws.tabs.first { $0.id == ws.focusedTabId }
-    }
+    var focusedGroup: PaneGroup? { focusedWorkspace?.focusedGroup }
 
     func workspaceAggregateState(_ ws: WorkspaceState) -> String {
         let rows = (state?.agents ?? []).filter { $0.wsId == ws.id }
@@ -702,54 +778,33 @@ final class AppModel: ObservableObject {
         for rt in worldRuntimes.values { rt.demoMode = on }
     }
 
-    /// Opens the agent world as a new tab in the focused space.
+    /// Opens the agent world as a tab in the focused pane.
     func newWorldTab() {
-        guard let wsId = focusedWorkspace?.id, let wi = wsIndex(wsId) else { return }
-        var ws = workspaces[wi]
-        var tab = TabState(id: "\(ws.id):t\(ws.nextTabNum)", label: "World",
-                           cwd: ws.cwd, focusedPaneId: nil, zoomedPaneId: nil, layout: nil)
-        ws.nextTabNum += 1
-        let paneId = "\(ws.id):p\(ws.nextPaneNum)"
-        ws.nextPaneNum += 1
-        tab.layout = .pane(PaneLeaf(paneId: paneId, kind: "world"))
-        tab.focusedPaneId = paneId
-        ws.tabs.append(tab)
-        ws.focusedTabId = tab.id
-        workspaces[wi] = ws
-        focusedWorkspaceId = ws.id
-        publish()
-    }
-
-    /// cmux-style: a browser opens as a new tab in the focused space.
-    func newBrowserTab(url: URL? = nil) {
-        guard let wsId = focusedWorkspace?.id, let wi = wsIndex(wsId) else { return }
-        var ws = workspaces[wi]
-        var tab = TabState(id: "\(ws.id):t\(ws.nextTabNum)", label: "New tab",
-                           cwd: ws.cwd, focusedPaneId: nil, zoomedPaneId: nil, layout: nil)
-        ws.nextTabNum += 1
-        let paneId = makeWebPane(ws: &ws, url: url)
-        tab.layout = .pane(PaneLeaf(paneId: paneId, kind: "web"))
-        tab.focusedPaneId = paneId
-        ws.tabs.append(tab)
-        ws.focusedTabId = tab.id
-        workspaces[wi] = ws
-        publish()
-    }
-
-    /// Browser as a split next to an existing pane (agent left, preview right).
-    @discardableResult
-    func splitPaneWithBrowser(_ paneId: String, direction: String) -> String? {
-        guard let (wi, ti) = locate(paneId) else { return nil }
-        var ws = workspaces[wi]
-        let newId = makeWebPane(ws: &ws, url: nil)
-        let dir = direction == "down" ? "column" : "row"
-        ws.tabs[ti].layout = ws.tabs[ti].layout?.rewriting(paneId: paneId) { old in
-            .split(dir: dir, ratio: 0.5, a: old, b: .pane(PaneLeaf(paneId: newId, kind: "web")))
+        guard let ws = focusedWorkspace, let wi = wsIndex(ws.id) else { return }
+        var w = workspaces[wi]
+        let paneId = "\(w.id):p\(w.nextPaneNum)"
+        w.nextPaneNum += 1
+        let leaf = PaneLeaf(paneId: paneId, kind: "world")
+        if let layout = w.layout, let target = w.focusedGroup {
+            w.layout = layout.mappingGroup(id: target.groupId) { g in
+                var g = g; g.tabs.append(leaf); g.focusedPaneId = paneId; return g
+            }
+            w.focusedGroupId = target.groupId
+        } else {
+            let g = PaneGroup(groupId: "\(w.id):g\(w.nextGroupNum)", tabs: [leaf])
+            w.nextGroupNum += 1
+            w.layout = .group(g)
+            w.focusedGroupId = g.groupId
         }
-        ws.tabs[ti].focusedPaneId = newId
-        workspaces[wi] = ws
+        workspaces[wi] = w
+        focusedWorkspaceId = w.id
         publish()
-        return newId
+    }
+
+    /// A browser opens as a tab in the focused pane, like any other tab.
+    func newBrowserTab(url: URL? = nil) {
+        guard let ws = focusedWorkspace else { return }
+        _ = newTab(ws, kind: "web", url: url)
     }
 
     func paneExited(_ paneId: String) {
@@ -770,58 +825,85 @@ final class AppModel: ObservableObject {
         var ws = WorkspaceState(
             id: "w\(nextWorkspaceNum)",
             label: (label?.isEmpty ?? true) ? (dir as NSString).lastPathComponent : label!,
-            cwd: dir, git: nil, worktreeInfo: nil, icon: nil, focusedTabId: nil, tabs: [])
+            cwd: dir, git: nil, worktreeInfo: nil, icon: nil, layout: nil)
         nextWorkspaceNum += 1
-        var tab = TabState(id: "\(ws.id):t\(ws.nextTabNum)", label: "main", cwd: dir,
-                           focusedPaneId: nil, zoomedPaneId: nil, layout: nil)
-        ws.nextTabNum += 1
         let paneId = makePane(ws: &ws, cwd: dir)
-        tab.layout = .pane(PaneLeaf(paneId: paneId))
-        tab.focusedPaneId = paneId
-        ws.focusedTabId = tab.id
-        ws.tabs = [tab]
+        let g = PaneGroup(groupId: "\(ws.id):g\(ws.nextGroupNum)",
+                          tabs: [PaneLeaf(paneId: paneId)])
+        ws.nextGroupNum += 1
+        ws.layout = .group(g)
+        ws.focusedGroupId = g.groupId
         workspaces.append(ws)
         focusedWorkspaceId = ws.id
         publish()
         gitTick()
     }
 
-    func newTab(_ wsIn: WorkspaceState) {
-        guard let wi = wsIndex(wsIn.id) else { return }
+    /// A new tab joins the focused group, the way a browser tab joins a window.
+    /// With no groups yet (a fresh space) it creates the first one.
+    @discardableResult
+    func newTab(_ wsIn: WorkspaceState, kind: String = "term", url: URL? = nil) -> String? {
+        guard let wi = wsIndex(wsIn.id) else { return nil }
         var ws = workspaces[wi]
-        var tab = TabState(id: "\(ws.id):t\(ws.nextTabNum)", label: "tab \(ws.tabs.count + 1)",
-                           cwd: ws.cwd, focusedPaneId: nil, zoomedPaneId: nil, layout: nil)
-        ws.nextTabNum += 1
-        let paneId = makePane(ws: &ws, cwd: ws.cwd)
-        tab.layout = .pane(PaneLeaf(paneId: paneId))
-        tab.focusedPaneId = paneId
-        ws.tabs.append(tab)
-        ws.focusedTabId = tab.id
+        let paneId = kind == "web" ? makeWebPane(ws: &ws, url: url) : makePane(ws: &ws, cwd: ws.cwd)
+        let leaf = PaneLeaf(paneId: paneId, kind: kind)
+        if let layout = ws.layout, let target = ws.focusedGroup {
+            ws.layout = layout.mappingGroup(id: target.groupId) { g in
+                var g = g
+                g.tabs.append(leaf)
+                g.focusedPaneId = paneId
+                return g
+            }
+            ws.focusedGroupId = target.groupId
+        } else {
+            let g = PaneGroup(groupId: "\(ws.id):g\(ws.nextGroupNum)", tabs: [leaf])
+            ws.nextGroupNum += 1
+            ws.layout = .group(g)
+            ws.focusedGroupId = g.groupId
+        }
         workspaces[wi] = ws
         publish()
+        return paneId
     }
 
+    /// Splitting makes a new group beside the one holding `paneId`, with one
+    /// fresh tab in it.
     @discardableResult
-    func splitPane(_ paneId: String, direction: String) -> String? {
-        guard let (wi, ti) = locate(paneId) else { return nil }
+    func splitPane(_ paneId: String, direction: String, kind: String = "term") -> String? {
+        guard let wi = wsIndex(workspaceIdContaining(paneId)),
+              let layout = workspaces[wi].layout,
+              let source = layout.groupContaining(paneId: paneId) else { return nil }
         var ws = workspaces[wi]
-        let cwd = runtimes[paneId]?.currentCwd() ?? ws.tabs[ti].cwd
-        let newId = makePane(ws: &ws, cwd: cwd)
+        let cwd = runtimes[paneId]?.currentCwd() ?? ws.cwd
+        let newId = kind == "web" ? makeWebPane(ws: &ws, url: nil) : makePane(ws: &ws, cwd: cwd)
+        let g = PaneGroup(groupId: "\(ws.id):g\(ws.nextGroupNum)",
+                          tabs: [PaneLeaf(paneId: newId, kind: kind)])
+        ws.nextGroupNum += 1
         let dir = direction == "down" ? "column" : "row"
-        ws.tabs[ti].layout = ws.tabs[ti].layout?.rewriting(paneId: paneId) { old in
-            .split(dir: dir, ratio: 0.5, a: old, b: .pane(PaneLeaf(paneId: newId)))
+        ws.layout = ws.layout?.rewriting(groupId: source.groupId) { old in
+            .split(dir: dir, ratio: 0.5, a: old, b: .group(g))
         }
-        ws.tabs[ti].focusedPaneId = newId
+        ws.focusedGroupId = g.groupId
+        ws.zoomedGroupId = nil
         workspaces[wi] = ws
         publish()
         return newId
     }
 
-    private func locate(_ paneId: String) -> (Int, Int)? {
+    @discardableResult
+    func splitPaneWithBrowser(_ paneId: String, direction: String) -> String? {
+        splitPane(paneId, direction: direction, kind: "web")
+    }
+
+    private func workspaceIdContaining(_ paneId: String) -> String? {
+        workspaces.first { $0.layout?.leaf(for: paneId) != nil }?.id
+    }
+
+    /// The workspace index and group id holding a pane, in any tab of any group.
+    private func locate(_ paneId: String) -> (Int, String)? {
         for wi in workspaces.indices {
-            for ti in workspaces[wi].tabs.indices
-            where workspaces[wi].tabs[ti].layout?.leaf(for: paneId) != nil {
-                return (wi, ti)
+            if let g = workspaces[wi].layout?.groupContaining(paneId: paneId) {
+                return (wi, g.groupId)
             }
         }
         return nil
@@ -840,40 +922,64 @@ final class AppModel: ObservableObject {
         publish()
     }
 
+    /// Removes one tab. An emptied group collapses out of the split tree, and
+    /// an emptied workspace closes, matching what closing the last tab of a
+    /// window does elsewhere.
     private func removePaneFromLayout(_ paneId: String) {
-        guard let (wi, ti) = locate(paneId) else { return }
+        guard let (wi, groupId) = locate(paneId) else { return }
         var ws = workspaces[wi]
-        let newLayout = ws.tabs[ti].layout?.rewriting(paneId: paneId) { _ in nil }
-        if let newLayout {
-            ws.tabs[ti].layout = newLayout
-            if ws.tabs[ti].focusedPaneId == paneId { ws.tabs[ti].focusedPaneId = newLayout.paneIds.first }
-            if ws.tabs[ti].zoomedPaneId == paneId { ws.tabs[ti].zoomedPaneId = nil }
+        ws.layout = ws.layout?.mappingGroup(id: groupId) { g in
+            var g = g
+            guard let idx = g.tabs.firstIndex(where: { $0.paneId == paneId }) else { return g }
+            g.tabs.remove(at: idx)
+            if g.focusedPaneId == paneId {
+                g.focusedPaneId = g.tabs[max(0, idx - 1)...].first?.paneId ?? g.tabs.first?.paneId ?? ""
+            }
+            return g
+        }
+        if let layout = ws.layout {
+            if ws.focusedGroupId == nil || layout.group(id: ws.focusedGroupId!) == nil {
+                ws.focusedGroupId = layout.groupIds.first
+            }
+            if let z = ws.zoomedGroupId, layout.group(id: z) == nil { ws.zoomedGroupId = nil }
             workspaces[wi] = ws
         } else {
-            ws.tabs.remove(at: ti)
-            if !ws.tabs.contains(where: { $0.id == ws.focusedTabId }) { ws.focusedTabId = ws.tabs.first?.id }
             workspaces[wi] = ws
-            if ws.tabs.isEmpty { closeWorkspaceRecord(ws.id) }
+            if workspaces.count > 1 { closeWorkspaceRecord(ws.id) }
         }
     }
 
-    func closeTab(_ tabId: String) {
-        guard let wi = workspaces.firstIndex(where: { $0.tabs.contains { $0.id == tabId } }) else { return }
+    /// Closes one tab of a group. Kept distinct from closePane so the menu and
+    /// the tab chip's x can share it.
+    func closeTab(_ paneId: String) { closePane(paneId) }
+
+    /// Closes an entire group and everything in it.
+    func closeGroup(_ groupId: String) {
+        guard let wi = workspaces.firstIndex(where: { $0.layout?.group(id: groupId) != nil }),
+              let g = workspaces[wi].layout?.group(id: groupId) else { return }
+        for leaf in g.tabs { discardRuntimes(leaf.paneId) }
         var ws = workspaces[wi]
-        guard let ti = ws.tabs.firstIndex(where: { $0.id == tabId }) else { return }
-        for pid in ws.tabs[ti].layout?.paneIds ?? [] {
-            runtimes[pid]?.terminate()
-            runtimes.removeValue(forKey: pid)
-            webRuntimes[pid]?.detach()
-            webRuntimes.removeValue(forKey: pid)
-            worldRuntimes.removeValue(forKey: pid)
-            paneFrames.removeValue(forKey: pid)
+        ws.layout = ws.layout?.rewriting(groupId: groupId) { _ in nil }
+        if let layout = ws.layout {
+            if ws.focusedGroupId == groupId { ws.focusedGroupId = layout.groupIds.first }
+            if ws.zoomedGroupId == groupId { ws.zoomedGroupId = nil }
+            workspaces[wi] = ws
+        } else {
+            workspaces[wi] = ws
+            if workspaces.count > 1 { closeWorkspaceRecord(ws.id) }
         }
-        ws.tabs.remove(at: ti)
-        if ws.focusedTabId == tabId { ws.focusedTabId = ws.tabs.first?.id }
-        workspaces[wi] = ws
-        if ws.tabs.isEmpty { closeWorkspaceRecord(ws.id) }
         publish()
+    }
+
+    private func discardRuntimes(_ paneId: String) {
+        runtimes[paneId]?.terminate()
+        runtimes.removeValue(forKey: paneId)
+        webRuntimes[paneId]?.detach()
+        webRuntimes.removeValue(forKey: paneId)
+        worldRuntimes.removeValue(forKey: paneId)
+        claudeReaders.removeValue(forKey: paneId)
+        codexReaders.removeValue(forKey: paneId)
+        paneFrames.removeValue(forKey: paneId)
     }
 
     private func closeWorkspaceRecord(_ wsId: String) {
@@ -884,16 +990,7 @@ final class AppModel: ObservableObject {
     func closeWorkspace(_ wsId: String, removeWorktree: Bool = false) {
         guard let wi = wsIndex(wsId) else { return }
         let ws = workspaces[wi]
-        for tab in ws.tabs {
-            for pid in tab.layout?.paneIds ?? [] {
-                runtimes[pid]?.terminate()
-                runtimes.removeValue(forKey: pid)
-                webRuntimes[pid]?.detach()
-                webRuntimes.removeValue(forKey: pid)
-                worldRuntimes.removeValue(forKey: pid)
-                paneFrames.removeValue(forKey: pid)
-            }
-        }
+        for pid in ws.layout?.paneIds ?? [] { discardRuntimes(pid) }
         closeWorkspaceRecord(wsId)
         if removeWorktree, let wt = ws.worktreeInfo {
             runGit(["-C", wt.parentRepo, "worktree", "remove", "--force", wt.path]) { _, _ in }
@@ -901,24 +998,35 @@ final class AppModel: ObservableObject {
         publish()
     }
 
-    func focus(workspaceId: String? = nil, tabId: String? = nil, paneId: String? = nil) {
+    /// Focusing a pane also selects it within its group and focuses that group,
+    /// so callers only ever have to name the pane they care about.
+    func focus(workspaceId: String? = nil, paneId: String? = nil) {
         if let workspaceId, wsIndex(workspaceId) != nil { focusedWorkspaceId = workspaceId }
         guard let wi = wsIndex(focusedWorkspaceId) else { publish(); return }
         var ws = workspaces[wi]
-        if let tabId, ws.tabs.contains(where: { $0.id == tabId }) {
-            ws.focusedTabId = tabId
-        }
-        if let paneId, let ti = ws.tabs.firstIndex(where: { $0.id == ws.focusedTabId }),
-           ws.tabs[ti].layout?.leaf(for: paneId) != nil {
-            ws.tabs[ti].focusedPaneId = paneId
+        if let paneId, let g = ws.layout?.groupContaining(paneId: paneId) {
+            ws.layout = ws.layout?.mappingGroup(id: g.groupId) { grp in
+                var grp = grp
+                grp.focusedPaneId = paneId
+                return grp
+            }
+            ws.focusedGroupId = g.groupId
         }
         workspaces[wi] = ws
-        if let focusedTabId = ws.focusedTabId { markTabSeen(focusedTabId) }
+        if let paneId { markPaneSeen(paneId) }
+        publish()
+    }
+
+    func focusGroup(_ groupId: String) {
+        guard let wi = wsIndex(focusedWorkspaceId),
+              let g = workspaces[wi].layout?.group(id: groupId) else { return }
+        workspaces[wi].focusedGroupId = groupId
+        markPaneSeen(g.focusedPaneId)
         publish()
     }
 
     private func followFocus() {
-        let focused = focusedTab?.focusedPaneId
+        let focused = focusedWorkspace?.focusedPaneId
         guard focused != lastFocusedPaneId else { return }
         lastFocusedPaneId = focused
         guard activeSheet == nil, !paletteOpen else { return }
@@ -940,15 +1048,8 @@ final class AppModel: ObservableObject {
         publish()
     }
 
-    func renameTab(_ id: String, label: String) {
-        for wi in workspaces.indices {
-            if let ti = workspaces[wi].tabs.firstIndex(where: { $0.id == id }) {
-                workspaces[wi].tabs[ti].label = label
-                publish()
-                return
-            }
-        }
-    }
+    /// A tab is a pane now, so renaming either means the same thing.
+    func renameTab(_ paneId: String, label: String) { renamePane(paneId, label: label) }
 
     func renamePane(_ id: String, label: String) {
         runtimes[id]?.label = label.isEmpty ? nil : label
@@ -961,168 +1062,165 @@ final class AppModel: ObservableObject {
         publish()
     }
 
-    func setRatio(tabId: String, path: String, ratio: Double) {
-        for wi in workspaces.indices {
-            if let ti = workspaces[wi].tabs.firstIndex(where: { $0.id == tabId }) {
-                workspaces[wi].tabs[ti].layout =
-                    workspaces[wi].tabs[ti].layout?.updatingRatio(path: path, ratio: min(0.9, max(0.1, ratio)))
-                publish()
-                return
-            }
-        }
+    func setRatio(workspaceId: String, path: String, ratio: Double) {
+        guard let wi = wsIndex(workspaceId) else { return }
+        workspaces[wi].layout =
+            workspaces[wi].layout?.updatingRatio(path: path, ratio: min(0.9, max(0.1, ratio)))
+        publish()
     }
 
+    /// Zoom hides the other groups, not the other tabs: a zoomed pane still
+    /// shows its own tab strip so you can switch inside it.
     func zoomPane(_ paneId: String) {
-        guard let (wi, ti) = locate(paneId) else { return }
-        workspaces[wi].tabs[ti].zoomedPaneId =
-            workspaces[wi].tabs[ti].zoomedPaneId == paneId ? nil : paneId
+        guard let (wi, groupId) = locate(paneId) else { return }
+        workspaces[wi].zoomedGroupId = workspaces[wi].zoomedGroupId == groupId ? nil : groupId
         publish()
     }
 
     // MARK: moves / swaps / merges
 
+    /// Dropping a tab on another pane's edge pulls it out into a new group
+    /// beside that one.
     func movePane(_ paneId: String, toEdge edge: String, of targetPaneId: String) {
-        guard paneId != targetPaneId, let (swi, sti) = locate(paneId),
-              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId),
-              // validate the destination BEFORE detaching: a target that
-              // vanished mid-drag must abort the move, not orphan the pane
-              locate(targetPaneId) != nil else { return }
-        detachLeaf(paneId)
-        guard let (twi, tti) = locate(targetPaneId) else { publish(); return }
-        var ws = workspaces[twi]
-        // dropping into a zoomed tab must land visibly, not behind the zoom
-        ws.tabs[tti].zoomedPaneId = nil
+        guard paneId != targetPaneId, let (swi, _) = locate(paneId),
+              let leaf = workspaces[swi].layout?.leaf(for: paneId),
+              let (twi, targetGroupId) = locate(targetPaneId), twi == swi else { return }
+        var ws = workspaces[swi]
+        detachLeaf(paneId, in: &ws)
+        // the source group may have collapsed under the detach
+        guard ws.layout?.group(id: targetGroupId) != nil else {
+            workspaces[swi] = ws; publish(); return
+        }
+        let g = PaneGroup(groupId: "\(ws.id):g\(ws.nextGroupNum)", tabs: [leaf])
+        ws.nextGroupNum += 1
         let dir = (edge == "left" || edge == "right") ? "row" : "column"
         let movedFirst = (edge == "left" || edge == "up")
-        ws.tabs[tti].layout = ws.tabs[tti].layout?.rewriting(paneId: targetPaneId) { old in
+        ws.layout = ws.layout?.rewriting(groupId: targetGroupId) { old in
             .split(dir: dir, ratio: 0.5,
-                   a: movedFirst ? .pane(leaf) : old,
-                   b: movedFirst ? old : .pane(leaf))
+                   a: movedFirst ? .group(g) : old,
+                   b: movedFirst ? old : .group(g))
         }
-        ws.tabs[tti].focusedPaneId = paneId
-        workspaces[twi] = ws
+        ws.focusedGroupId = g.groupId
+        ws.zoomedGroupId = nil
+        workspaces[swi] = ws
         publish()
     }
 
-    func movePane(_ paneId: String, toTab tabId: String) {
-        guard let (swi, sti) = locate(paneId),
-              workspaces[swi].tabs[sti].id != tabId,
-              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId),
-              workspaces.contains(where: { $0.tabs.contains { $0.id == tabId } }) else { return }
-        detachLeaf(paneId)
-        guard let twi = workspaces.firstIndex(where: { $0.tabs.contains { $0.id == tabId } }),
-              let tti = workspaces[twi].tabs.firstIndex(where: { $0.id == tabId }) else { publish(); return }
-        var ws = workspaces[twi]
-        ws.tabs[tti].zoomedPaneId = nil
-        ws.tabs[tti].layout = ws.tabs[tti].layout.map {
-            .split(dir: "row", ratio: 0.5, a: $0, b: .pane(leaf))
-        } ?? .pane(leaf)
-        ws.tabs[tti].focusedPaneId = paneId
-        workspaces[twi] = ws
-        publish()
+    /// Dropping a tab on another pane's middle moves it into that pane's strip.
+    func movePane(_ paneId: String, intoGroupOf targetPaneId: String) {
+        guard let (_, targetGroupId) = locate(targetPaneId) else { return }
+        moveTab(paneId, toGroup: targetGroupId)
     }
 
     func movePane(_ paneId: String, toWorkspace wsId: String) {
-        guard let (swi, sti) = locate(paneId),
-              let leaf = workspaces[swi].tabs[sti].layout?.leaf(for: paneId),
-              wsIndex(wsId) != nil else { return }
-        detachLeaf(paneId)
-        guard let wi = wsIndex(wsId) else { publish(); return }
-        var ws = workspaces[wi]
-        let tab = TabState(id: "\(ws.id):t\(ws.nextTabNum)",
-                           label: runtimes[paneId]?.label ?? "moved",
-                           cwd: ws.cwd, focusedPaneId: paneId, zoomedPaneId: nil,
-                           layout: .pane(leaf))
-        ws.nextTabNum += 1
-        ws.tabs.append(tab)
-        ws.focusedTabId = tab.id
-        workspaces[wi] = ws
-        publish()
-    }
-
-    /// Remove a pane's leaf without killing the pty (for moves).
-    private func detachLeaf(_ paneId: String) {
-        guard let (wi, ti) = locate(paneId) else { return }
-        var ws = workspaces[wi]
-        let newLayout = ws.tabs[ti].layout?.rewriting(paneId: paneId) { _ in nil }
-        if let newLayout {
-            ws.tabs[ti].layout = newLayout
-            if ws.tabs[ti].focusedPaneId == paneId { ws.tabs[ti].focusedPaneId = newLayout.paneIds.first }
-            if ws.tabs[ti].zoomedPaneId == paneId { ws.tabs[ti].zoomedPaneId = nil }
-            workspaces[wi] = ws
+        guard let (swi, _) = locate(paneId),
+              let leaf = workspaces[swi].layout?.leaf(for: paneId),
+              let target = wsIndex(wsId), target != swi else { return }
+        var source = workspaces[swi]
+        detachLeaf(paneId, in: &source)
+        workspaces[swi] = source
+        guard let ti = wsIndex(wsId) else { publish(); return }
+        var ws = workspaces[ti]
+        if let layout = ws.layout, let focused = ws.focusedGroup {
+            ws.layout = layout.mappingGroup(id: focused.groupId) { g in
+                var g = g
+                g.tabs.append(leaf)
+                g.focusedPaneId = leaf.paneId
+                return g
+            }
+            ws.focusedGroupId = focused.groupId
         } else {
-            ws.tabs.remove(at: ti)
-            if !ws.tabs.contains(where: { $0.id == ws.focusedTabId }) { ws.focusedTabId = ws.tabs.first?.id }
-            workspaces[wi] = ws
-            if ws.tabs.isEmpty && workspaces.count > 1 { closeWorkspaceRecord(ws.id) }
+            let g = PaneGroup(groupId: "\(ws.id):g\(ws.nextGroupNum)", tabs: [leaf])
+            ws.nextGroupNum += 1
+            ws.layout = .group(g)
+            ws.focusedGroupId = g.groupId
         }
-    }
-
-    func mergeTab(_ tabId: String, toEdge edge: String, of targetPaneId: String) {
-        guard let swi = workspaces.firstIndex(where: { $0.tabs.contains { $0.id == tabId } }),
-              let sti = workspaces[swi].tabs.firstIndex(where: { $0.id == tabId }),
-              let subtree = workspaces[swi].tabs[sti].layout else { return }
-        guard let (twi0, tti0) = locate(targetPaneId),
-              workspaces[twi0].tabs[tti0].id != tabId else { return }
-        var sws = workspaces[swi]
-        sws.tabs.remove(at: sti)
-        if !sws.tabs.contains(where: { $0.id == sws.focusedTabId }) { sws.focusedTabId = sws.tabs.first?.id }
-        workspaces[swi] = sws
-        if sws.tabs.isEmpty && workspaces.count > 1 && sws.id != workspaces[twi0].id {
-            closeWorkspaceRecord(sws.id)
-        }
-        guard let (twi, tti) = locate(targetPaneId) else { publish(); return }
-        var ws = workspaces[twi]
-        ws.tabs[tti].zoomedPaneId = nil
-        let e = edge == "center" ? "right" : edge
-        let dir = (e == "left" || e == "right") ? "row" : "column"
-        let movedFirst = (e == "left" || e == "up")
-        ws.tabs[tti].layout = ws.tabs[tti].layout?.rewriting(paneId: targetPaneId) { old in
-            .split(dir: dir, ratio: 0.5,
-                   a: movedFirst ? subtree : old,
-                   b: movedFirst ? old : subtree)
-        }
-        workspaces[twi] = ws
+        workspaces[ti] = ws
+        focusedWorkspaceId = wsId
         publish()
     }
 
-    func swapPanes(_ a: String, _ b: String) {
-        guard a != b,
-              let (awi, ati) = locate(a), let (bwi, bti) = locate(b),
-              let leafA = workspaces[awi].tabs[ati].layout?.leaf(for: a),
-              let leafB = workspaces[bwi].tabs[bti].layout?.leaf(for: b) else { return }
+    /// Removes a tab's leaf from a workspace without killing its runtime.
+    private func detachLeaf(_ paneId: String, in ws: inout WorkspaceState) {
+        guard let g = ws.layout?.groupContaining(paneId: paneId) else { return }
+        ws.layout = ws.layout?.mappingGroup(id: g.groupId) { grp in
+            var grp = grp
+            grp.tabs.removeAll { $0.paneId == paneId }
+            if grp.focusedPaneId == paneId { grp.focusedPaneId = grp.tabs.first?.paneId ?? "" }
+            return grp
+        }
+        if let layout = ws.layout {
+            if ws.focusedGroupId == nil || layout.group(id: ws.focusedGroupId!) == nil {
+                ws.focusedGroupId = layout.groupIds.first
+            }
+            if let z = ws.zoomedGroupId, layout.group(id: z) == nil { ws.zoomedGroupId = nil }
+        }
+    }
 
-        // Both leaves must be exchanged in ONE traversal: rewriting them one at a
-        // time makes the first write's new id match the second rewrite, which
-        // duplicates a pane and orphans the other.
+    /// Swaps the two groups holding these panes, in one traversal: rewriting
+    /// twice duplicates one and orphans the other.
+    func swapPanes(_ a: String, _ b: String) {
+        guard let (wi, ga) = locate(a), let (wj, gb) = locate(b), wi == wj, ga != gb,
+              let layout = workspaces[wi].layout,
+              let groupA = layout.group(id: ga), let groupB = layout.group(id: gb) else { return }
         func exchange(_ node: LayoutNode) -> LayoutNode {
             switch node {
-            case .pane(let leaf):
-                if leaf.paneId == a { return .pane(leafB) }
-                if leaf.paneId == b { return .pane(leafA) }
+            case .group(let g):
+                if g.groupId == ga { return .group(groupB) }
+                if g.groupId == gb { return .group(groupA) }
                 return node
             case .split(let dir, let ratio, let x, let y):
                 return .split(dir: dir, ratio: ratio, a: exchange(x), b: exchange(y))
             }
         }
+        workspaces[wi].layout = exchange(layout)
+        publish()
+    }
 
-        if awi == bwi && ati == bti {
-            workspaces[awi].tabs[ati].layout = workspaces[awi].tabs[ati].layout.map(exchange)
-        } else {
-            workspaces[awi].tabs[ati].layout = workspaces[awi].tabs[ati].layout.map(exchange)
-            workspaces[bwi].tabs[bti].layout = workspaces[bwi].tabs[bti].layout.map(exchange)
-            if workspaces[awi].tabs[ati].focusedPaneId == a { workspaces[awi].tabs[ati].focusedPaneId = b }
-            if workspaces[bwi].tabs[bti].focusedPaneId == b { workspaces[bwi].tabs[bti].focusedPaneId = a }
+    /// Whether two panes live in the same group, which decides between a
+    /// reorder and a move when a tab chip is dropped on another.
+    func sameGroup(_ a: String, _ b: String) -> Bool {
+        guard let (_, ga) = locate(a), let (_, gb) = locate(b) else { return false }
+        return ga == gb
+    }
+
+    /// Reorders a tab inside its own group.
+    func moveTab(_ paneId: String, toIndex: Int) {
+        guard let (wi, groupId) = locate(paneId) else { return }
+        workspaces[wi].layout = workspaces[wi].layout?.mappingGroup(id: groupId) { g in
+            var g = g
+            guard let from = g.tabs.firstIndex(where: { $0.paneId == paneId }) else { return g }
+            let leaf = g.tabs.remove(at: from)
+            g.tabs.insert(leaf, at: max(0, min(g.tabs.count, toIndex)))
+            return g
         }
         publish()
     }
 
-    func moveTab(_ tabId: String, toIndex: Int) {
-        guard let wi = workspaces.firstIndex(where: { $0.tabs.contains { $0.id == tabId } }),
-              let ti = workspaces[wi].tabs.firstIndex(where: { $0.id == tabId }) else { return }
+    /// Moves a tab into another group, which is what dropping a tab chip onto
+    /// a different pane's strip does.
+    func moveTab(_ paneId: String, toGroup targetGroupId: String, atIndex: Int? = nil) {
+        guard let (wi, sourceGroupId) = locate(paneId), sourceGroupId != targetGroupId,
+              let leaf = workspaces[wi].layout?.leaf(for: paneId),
+              workspaces[wi].layout?.group(id: targetGroupId) != nil else { return }
         var ws = workspaces[wi]
-        let tab = ws.tabs.remove(at: ti)
-        ws.tabs.insert(tab, at: max(0, min(ws.tabs.count, toIndex)))
+        ws.layout = ws.layout?.mappingGroup(id: sourceGroupId) { g in
+            var g = g
+            g.tabs.removeAll { $0.paneId == paneId }
+            if g.focusedPaneId == paneId { g.focusedPaneId = g.tabs.first?.paneId ?? "" }
+            return g
+        }
+        // the source group may have collapsed, so re-check the target still exists
+        guard ws.layout?.group(id: targetGroupId) != nil else { workspaces[wi] = ws; publish(); return }
+        ws.layout = ws.layout?.mappingGroup(id: targetGroupId) { g in
+            var g = g
+            let at = atIndex.map { max(0, min(g.tabs.count, $0)) } ?? g.tabs.count
+            g.tabs.insert(leaf, at: at)
+            g.focusedPaneId = paneId
+            return g
+        }
+        ws.focusedGroupId = targetGroupId
+        ws.zoomedGroupId = nil
         workspaces[wi] = ws
         publish()
     }
@@ -1130,15 +1228,15 @@ final class AppModel: ObservableObject {
     // MARK: tab / space navigation
 
     func selectTab(index: Int) {
-        guard let ws = focusedWorkspace, index < ws.tabs.count else { return }
-        focus(workspaceId: ws.id, tabId: ws.tabs[index].id)
+        guard let ws = focusedWorkspace, let g = ws.focusedGroup, index < g.tabs.count else { return }
+        focus(workspaceId: ws.id, paneId: g.tabs[index].paneId)
     }
 
     func stepTab(_ delta: Int) {
-        guard let ws = focusedWorkspace, !ws.tabs.isEmpty,
-              let i = ws.tabs.firstIndex(where: { $0.id == ws.focusedTabId }) else { return }
-        let n = (i + delta + ws.tabs.count) % ws.tabs.count
-        focus(workspaceId: ws.id, tabId: ws.tabs[n].id)
+        guard let ws = focusedWorkspace, let g = ws.focusedGroup, !g.tabs.isEmpty,
+              let i = g.tabs.firstIndex(where: { $0.paneId == g.focusedPaneId }) else { return }
+        let n = (i + delta + g.tabs.count) % g.tabs.count
+        focus(workspaceId: ws.id, paneId: g.tabs[n].paneId)
     }
 
     func selectSpace(index: Int) {
@@ -1147,8 +1245,8 @@ final class AppModel: ObservableObject {
     }
 
     func focusDirection(_ dir: String) {
-        guard let ws = focusedWorkspace, let tab = focusedTab, let layout = tab.layout,
-              let current = tab.focusedPaneId else { return }
+        guard let ws = focusedWorkspace, let layout = ws.layout,
+              let current = ws.focusedGroup?.groupId else { return }
         var rects: [String: CGRect] = [:]
         collectUnitRects(layout, CGRect(x: 0, y: 0, width: 1, height: 1), &rects)
         guard let cur = rects[current] else { return }
@@ -1166,7 +1264,7 @@ final class AppModel: ObservableObject {
                 if best == nil || d < best!.dist { best = (id, d) }
             }
         }
-        if let best { focus(workspaceId: ws.id, tabId: tab.id, paneId: best.id) }
+        if let best { focusGroup(best.id) }
     }
 
     private func overlaps(_ a: ClosedRange<CGFloat>, _ b: ClosedRange<CGFloat>) -> Bool {
@@ -1175,8 +1273,8 @@ final class AppModel: ObservableObject {
 
     private func collectUnitRects(_ node: LayoutNode, _ rect: CGRect, _ out: inout [String: CGRect]) {
         switch node {
-        case .pane(let leaf):
-            out[leaf.paneId] = rect
+        case .group(let g):
+            out[g.groupId] = rect
         case .split(let dir, let ratio, let a, let b):
             if dir == "row" {
                 let w = rect.width * ratio
@@ -1386,26 +1484,22 @@ final class AppModel: ObservableObject {
         return nil
     }
 
+    /// Visible means: its workspace is focused and it is the tab its group is
+    /// showing. A background tab of a visible group is not visible.
     private func isPaneVisibleFocused(_ paneId: String) -> Bool {
-        guard let (wi, ti) = locate(paneId) else { return false }
-        return workspaces[wi].id == focusedWorkspaceId
-            && workspaces[wi].tabs[ti].id == workspaces[wi].focusedTabId
+        guard let ws = focusedWorkspace,
+              let g = ws.layout?.groupContaining(paneId: paneId) else { return false }
+        return g.focusedPaneId == paneId
     }
 
-    private func markTabSeen(_ tabId: String) {
-        for ws in workspaces {
-            for tab in ws.tabs where tab.id == tabId {
-                for pid in tab.layout?.paneIds ?? [] where runtimes[pid]?.agent?.state == "done" {
-                    runtimes[pid]?.agent?.state = "idle"
-                }
-            }
-        }
+    private func markPaneSeen(_ paneId: String) {
+        if runtimes[paneId]?.agent?.state == "done" { runtimes[paneId]?.agent?.state = "idle" }
     }
 
     private func notifyAgent(paneId: String, rt: PaneRuntime, newState: String) {
         guard let (wi, ti) = locate(paneId) else { return }
         let item = NotificationItem(
-            paneId: paneId, wsId: workspaces[wi].id, tabId: workspaces[wi].tabs[ti].id,
+            paneId: paneId, wsId: workspaces[wi].id, tabId: ti,
             kind: rt.agent?.kind ?? "agent", name: rt.agent?.name, state: newState,
             label: workspaces[wi].label, at: Date())
         notifications.insert(item, at: 0)
@@ -1430,7 +1524,7 @@ final class AppModel: ObservableObject {
     }
 
     func openNotification(_ item: NotificationItem) {
-        focus(workspaceId: item.wsId, tabId: item.tabId, paneId: item.paneId)
+        focus(workspaceId: item.wsId, paneId: item.paneId)
     }
 
     func openLatestNotification() {
@@ -1526,7 +1620,10 @@ final class AppModel: ObservableObject {
     // MARK: persistence (same file shape the Node server used)
 
     private final class DumpNode: Codable {
-        var type: String = "pane"
+        var type: String = "group"
+        var groupId: String?
+        var focusedPaneId: String?
+        var tabs: [DumpNode]?
         var paneId: String?
         var kind: String?
         var url: String?
@@ -1553,7 +1650,11 @@ final class AppModel: ObservableObject {
         var focusedTabId: String?
         var nextTabNum: Int?
         var nextPaneNum: Int?
-        var tabs: [DumpTab]
+        var nextGroupNum: Int?
+        /// Current format: the space owns one layout of groups.
+        var layout: DumpNode?
+        /// Old format, read for migration only and never written again.
+        var tabs: [DumpTab]?
     }
     private struct Dump: Codable {
         var version: Int
@@ -1578,13 +1679,10 @@ final class AppModel: ObservableObject {
             focusedWorkspaceId: focusedWorkspaceId,
             workspaces: workspaces.map { ws in
                 DumpWs(id: ws.id, label: ws.label, cwd: ws.cwd, icon: ws.icon,
-                       worktree: ws.worktreeInfo, focusedTabId: ws.focusedTabId,
+                       worktree: ws.worktreeInfo, focusedTabId: ws.focusedGroupId,
                        nextTabNum: ws.nextTabNum, nextPaneNum: ws.nextPaneNum,
-                       tabs: ws.tabs.map { tab in
-                           DumpTab(id: tab.id, label: tab.label, cwd: tab.cwd,
-                                   focusedPaneId: tab.focusedPaneId,
-                                   layout: dumpNode(tab.layout))
-                       })
+                       nextGroupNum: ws.nextGroupNum,
+                       layout: dumpNode(ws.layout), tabs: nil)
             })
         let dir = Self.stateFile.deletingLastPathComponent()
         let file = Self.stateFile
@@ -1599,15 +1697,22 @@ final class AppModel: ObservableObject {
         guard let node else { return nil }
         let d = DumpNode()
         switch node {
-        case .pane(let leaf):
-            d.type = "pane"
-            d.paneId = leaf.paneId
-            d.kind = leaf.kind
-            if leaf.kind == "web" {
-                d.url = webRuntimes[leaf.paneId]?.url?.absoluteString
-            } else {
-                d.cwd = runtimes[leaf.paneId]?.currentCwd()
-                d.label = runtimes[leaf.paneId]?.label
+        case .group(let g):
+            d.type = "group"
+            d.groupId = g.groupId
+            d.focusedPaneId = g.focusedPaneId
+            d.tabs = g.tabs.map { leaf in
+                let t = DumpNode()
+                t.type = "pane"
+                t.paneId = leaf.paneId
+                t.kind = leaf.kind
+                if leaf.kind == "web" {
+                    t.url = webRuntimes[leaf.paneId]?.url?.absoluteString
+                } else {
+                    t.cwd = runtimes[leaf.paneId]?.currentCwd()
+                    t.label = runtimes[leaf.paneId]?.label
+                }
+                return t
             }
         case .split(let dir, let ratio, let a, let b):
             d.type = "split"
@@ -1629,20 +1734,20 @@ final class AppModel: ObservableObject {
             guard FileManager.default.fileExists(atPath: dws.cwd, isDirectory: &isDir), isDir.boolValue else { continue }
             var ws = WorkspaceState(
                 id: dws.id, label: dws.label, cwd: dws.cwd, git: nil,
-                worktreeInfo: dws.worktree, icon: dws.icon, focusedTabId: nil, tabs: [])
+                worktreeInfo: dws.worktree, icon: dws.icon, layout: nil)
             ws.nextTabNum = dws.nextTabNum ?? 1
             ws.nextPaneNum = dws.nextPaneNum ?? 1
-            for dtab in dws.tabs {
-                var tab = TabState(id: dtab.id, label: dtab.label, cwd: dtab.cwd ?? dws.cwd,
-                                   focusedPaneId: nil, zoomedPaneId: nil, layout: nil)
-                tab.layout = restoreNode(dtab.layout, ws: &ws)
-                guard tab.layout != nil else { continue }
-                let ids = tab.layout?.paneIds ?? []
-                tab.focusedPaneId = ids.contains(dtab.focusedPaneId ?? "") ? dtab.focusedPaneId : ids.first
-                ws.tabs.append(tab)
+            ws.nextGroupNum = dws.nextGroupNum ?? 1
+
+            if let layout = dws.layout {
+                ws.layout = restoreNode(layout, ws: &ws)
+                ws.focusedGroupId = ws.layout?.group(id: dws.focusedTabId ?? "")?.groupId
+                    ?? ws.layout?.groupIds.first
+            } else if let oldTabs = dws.tabs {
+                ws.layout = migrateOldTabs(oldTabs, focused: dws.focusedTabId, ws: &ws)
+                ws.focusedGroupId = ws.layout?.groupIds.first
             }
-            ws.focusedTabId = ws.tabs.contains { $0.id == dws.focusedTabId } ? dws.focusedTabId : ws.tabs.first?.id
-            guard !ws.tabs.isEmpty else { continue }
+            guard ws.layout != nil else { continue }
             workspaces.append(ws)
         }
         focusedWorkspaceId = workspaces.contains { $0.id == dump.focusedWorkspaceId }
@@ -1650,42 +1755,111 @@ final class AppModel: ObservableObject {
         gitTick()
     }
 
-    private func restoreNode(_ node: DumpNode?, ws: inout WorkspaceState) -> LayoutNode? {
-        guard let node else { return nil }
-        if node.type == "pane" {
-            guard let paneId = node.paneId else { return nil }
-            if let num = Int(paneId.split(separator: "p").last ?? ""), num >= ws.nextPaneNum {
-                ws.nextPaneNum = num + 1
+    /// Migration from the format where a space owned the tabs and each tab
+    /// owned a layout. The focused tab's splits become the space's layout, with
+    /// every pane in it becoming a single-tab group; every pane from the other
+    /// tabs is then appended as an extra tab on the first group. Nothing is
+    /// dropped, so no pty is stranded, but arrangements from non-focused tabs
+    /// cannot be preserved because a space only has one layout now.
+    private func migrateOldTabs(_ tabs: [DumpTab], focused: String?,
+                                ws: inout WorkspaceState) -> LayoutNode? {
+        let ordered = tabs.sorted { a, _ in a.id == focused }
+        var root: LayoutNode?
+        var spare: [PaneLeaf] = []
+        for (i, dtab) in ordered.enumerated() {
+            guard let restored = restoreNode(dtab.layout, ws: &ws) else { continue }
+            if i == 0 {
+                root = groupsFromPanes(restored, ws: &ws)
+            } else {
+                spare.append(contentsOf: restored.groups.flatMap(\.tabs))
             }
-            if node.kind == "web" {
-                let url = node.url.flatMap { URL(string: $0) }
-                webRuntimes[paneId] = WebPaneRuntime(id: paneId, url: url, model: self)
-                return .pane(PaneLeaf(paneId: paneId, kind: "web"))
-            }
-            if node.kind == "world" {
-                // the runtime is built lazily by worldRuntime(for:) on first render
-                return .pane(PaneLeaf(paneId: paneId, kind: "world"))
-            }
-            var isDir: ObjCBool = false
-            let cwd = (node.cwd != nil
-                       && FileManager.default.fileExists(atPath: node.cwd!, isDirectory: &isDir)
-                       && isDir.boolValue) ? node.cwd! : ws.cwd
-            let rt = PaneRuntime(id: paneId, cwd: cwd, model: self)
-            rt.label = node.label
-            runtimes[paneId] = rt
-            return .pane(PaneLeaf(paneId: paneId))
         }
-        let a = restoreNode(node.a, ws: &ws)
-        let b = restoreNode(node.b, ws: &ws)
-        switch (a, b) {
-        case (let x?, let y?): return .split(dir: node.dir ?? "row", ratio: node.ratio ?? 0.5, a: x, b: y)
-        case (let x?, nil): return x
-        case (nil, let y?): return y
-        default: return nil
+        guard var layout = root else {
+            guard !spare.isEmpty else { return nil }
+            let g = PaneGroup(groupId: "\(ws.id):g\(ws.nextGroupNum)", tabs: spare)
+            ws.nextGroupNum += 1
+            return .group(g)
+        }
+        if !spare.isEmpty, let first = layout.groupIds.first {
+            layout = layout.mappingGroup(id: first) { g in
+                var g = g; g.tabs.append(contentsOf: spare); return g
+            } ?? layout
+        }
+        return layout
+    }
+
+    /// Wraps each restored single-pane group in its own group, preserving the
+    /// split arrangement from the old format.
+    private func groupsFromPanes(_ node: LayoutNode, ws: inout WorkspaceState) -> LayoutNode {
+        node.mappingAllGroups { g in
+            var g = g
+            if g.groupId.isEmpty {
+                g.groupId = "\(ws.id):g\(ws.nextGroupNum)"
+                ws.nextGroupNum += 1
+            }
+            return g
         }
     }
 
-    // MARK: close-with-confirm helpers
+    /// Restores both formats. "group" is current; a bare "pane" is the old
+    /// format, and is wrapped in a single-tab group so migration can reuse this.
+    private func restoreNode(_ node: DumpNode?, ws: inout WorkspaceState) -> LayoutNode? {
+        guard let node else { return nil }
+
+        func restoreLeaf(_ n: DumpNode) -> PaneLeaf? {
+            guard let paneId = n.paneId else { return nil }
+            if let num = Int(paneId.split(separator: "p").last ?? ""), num >= ws.nextPaneNum {
+                ws.nextPaneNum = num + 1
+            }
+            if n.kind == "web" {
+                webRuntimes[paneId] = WebPaneRuntime(
+                    id: paneId, url: n.url.flatMap { URL(string: $0) }, model: self)
+                return PaneLeaf(paneId: paneId, kind: "web")
+            }
+            if n.kind == "world" {
+                // the runtime is built lazily by worldRuntime(for:) on first render
+                return PaneLeaf(paneId: paneId, kind: "world")
+            }
+            var isDir: ObjCBool = false
+            let cwd = (n.cwd != nil
+                       && FileManager.default.fileExists(atPath: n.cwd!, isDirectory: &isDir)
+                       && isDir.boolValue) ? n.cwd! : ws.cwd
+            let rt = PaneRuntime(id: paneId, cwd: cwd, model: self)
+            rt.label = n.label
+            runtimes[paneId] = rt
+            return PaneLeaf(paneId: paneId)
+        }
+
+        switch node.type {
+        case "group":
+            let leaves = (node.tabs ?? []).compactMap(restoreLeaf)
+            guard !leaves.isEmpty else { return nil }
+            let gid = node.groupId ?? "\(ws.id):g\(ws.nextGroupNum)"
+            if node.groupId == nil { ws.nextGroupNum += 1 }
+            if let num = Int(gid.split(separator: "g").last ?? ""), num >= ws.nextGroupNum {
+                ws.nextGroupNum = num + 1
+            }
+            let focused = leaves.contains { $0.paneId == node.focusedPaneId }
+                ? node.focusedPaneId : leaves.first?.paneId
+            return .group(PaneGroup(groupId: gid, tabs: leaves, focusedPaneId: focused))
+        case "pane":
+            // old format: one pane became one group
+            guard let leaf = restoreLeaf(node) else { return nil }
+            let gid = "\(ws.id):g\(ws.nextGroupNum)"
+            ws.nextGroupNum += 1
+            return .group(PaneGroup(groupId: gid, tabs: [leaf]))
+        default:
+            let a = restoreNode(node.a, ws: &ws)
+            let b = restoreNode(node.b, ws: &ws)
+            switch (a, b) {
+            case (let x?, let y?):
+                return .split(dir: node.dir ?? "row", ratio: node.ratio ?? 0.5, a: x, b: y)
+            case (let x?, nil): return x
+            case (nil, let y?): return y
+            default: return nil
+            }
+        }
+    }
 
     func requestClosePane(_ paneId: String) {
         let confirm = UserDefaults.standard.object(forKey: "confirmClose") as? Bool ?? true
@@ -1696,14 +1870,17 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func requestCloseTab(_ tab: TabState) {
+    /// Closing a group with more than one tab asks first; closing a single tab
+    /// does not, the same way a browser treats a window versus a tab.
+    func requestCloseGroup(_ group: PaneGroup) {
         let confirm = UserDefaults.standard.object(forKey: "confirmClose") as? Bool ?? true
-        if confirm, (tab.layout?.paneIds.count ?? 0) > 1 {
-            activeSheet = .confirmCloseTab(tab)
+        if confirm, group.tabs.count > 1 {
+            activeSheet = .confirmCloseGroup(group)
         } else {
-            closeTab(tab.id)
+            closeGroup(group.groupId)
         }
     }
+
 
     func requestCloseSpace(_ ws: WorkspaceState) {
         let confirm = UserDefaults.standard.object(forKey: "confirmClose") as? Bool ?? true

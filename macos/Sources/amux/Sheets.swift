@@ -307,20 +307,20 @@ struct ConfirmCloseSpaceSheet: View {
     }
 }
 
-struct ConfirmCloseTabSheet: View {
+struct ConfirmCloseGroupSheet: View {
     @ObservedObject var model: AppModel
-    let tab: TabState
+    let group: PaneGroup
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        SheetChrome("close tab") {
-            Text("Close “\(tab.label)” and its \(tab.layout?.paneIds.count ?? 0) panes?")
+        SheetChrome("close pane") {
+            Text("Close this pane and its \(group.tabs.count) tabs?")
                 .font(.system(size: 12.5))
             HStack {
                 Spacer()
                 Button("cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("close tab", role: .destructive) {
-                    model.closeTab(tab.id)
+                Button("close pane", role: .destructive) {
+                    model.closeGroup(group.groupId)
                     dismiss()
                 }
             }
