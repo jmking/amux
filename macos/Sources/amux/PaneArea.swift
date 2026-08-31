@@ -46,19 +46,6 @@ struct TabBarView: View {
                                         active: tab.id == ws.focusedTabId)
                                     .id(tab.id)
                             }
-                            // Sits with the tabs rather than after the scroll
-                            // view: a horizontal ScrollView claims all the width
-                            // it is offered, so anything placed after it lands
-                            // against the far right instead of beside the tabs.
-                            Button { model.newTab(ws) } label: {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .frame(width: 22, height: 22)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(pal.faint)
-                            .help("New tab (⌘T)")
                         }
                     }
                     .onChange(of: ws.focusedTabId) { _, focused in
