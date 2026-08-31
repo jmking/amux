@@ -46,8 +46,8 @@ struct AgentEvent: Identifiable, Equatable {
     static func == (a: AgentEvent, b: AgentEvent) -> Bool { a.id == b.id }
 }
 
-/// Bounded in-memory log. Nothing is persisted: the prototype should not become
-/// a second copy of the user's work.
+/// Bounded in-memory log. Nothing is persisted: amux should not become a second
+/// copy of the user's work.
 final class AgentEventLog {
     private(set) var events: [AgentEvent] = []
     private let cap = 4000
@@ -90,9 +90,9 @@ private extension Array {
 // Neither store knows anything about amux panes. Both are keyed by their own
 // session id, and the only natural join is the working directory, which is
 // exactly the case amux encourages you to break by running several agents in
-// one repo. For a prototype we take the most recently touched session under a
-// pane's cwd and accept the ambiguity; the real fix is to stamp a pane id into
-// the environment and have Claude's hooks echo it back.
+// one repo. We take the most recently touched session under a pane's cwd and
+// accept the ambiguity; the real fix is to stamp a pane id into the environment
+// and have Claude's hooks echo it back.
 
 enum SessionMatch {
     /// Claude slugifies the project path into a directory name under

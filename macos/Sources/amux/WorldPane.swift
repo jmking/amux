@@ -9,8 +9,6 @@ import AppKit
 // it from what that agent is actually doing. Coarse pane state drives the
 // fallback behaviour, and the normalised event stream (AgentSources) sharpens it
 // into thinking / tool / network when the agent is one we can read.
-//
-// Prototype: not on the release path.
 
 /// Owns the Metal view for a world pane. Held by the model so the scene
 /// survives tab switches instead of being rebuilt on every re-render.
@@ -31,8 +29,8 @@ final class WorldRuntime {
     private var timer: Timer?
     private var occlusionObserver: NSObjectProtocol?
     private var demoTick = 0
-    /// Prototype affordance: fake agents cycling every phase, so the behaviours
-    /// can be reviewed without five live agents.
+    /// Cycles fake agents through every phase, so the behaviours can be seen
+    /// without standing up five live agents. File > Toggle Agent World Demo.
     var demoMode = false { didSet { if oldValue != demoMode { renderer?.resetStats(); applyRunPolicy() } } }
     /// Whether the pane's tab is the visible one, pushed in by WorldHost.
     var tabActive = true { didSet { if oldValue != tabActive { applyRunPolicy() } } }

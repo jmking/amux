@@ -131,6 +131,10 @@ macos/Sources/amux/
   PaneArea.swift      tab bar, split layout, drag and drop, pane chrome
   Sidebar.swift       spaces and agents
   WebPane.swift       WebKit browser panes
+  WorldPane.swift     the agent world pane and its run policy
+  WorldMetal.swift    Metal renderer: meshes, shaders, instanced draws
+  AgentSources.swift  reads what Claude and Codex record about themselves
+  AgentEvents.swift   one normalised activity event for every agent kind
   Palette.swift       command palette
   Sheets.swift        dialogs
   Theme.swift         palettes, terminal themes, agent marks

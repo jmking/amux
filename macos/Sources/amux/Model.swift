@@ -266,8 +266,8 @@ final class AppModel: ObservableObject {
     var webRuntimes: [String: WebPaneRuntime] = [:]
     var worldRuntimes: [String: WorldRuntime] = [:]
 
-    // Prototype: normalised activity read from what the agents record about
-    // themselves. See AgentSources.swift.
+    // Normalised activity, read from what the agents record about themselves.
+    // See AgentSources.swift.
     let eventLog = AgentEventLog()
     private var claudeReaders: [String: ClaudeReader] = [:]
     private var codexReaders: [String: CodexReader] = [:]
@@ -465,7 +465,7 @@ final class AppModel: ObservableObject {
     private var branchByDir: [String: String] = [:]
     private var detectBusy = false
 
-    static let version = "0.2.0"
+    static let version = "0.3.0"
 
     // ProcessInfo.hostName does blocking DNS — this doesn't
     static let cachedHostname: String = {
@@ -695,9 +695,8 @@ final class AppModel: ObservableObject {
         return rt
     }
 
-    /// Prototype affordance: cycle fake agents through every behaviour in every
-    /// open world pane, so the visualisation can be reviewed without standing up
-    /// five real agents.
+    /// Cycles fake agents through every behaviour in every open world pane, so
+    /// the visualisation can be seen without standing up five real agents.
     func toggleWorldDemo() {
         let on = !(worldRuntimes.values.first?.demoMode ?? false)
         for rt in worldRuntimes.values { rt.demoMode = on }
