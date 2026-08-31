@@ -454,6 +454,41 @@ private struct DividerView: View {
 
 // MARK: - Pane drop (drag to snap / move / swap)
 
+/// Split, zoom and close, shared by every pane kind so a browser or a world
+/// pane offers the same controls as a terminal rather than being a dead end.
+struct PaneChromeButtons: View {
+    @ObservedObject var model: AppModel
+    let paneId: String
+    var size: CGFloat = 11
+    @Environment(\.palette) private var pal
+
+    var body: some View {
+        HStack(spacing: 2) {
+            btn("rectangle.split.2x1", "Split right (⌘D)") {
+                model.splitPane(paneId, direction: "right")
+            }
+            btn("rectangle.split.1x2", "Split down (⇧⌘D)") {
+                model.splitPane(paneId, direction: "down")
+            }
+            btn("arrow.up.left.and.arrow.down.right", "Zoom pane (⇧⌘E)") {
+                model.zoomPane(paneId)
+            }
+            btn("xmark", "Close pane") { model.requestClosePane(paneId) }
+        }
+    }
+
+    private func btn(_ icon: String, _ help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon).font(.system(size: size))
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(pal.faint)
+        .help(help)
+    }
+}
+
 /// Publishes a pane's window-space frame so the model's drop tracker can tell
 /// which pane the pointer is over. Kept as its own view with explicit types:
 /// inlining it pushed this file past the type-checker's budget.
