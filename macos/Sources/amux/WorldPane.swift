@@ -372,6 +372,9 @@ struct WorldToolbar: View {
                 .onDrag {
                     model.beginDrag("pane:\(paneId)")
                     return PaneDrag.provider("pane:\(paneId)")
+                } preview: {
+                    DragChip(icon: "cube.transparent", label: "agent world")
+                        .environment(\.palette, pal)
                 }
                 .help("Drag to move this pane")
             Image(systemName: "cube.transparent").font(.system(size: 11))
@@ -403,6 +406,9 @@ struct WorldToolbar: View {
         .onDrag {
             model.beginDrag("pane:\(paneId)")
             return PaneDrag.provider("pane:\(paneId)")
+        } preview: {
+            DragChip(icon: "cube.transparent", label: "agent world")
+                .environment(\.palette, pal)
         }
         .contextMenu {
             Button("Split right") { model.splitPane(paneId, direction: "right") }
