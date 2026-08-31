@@ -72,18 +72,10 @@ struct TabBarView: View {
             }
             Spacer()
             HStack(spacing: 10) {
+                // Creating and splitting moved onto the pane headers, where cmux
+                // keeps them: those actions are about a pane, so they belong on
+                // the pane rather than in a bar that floats above all of them.
                 clusterButton("magnifyingglass", "Command palette (⌘K)") { model.paletteOpen = true }
-                clusterButton("terminal", "New terminal tab (⌘T)") {
-                    if let ws = model.focusedWorkspace { model.newTab(ws) }
-                }
-                clusterButton("globe", "New browser tab (⇧⌘B)") { model.newBrowserTab() }
-                clusterButton("rectangle.split.2x1", "Split right (⌘D)") {
-                    if let p = model.actionPaneId { model.splitPane(p, direction: "right") }
-                }
-                clusterButton("rectangle.split.1x2", "Split down (⇧⌘D)") {
-                    if let p = model.actionPaneId { model.splitPane(p, direction: "down") }
-                }
-                Divider().frame(height: 14).overlay(pal.line2)
                 bellButton
             }
             .font(.system(size: 11))
@@ -505,6 +497,10 @@ struct PaneChromeButtons: View {
 
     var body: some View {
         HStack(spacing: 2) {
+            btn("terminal", "New terminal tab (⌘T)") {
+                if let ws = model.focusedWorkspace { model.newTab(ws) }
+            }
+            btn("globe", "New browser tab (⇧⌘B)") { model.newBrowserTab() }
             btn("rectangle.split.2x1", "Split right (⌘D)") {
                 model.splitPane(paneId, direction: "right")
             }
@@ -676,11 +672,10 @@ struct PaneView: View {
 
     private var paneButtons: some View {
         HStack(spacing: 2) {
+            // starting an agent only means anything in a terminal, so it stays
+            // here rather than moving into the cluster every pane kind shares
             headBtn("faceid", "Start agent… (⇧⌘A)") { model.activeSheet = .startAgent(paneId: leaf.paneId) }
-            headBtn("rectangle.split.2x1", "Split right (⌘D)") { model.splitPane(leaf.paneId, direction: "right") }
-            headBtn("rectangle.split.1x2", "Split down (⇧⌘D)") { model.splitPane(leaf.paneId, direction: "down") }
-            headBtn("arrow.up.left.and.arrow.down.right", "Zoom pane (⇧⌘E)") { model.zoomPane(leaf.paneId) }
-            headBtn("xmark", "Close pane") { model.requestClosePane(leaf.paneId) }
+            PaneChromeButtons(model: model, paneId: leaf.paneId, size: 9.5)
         }
     }
 
