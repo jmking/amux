@@ -94,6 +94,13 @@ final class ClaudeReader {
                 case "tool_use":
                     let name = b["name"] as? String ?? "tool"
                     if let id = b["id"] as? String { pending[id] = (at, name) }
+                    // interrupted calls never get a result; stop the orphans
+                    // accumulating over a long session
+                    if pending.count > 512 {
+                        for (k, v) in pending.sorted(by: { $0.value.0 < $1.value.0 }).prefix(pending.count - 512) {
+                            _ = v; pending.removeValue(forKey: k)
+                        }
+                    }
                     out.append(AgentEvent(at: at, paneId: paneId, kind: "claude",
                                           phase: Self.isNetwork(name) ? .network : .tool,
                                           detail: Self.shortTool(name), durationMs: nil))
@@ -121,8 +128,10 @@ final class ClaudeReader {
 
     private static func stamp(_ s: String?) -> Date {
         guard let s else { return Date() }
-        return ISO8601DateFormatter().date(from: s)
-            ?? ISO8601DateFormatter.withFractional.date(from: s) ?? Date()
+        // fractional first: real transcripts carry millisecond timestamps, so
+        // the plain parse failed on every event before this order
+        return ISO8601DateFormatter.withFractional.date(from: s)
+            ?? ISO8601DateFormatter.plain.date(from: s) ?? Date()
     }
 
     private func resolve(cwd newCwd: String?) {
@@ -135,11 +144,21 @@ final class ClaudeReader {
         guard let dir = SessionMatch.claudeProjectDir(for: newCwd) else {
             tailer.retarget(nil); return
         }
+        // Sticky while live: with two agents in one project, always chasing the
+        // newest transcript flip-flops the tailer between their files, which
+        // cross-attributes one agent's events to both panes and drops chunks on
+        // every switch. Only rehunt once the current file has gone quiet.
+        if let current = tailer.url,
+           let mod = (try? FileManager.default.attributesOfItem(atPath: current.path)[.modificationDate]) as? Date,
+           Date().timeIntervalSince(mod) < 30 {
+            return
+        }
         tailer.retarget(SessionMatch.newestTranscript(in: dir))
     }
 }
 
 extension ISO8601DateFormatter {
+    static let plain = ISO8601DateFormatter()
     static let withFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -233,6 +252,12 @@ final class CodexReader {
         if newCwd == cwd && Date().timeIntervalSince(lastResolve) < 15 { return }
         cwd = newCwd
         lastResolve = Date()
+        // sticky while live, for the same reason as ClaudeReader.resolve
+        if let current = tailer.url,
+           let mod = (try? FileManager.default.attributesOfItem(atPath: current.path)[.modificationDate]) as? Date,
+           Date().timeIntervalSince(mod) < 30 {
+            return
+        }
         tailer.retarget(Self.newestRollout(cwd: newCwd))
     }
 
@@ -240,13 +265,22 @@ final class CodexReader {
     /// first line of each. Only recent files are opened, otherwise this walks
     /// every session the user has ever run.
     static func newestRollout(cwd: String) -> URL? {
-        let root = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".codex/sessions")
-        guard let e = FileManager.default.enumerator(
-            at: root, includingPropertiesForKeys: [.contentModificationDateKey]) else { return nil }
+        let fm = FileManager.default
+        let root = fm.homeDirectoryForCurrentUser.appendingPathComponent(".codex/sessions")
+        // rollouts are filed YYYY/MM/DD; walking the whole tree re-stats every
+        // session ever recorded, every 15 seconds. Visit only the day
+        // directories that can contain a live session.
+        let cal = Calendar.current
+        let days = [Date(), Date().addingTimeInterval(-24 * 3600)].map {
+            let c = cal.dateComponents([.year, .month, .day], from: $0)
+            return root.appendingPathComponent(String(format: "%04d/%02d/%02d", c.year!, c.month!, c.day!))
+        }
+        let candidates = days.flatMap {
+            (try? fm.contentsOfDirectory(at: $0, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        }
         let cutoff = Date().addingTimeInterval(-24 * 3600)
         var best: (URL, Date)?
-        for case let url as URL in e where url.pathExtension == "jsonl" {
+        for url in candidates where url.pathExtension == "jsonl" {
             let mod = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
                 .contentModificationDate ?? .distantPast
             guard mod > cutoff, mod > (best?.1 ?? .distantPast) else { continue }

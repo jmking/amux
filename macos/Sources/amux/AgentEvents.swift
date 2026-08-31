@@ -96,9 +96,13 @@ private extension Array {
 
 enum SessionMatch {
     /// Claude slugifies the project path into a directory name under
-    /// ~/.claude/projects, e.g. /Users/me/dev/amux -> -Users-me-dev-amux
+    /// ~/.claude/projects by replacing every non-alphanumeric character, not
+    /// just '/': /Users/me/.conclave/x -> -Users-me--conclave-x. Replacing only
+    /// '/' made any cwd containing '.' or '_' resolve to nothing, which
+    /// silently killed the activity pipeline for that pane.
     static func claudeProjectDir(for cwd: String) -> URL? {
-        let slug = cwd.replacingOccurrences(of: "/", with: "-")
+        let slug = cwd.replacingOccurrences(
+            of: "[^a-zA-Z0-9]", with: "-", options: .regularExpression)
         let dir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude/projects")
             .appendingPathComponent(slug)

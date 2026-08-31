@@ -1239,6 +1239,11 @@ final class AppModel: ObservableObject {
     /// Reads whatever the live agents have appended since the last tick. Runs on
     /// a background queue: both readers touch the filesystem, and the perf rule
     /// in this app is that nothing like that happens on the main thread.
+    /// All reader IO runs here, serially: the readers mutate unsynchronised
+    /// state (tail offsets, pending tool calls), and the concurrent global
+    /// queue let two ticks' polls overlap on the same instances.
+    private static let pollQueue = DispatchQueue(label: "au.jmk.amux.agent-poll", qos: .utility)
+
     private func pollAgentSources() {
         let live: [(String, String, String?)] = (state?.agents ?? []).compactMap {
             guard $0.kind == "claude" || $0.kind == "codex" else { return nil }
@@ -1252,7 +1257,7 @@ final class AppModel: ObservableObject {
             codexReaders[paneId] = CodexReader()
         }
         let claude = claudeReaders, codex = codexReaders
-        DispatchQueue.global(qos: .utility).async {
+        Self.pollQueue.async {
             var batch: [AgentEvent] = []
             for (paneId, kind, cwd) in live {
                 if kind == "claude" { batch += claude[paneId]?.poll(paneId: paneId, cwd: cwd) ?? [] }

@@ -706,10 +706,19 @@ final class WorldRenderer: NSObject, MTKViewDelegate {
         }
         enc.endEncoding()
 
-        commands.addCompletedHandler { [weak self] buf in
-            guard let self else { return }
+        // The semaphore is captured strongly and signalled in a defer: if the
+        // renderer is torn down while this buffer is still on the GPU (closing
+        // a world pane mid-frame), a weak-self-only handler would skip the
+        // signal and the semaphore would be destroyed below its initial value,
+        // which libdispatch traps on. The strong capture also keeps the
+        // semaphore alive until the last outstanding handler has run.
+        commands.addCompletedHandler { [weak self, semaphore] buf in
+            defer { semaphore.signal() }
             let gpu = (buf.gpuEndTime - buf.gpuStartTime) * 1000
-            if gpu > 0 {
+            guard let self, gpu > 0 else { return }
+            // completion handlers run on a Metal thread; the stats are read and
+            // reset from the main thread, so hop rather than race
+            DispatchQueue.main.async {
                 self.lastGpuMs = gpu
                 self.gpuTimes.append(gpu)
                 if self.gpuTimes.count > 240 {
@@ -717,7 +726,6 @@ final class WorldRenderer: NSObject, MTKViewDelegate {
                 }
                 if self.gpuTimes.count > 20 { self.worstGpuMs = self.gpuTimes.max() ?? 0 }
             }
-            self.semaphore.signal()
         }
         commands.present(drawable)
         commands.commit()
