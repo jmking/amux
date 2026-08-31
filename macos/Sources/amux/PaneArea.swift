@@ -37,26 +37,6 @@ struct TabBarView: View {
                 .help("Hide sidebar (⌘0)")
                 .padding(.trailing, 2)
             }
-            if let ws = model.focusedWorkspace {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
-                            ForEach(Array(ws.tabs.enumerated()), id: \.element.id) { index, tab in
-                                TabChip(model: model, ws: ws, tab: tab, index: index,
-                                        active: tab.id == ws.focusedTabId)
-                                    .id(tab.id)
-                            }
-                        }
-                    }
-                    .onChange(of: ws.focusedTabId) { _, focused in
-                        // no animation: the strip should land the instant you click
-                        if let focused { proxy.scrollTo(focused) }
-                    }
-                    .onAppear {
-                        if let focused = ws.focusedTabId { proxy.scrollTo(focused) }
-                    }
-                }
-            }
             Spacer()
             HStack(spacing: 10) {
                 // Creating and splitting moved onto the pane headers, where cmux
@@ -160,56 +140,48 @@ struct BellPopover: View {
     }
 }
 
+/// One tab inside a pane's strip. A tab is a pane now, so its identity is the
+/// paneId and its label comes from the runtime.
 struct TabChip: View {
     @ObservedObject var model: AppModel
     let ws: WorkspaceState
-    let tab: TabState
+    let group: PaneGroup
+    let leaf: PaneLeaf
     let index: Int
     let active: Bool
     @Environment(\.palette) private var pal
     @State private var hovering = false
-    @State private var dropTargeted = false
-    @State private var springTask: Task<Void, Never>?
 
     private var tabIcon: String {
-        if case .pane(let leaf)? = tab.layout, leaf.kind == "world" { return "cube.transparent" }
-        if case .pane(let leaf)? = tab.layout, leaf.kind == "web" { return "globe" }
-        return "terminal"
+        switch leaf.kind {
+        case "world": return "cube.transparent"
+        case "web": return "globe"
+        default: return "terminal"
+        }
     }
 
-    private var tabAgentKind: String? {
-        func walk(_ n: LayoutNode?) -> String? {
-            switch n {
-            case .pane(let l): return l.agent?.kind
-            case .split(_, _, let a, let b): return walk(a) ?? walk(b)
-            case nil: return nil
-            }
-        }
-        return walk(tab.layout)
+    private var title: String {
+        if let label = leaf.label, !label.isEmpty { return label }
+        if leaf.kind == "web" { return "New tab" }
+        if leaf.kind == "world" { return "agent world" }
+        return leaf.proc ?? "shell"
     }
 
     var body: some View {
         HStack(spacing: 6) {
-            if let kind = tabAgentKind {
+            if let kind = leaf.agent?.kind {
                 AgentChip(kind: kind, size: 13)
             } else {
                 Image(systemName: tabIcon)
                     .font(.system(size: 10))
                     .foregroundStyle(active ? pal.ink : pal.faint)
             }
-            Text(tab.label)
+            Text(title)
                 .font(.system(size: 12, weight: active ? .semibold : .regular))
                 .lineLimit(1)
                 .fixedSize()
-            if tab.zoomedPaneId != nil {
-                Text("ZOOM")
-                    .font(.system(size: 8, design: .monospaced)).tracking(1)
-                    .padding(.horizontal, 3)
-                    .overlay(RoundedRectangle(cornerRadius: 2)
-                        .strokeBorder(active ? pal.spotInk : pal.spot, lineWidth: 0.5))
-            }
             // slot is always reserved so chips never resize on hover
-            Button { model.requestCloseTab(tab) } label: {
+            Button { model.requestClosePane(leaf.paneId) } label: {
                 Image(systemName: "xmark").font(.system(size: 7))
                     .frame(width: 10, height: 10)
                     .contentShape(Rectangle())
@@ -220,62 +192,35 @@ struct TabChip: View {
             .help("Close tab")
         }
         .foregroundStyle(active ? pal.ink : (hovering ? pal.dim : pal.faint))
-        .padding(.horizontal, 10).padding(.vertical, 5)
+        .padding(.horizontal, 10).padding(.vertical, 4)
         .background(UnevenRoundedRectangle(
             topLeadingRadius: 7, bottomLeadingRadius: 0,
             bottomTrailingRadius: 0, topTrailingRadius: 7)
-            .fill(active ? pal.mass : (hovering || dropTargeted ? pal.panel : .clear)))
-        .overlay(UnevenRoundedRectangle(
-            topLeadingRadius: 7, bottomLeadingRadius: 0,
-            bottomTrailingRadius: 0, topTrailingRadius: 7)
-            .strokeBorder(dropTargeted ? pal.spot : .clear, lineWidth: 1.5))
+            .fill(active ? pal.mass : (hovering ? pal.panel : .clear)))
         .contentShape(Rectangle())
         // A count:2 gesture stacked on a count:1 makes SwiftUI wait out the whole
-        // double-click interval before it will admit a click was single — a fixed
-        // ~½s lag on every tab switch. Recognize them in parallel instead: the
-        // switch lands on mouse-up, and a second click additionally opens rename.
-        .onTapGesture { model.focus(workspaceId: ws.id, tabId: tab.id) }
+        // double-click interval before it will admit a click was single. Recognize
+        // them in parallel instead.
+        .onTapGesture { model.focus(workspaceId: ws.id, paneId: leaf.paneId) }
         .simultaneousGesture(TapGesture(count: 2).onEnded {
-            model.activeSheet = .rename(.tab(id: tab.id, current: tab.label))
+            model.activeSheet = .rename(.pane(id: leaf.paneId, current: leaf.label ?? ""))
         })
         .onHover { hovering = $0 }
         .onDrag {
-            model.beginDrag("tab:\(tab.id)")
-            return PaneDrag.provider("tab:\(tab.id)")
+            model.beginDrag("tab:\(leaf.paneId)")
+            return PaneDrag.provider("tab:\(leaf.paneId)")
         } preview: {
-            DragChip(icon: tabIcon, label: tab.label).environment(\.palette, pal)
+            DragChip(icon: tabIcon, label: title).environment(\.palette, pal)
         }
-        .onDrop(of: [PaneDrag.type], isTargeted: $dropTargeted) { providers in
-            model.endDrag()
-            loadDragPayload(providers) { payload in
-                if payload.hasPrefix("tab:") {
-                    let src = String(payload.dropFirst(4))
-                    if src != tab.id { model.moveTab(src, toIndex: index) }
-                } else if payload.hasPrefix("pane:") {
-                    model.movePane(String(payload.dropFirst(5)), toTab: tab.id)
-                }
-            }
-            return true
-        }
-        // spring-loading: linger over a tab mid-drag and it comes forward, so a
-        // dragged pane or tab can be dropped into another tab's layout
-        .onChange(of: dropTargeted) { _, targeted in
-            springTask?.cancel()
-            if targeted && tab.id != ws.focusedTabId {
-                springTask = Task {
-                    try? await Task.sleep(nanoseconds: 400_000_000)
-                    if !Task.isCancelled {
-                        model.focus(workspaceId: ws.id, tabId: tab.id)
-                    }
-                }
-            }
-        }
+        .background(FrameReporter { model.chipFrames[leaf.paneId] = $0 })
         .contextMenu {
-            Button("Rename tab…") { model.activeSheet = .rename(.tab(id: tab.id, current: tab.label)) }
+            Button("Rename tab…") {
+                model.activeSheet = .rename(.pane(id: leaf.paneId, current: leaf.label ?? ""))
+            }
             Divider()
-            Button("Close tab", role: .destructive) { model.requestCloseTab(tab) }
+            Button("Close tab", role: .destructive) { model.requestClosePane(leaf.paneId) }
         }
-        .help("Click to switch · double-click to rename · drag to reorder")
+        .help("Click to switch · double-click to rename · drag to reorder or move")
     }
 }
 
@@ -287,12 +232,77 @@ func loadDragPayload(_ providers: [NSItemProvider], _ handle: @escaping (String)
     }
 }
 
+/// A pane's own tab strip, the way cmux arranges things: the tabs belong to
+/// this pane, and the create/split cluster acts on it.
+struct PaneTabStrip: View {
+    @ObservedObject var model: AppModel
+    let ws: WorkspaceState
+    let group: PaneGroup
+    let focused: Bool
+    @Environment(\.palette) private var pal
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 4) {
+                        ForEach(Array(group.tabs.enumerated()), id: \.element.paneId) { index, leaf in
+                            TabChip(model: model, ws: ws, group: group, leaf: leaf, index: index,
+                                    active: leaf.paneId == group.focusedPaneId)
+                                .id(leaf.paneId)
+                        }
+                    }
+                }
+                .onChange(of: group.focusedPaneId) { _, id in
+                    // no animation: the strip should land the instant you click
+                    proxy.scrollTo(id)
+                }
+            }
+            Spacer(minLength: 4)
+            PaneChromeButtons(model: model, paneId: group.focusedPaneId, size: 10)
+        }
+        .padding(.horizontal, 6)
+        .frame(height: 30)
+        .background(focused ? pal.panel : pal.panel.opacity(0.6))
+        .contentShape(Rectangle())
+        .onTapGesture { model.focusGroup(group.groupId) }
+        .background(FrameReporter { model.stripFrames[group.groupId] = $0 })
+        .overlay(alignment: .leading) { insertCaret }
+    }
+
+    /// Where a dragged tab would land in this strip.
+    @ViewBuilder private var insertCaret: some View {
+        if model.trackedDropGroup == group.groupId, let idx = model.trackedDropIndex {
+            GeometryReader { geo in
+                let x = caretX(idx, in: geo)
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(pal.spot)
+                    .frame(width: 2)
+                    .offset(x: x - 1)
+            }
+            .allowsHitTesting(false)
+            .transition(.opacity)
+        }
+    }
+
+    private func caretX(_ idx: Int, in geo: GeometryProxy) -> CGFloat {
+        let origin = geo.frame(in: .global).minX
+        if idx < group.tabs.count, let c = model.chipFrames[group.tabs[idx].paneId] {
+            return c.minX - origin
+        }
+        if let last = group.tabs.last, let c = model.chipFrames[last.paneId] {
+            return c.maxX - origin
+        }
+        return 6
+    }
+}
+
 // MARK: - Pane area (recursive splits)
 
-private struct PanePlacement: Identifiable {
-    let leaf: PaneLeaf
+private struct GroupPlacement: Identifiable {
+    let group: PaneGroup
     let rect: CGRect
-    var id: String { leaf.paneId }
+    var id: String { group.groupId }
 }
 
 private struct DividerPlacement: Identifiable {
@@ -313,18 +323,19 @@ struct PaneAreaView: View {
             let inset: CGFloat = 8
             let area = CGRect(origin: .zero, size: geo.size).insetBy(dx: inset, dy: inset)
             ZStack(alignment: .topLeading) {
-                if let ws = model.focusedWorkspace {
-                    // Every tab in the space stays mounted and switching only
-                    // changes which one is visible. Rebuilding a tab's panes
-                    // re-attaches each SwiftTerm view and re-fires a PTY resize,
-                    // which is what made switching feel sluggish.
-                    ForEach(ws.tabs, id: \.id) { tab in
-                        let isActive = tab.id == ws.focusedTabId
-                        tabLayer(tab: tab, area: area, isActive: isActive)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                            .opacity(isActive ? 1 : 0)
-                            .allowsHitTesting(isActive)
-                            .zIndex(isActive ? 1 : 0)
+                if let ws = model.focusedWorkspace, let layout = ws.layout {
+                    let (groups, dividers) = computeLayout(ws: ws, layout: layout, area: area)
+                    ForEach(groups) { g in
+                        let r = CGRect(x: g.rect.minX.rounded(), y: g.rect.minY.rounded(),
+                                       width: g.rect.width.rounded(), height: g.rect.height.rounded())
+                        PaneGroupView(model: model, ws: ws, group: g.group,
+                                      focused: ws.focusedGroupId == g.group.groupId,
+                                      size: r.size)
+                            .frame(width: r.width, height: r.height)
+                            .offset(x: r.minX, y: r.minY)
+                    }
+                    ForEach(dividers) { d in
+                        DividerView(model: model, ws: ws, placement: d)
                     }
                 }
                 if model.state != nil && (model.state?.workspaces.isEmpty ?? false) {
@@ -335,47 +346,26 @@ struct PaneAreaView: View {
         .background(pal.bg)
     }
 
-    @ViewBuilder
-    private func tabLayer(tab: TabState, area: CGRect, isActive: Bool) -> some View {
-        if let layout = tab.layout {
-            let (panes, dividers) = computeLayout(tab: tab, layout: layout, area: area)
-            ZStack(alignment: .topLeading) {
-                ForEach(panes) { p in
-                    let r = CGRect(x: p.rect.minX.rounded(), y: p.rect.minY.rounded(),
-                                   width: p.rect.width.rounded(), height: p.rect.height.rounded())
-                    PaneView(model: model, tab: tab, leaf: p.leaf,
-                             focused: isActive && tab.focusedPaneId == p.leaf.paneId,
-                             size: r.size, isActive: isActive)
-                        .frame(width: r.width, height: r.height)
-                        .offset(x: r.minX, y: r.minY)
-                }
-                ForEach(dividers) { d in
-                    DividerView(model: model, tab: tab, placement: d)
-                }
-            }
-        }
-    }
-
-    private func computeLayout(tab: TabState, layout: LayoutNode, area: CGRect)
-        -> ([PanePlacement], [DividerPlacement]) {
-        var panes: [PanePlacement] = []
+    private func computeLayout(ws: WorkspaceState, layout: LayoutNode, area: CGRect)
+        -> ([GroupPlacement], [DividerPlacement]) {
+        var groups: [GroupPlacement] = []
         var divs: [DividerPlacement] = []
-        if let zoomed = tab.zoomedPaneId, let leaf = layout.leaf(for: zoomed) {
-            panes.append(PanePlacement(leaf: leaf, rect: area))
-            return (panes, divs)
+        if let zoomed = ws.zoomedGroupId, let g = layout.group(id: zoomed) {
+            groups.append(GroupPlacement(group: g, rect: area))
+            return (groups, divs)
         }
-        walk(node: layout, rect: area, path: "", tab: tab, panes: &panes, divs: &divs)
-        return (panes, divs)
+        walk(node: layout, rect: area, path: "", ws: ws, groups: &groups, divs: &divs)
+        return (groups, divs)
     }
 
-    private func walk(node: LayoutNode, rect: CGRect, path: String, tab: TabState,
-                      panes: inout [PanePlacement], divs: inout [DividerPlacement]) {
+    private func walk(node: LayoutNode, rect: CGRect, path: String, ws: WorkspaceState,
+                      groups: inout [GroupPlacement], divs: inout [DividerPlacement]) {
         switch node {
-        case .pane(let leaf):
-            panes.append(PanePlacement(leaf: leaf, rect: rect))
+        case .group(let g):
+            groups.append(GroupPlacement(group: g, rect: rect))
         case .split(let dir, let serverRatio, let a, let b):
             let gap: CGFloat = 7
-            let key = tab.id + "|" + path
+            let key = ws.id + "|" + path
             let ratio = model.dragRatios[key] ?? serverRatio
             let childPathA = path.isEmpty ? "a" : path + ".a"
             let childPathB = path.isEmpty ? "b" : path + ".b"
@@ -383,30 +373,99 @@ struct PaneAreaView: View {
                 let usable = rect.width - gap
                 let aw = round(usable * ratio)
                 walk(node: a, rect: CGRect(x: rect.minX, y: rect.minY, width: aw, height: rect.height),
-                     path: childPathA, tab: tab, panes: &panes, divs: &divs)
+                     path: childPathA, ws: ws, groups: &groups, divs: &divs)
                 divs.append(DividerPlacement(
                     path: path, rect: CGRect(x: rect.minX + aw, y: rect.minY, width: gap, height: rect.height),
                     horizontal: true, parentRect: rect, gap: gap))
                 walk(node: b, rect: CGRect(x: rect.minX + aw + gap, y: rect.minY, width: usable - aw, height: rect.height),
-                     path: childPathB, tab: tab, panes: &panes, divs: &divs)
+                     path: childPathB, ws: ws, groups: &groups, divs: &divs)
             } else {
                 let usable = rect.height - gap
                 let ah = round(usable * ratio)
                 walk(node: a, rect: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: ah),
-                     path: childPathA, tab: tab, panes: &panes, divs: &divs)
+                     path: childPathA, ws: ws, groups: &groups, divs: &divs)
                 divs.append(DividerPlacement(
                     path: path, rect: CGRect(x: rect.minX, y: rect.minY + ah, width: rect.width, height: gap),
                     horizontal: false, parentRect: rect, gap: gap))
                 walk(node: b, rect: CGRect(x: rect.minX, y: rect.minY + ah + gap, width: rect.width, height: usable - ah),
-                     path: childPathB, tab: tab, panes: &panes, divs: &divs)
+                     path: childPathB, ws: ws, groups: &groups, divs: &divs)
             }
+        }
+    }
+}
+
+/// One pane: its own tab strip on top, the visible tab's content below. Every
+/// tab of the group stays mounted and switching only changes which is visible,
+/// because rebuilding re-attaches the SwiftTerm view and re-fires a PTY resize.
+struct PaneGroupView: View {
+    @ObservedObject var model: AppModel
+    let ws: WorkspaceState
+    let group: PaneGroup
+    let focused: Bool
+    let size: CGSize
+    @Environment(\.palette) private var pal
+    @AppStorage("termTheme") private var termThemeName = "amux"
+    @AppStorage("mode") private var mode = "dark"
+
+    var body: some View {
+        VStack(spacing: 0) {
+            PaneTabStrip(model: model, ws: ws, group: group, focused: focused)
+            ZStack(alignment: .topLeading) {
+                ForEach(group.tabs, id: \.paneId) { leaf in
+                    let visible = leaf.paneId == group.focusedPaneId
+                    PaneView(model: model, leaf: leaf,
+                             focused: focused && visible, size: size, isActive: visible)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .opacity(visible ? 1 : 0)
+                        .allowsHitTesting(visible)
+                        .zIndex(visible ? 1 : 0)
+                }
+            }
+        }
+        .background(Color(nsColor: TermThemes.effective(termThemeName, mode: mode).bgNS))
+        .clipShape(RoundedRectangle(cornerRadius: Palette.Radius.card))
+        .overlay(dropHighlight)
+        .overlay(RoundedRectangle(cornerRadius: Palette.Radius.card)
+            .strokeBorder(focused ? pal.spot : pal.line2, lineWidth: 1))
+        .background(PaneFrameReporter(model: model, paneId: group.focusedPaneId))
+        .contentShape(Rectangle())
+        .onTapGesture { model.focusGroup(group.groupId) }
+    }
+
+    private var activeDropEdge: String? {
+        model.trackedDropPane == group.focusedPaneId ? model.trackedDropEdge : nil
+    }
+
+    @ViewBuilder private var dropHighlight: some View {
+        if let e = activeDropEdge {
+            GeometryReader { geo in
+                let r = highlightRect(e, in: geo.size)
+                RoundedRectangle(cornerRadius: Palette.Radius.row)
+                    .fill(pal.spot.opacity(0.22))
+                    .overlay(RoundedRectangle(cornerRadius: Palette.Radius.row)
+                        .strokeBorder(pal.spot, lineWidth: 1.5))
+                    .frame(width: r.width, height: r.height)
+                    .offset(x: r.minX, y: r.minY)
+            }
+            .allowsHitTesting(false)
+            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+        }
+    }
+
+    private func highlightRect(_ edge: String, in size: CGSize) -> CGRect {
+        switch edge {
+        case "left": return CGRect(x: 0, y: 0, width: size.width / 2, height: size.height)
+        case "right": return CGRect(x: size.width / 2, y: 0, width: size.width / 2, height: size.height)
+        case "up": return CGRect(x: 0, y: 0, width: size.width, height: size.height / 2)
+        case "down": return CGRect(x: 0, y: size.height / 2, width: size.width, height: size.height / 2)
+        default: return CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.15, dy: size.height * 0.15)
         }
     }
 }
 
 private struct DividerView: View {
     @ObservedObject var model: AppModel
-    let tab: TabState
+    let ws: WorkspaceState
     let placement: DividerPlacement
     @Environment(\.palette) private var pal
     @State private var hovering = false
@@ -433,7 +492,7 @@ private struct DividerView: View {
                 DragGesture(minimumDistance: 1)
                     .onChanged { g in
                         dragging = true
-                        let key = tab.id + "|" + d.path
+                        let key = ws.id + "|" + d.path
                         let pos = d.horizontal
                             ? d.rect.minX + g.translation.width - d.parentRect.minX
                             : d.rect.minY + g.translation.height - d.parentRect.minY
@@ -442,9 +501,9 @@ private struct DividerView: View {
                     }
                     .onEnded { _ in
                         dragging = false
-                        let key = tab.id + "|" + d.path
+                        let key = ws.id + "|" + d.path
                         if let ratio = model.dragRatios[key] {
-                            model.setRatio(tabId: tab.id, path: d.path, ratio: ratio)
+                            model.setRatio(workspaceId: ws.id, path: d.path, ratio: ratio)
                         }
                     })
     }
@@ -518,6 +577,18 @@ struct PaneChromeButtons: View {
 /// Publishes a pane's window-space frame so the model's drop tracker can tell
 /// which pane the pointer is over. Kept as its own view with explicit types:
 /// inlining it pushed this file past the type-checker's budget.
+/// Publishes a view's window-space frame through a closure. Explicit types:
+/// inlining a GeometryReader here pushed this file past the type-checker.
+struct FrameReporter: View {
+    let report: (CGRect) -> Void
+    var body: some View {
+        GeometryReader { (geo: GeometryProxy) -> Color in
+            report(geo.frame(in: .global))
+            return Color.clear
+        }
+    }
+}
+
 private struct PaneFrameReporter: View {
     @ObservedObject var model: AppModel
     let paneId: String
@@ -533,9 +604,11 @@ private struct PaneFrameReporter: View {
 
 // MARK: - Pane chrome
 
+/// The content of one tab. The card, border, drop highlight and frame
+/// reporting all belong to the enclosing PaneGroupView now, because those are
+/// properties of the pane on screen rather than of whichever tab it is showing.
 struct PaneView: View {
     @ObservedObject var model: AppModel
-    let tab: TabState
     let leaf: PaneLeaf
     let focused: Bool
     let size: CGSize
@@ -561,76 +634,24 @@ struct PaneView: View {
                     .padding(.leading, 6).padding(.vertical, 4)
             }
         }
-        .background(Color(nsColor: TermThemes.effective(termThemeName, mode: mode).bgNS))
-        .clipShape(RoundedRectangle(cornerRadius: Palette.Radius.card))
-        .overlay(dropHighlight)
-        .overlay(
-            RoundedRectangle(cornerRadius: Palette.Radius.card)
-                .strokeBorder(focused ? pal.spot : pal.line2, lineWidth: 1))
         .onHover { hovering = $0 }
-        .background(PaneFrameReporter(model: model, paneId: leaf.paneId))
     }
 
-    /// Every pane takes its drop edge from the model's pointer tracking. See
-    /// AppModel's "drop tracking" section for why SwiftUI's .onDrop is not used.
-    private var activeDropEdge: String? {
-        model.trackedDropPane == leaf.paneId ? model.trackedDropEdge : nil
-    }
-
-    @ViewBuilder private var dropHighlight: some View {
-        if let e = activeDropEdge {
-            GeometryReader { geo in
-                let r = highlightRect(e, in: geo.size)
-                RoundedRectangle(cornerRadius: Palette.Radius.row)
-                    .fill(pal.spot.opacity(0.22))
-                    .overlay(RoundedRectangle(cornerRadius: Palette.Radius.row).strokeBorder(pal.spot, lineWidth: 1.5))
-                    .frame(width: r.width, height: r.height)
-                    .offset(x: r.minX, y: r.minY)
-            }
-            .allowsHitTesting(false)
-            .transition(.opacity.combined(with: .scale(scale: 0.97)))
-        }
-    }
-
-    private func highlightRect(_ edge: String, in size: CGSize) -> CGRect {
-        switch edge {
-        case "left": return CGRect(x: 0, y: 0, width: size.width / 2, height: size.height)
-        case "right": return CGRect(x: size.width / 2, y: 0, width: size.width / 2, height: size.height)
-        case "up": return CGRect(x: 0, y: 0, width: size.width, height: size.height / 2)
-        case "down": return CGRect(x: 0, y: size.height / 2, width: size.width, height: size.height / 2)
-        default: return CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.15, dy: size.height * 0.15)
-        }
-    }
-
+    /// Slim: the tab chip above already carries the name and agent state, so
+    /// this is only the things it cannot show, the working directory and branch.
     private var header: some View {
         HStack(spacing: 7) {
-            if let agent = leaf.agent {
-                StateDot(state: agent.state)
-                Text(leaf.label ?? agent.name ?? agent.kind)
+            if let cwd = leaf.cwd {
+                Text(shortPath(cwd))
                     .font(Fonts.uiMonoSmall)
-                    .foregroundStyle(focused ? pal.faint : pal.faint2)
-                Text("· \(agent.state)\(titleIsKind(agent) ? "" : " · \(agent.kind)")")
-                    .font(Fonts.uiMonoSmall)
-                    .foregroundStyle(pal.spot)
-            } else {
-                if let agentKind = leaf.agent?.kind { AgentChip(kind: agentKind, size: 13) }
-                Text(leaf.label ?? "❯ \(leaf.proc ?? "shell")")
-                    .font(Fonts.uiMonoSmall)
-                    .foregroundStyle(focused ? pal.faint : pal.faint2)
+                    .foregroundStyle(pal.faint2)
             }
-            if leaf.kind != "web" {
-                if let cwd = leaf.cwd {
-                    Text(shortPath(cwd))
-                        .font(Fonts.uiMonoSmall)
-                        .foregroundStyle(pal.faint2)
+            if let branch = leaf.branch {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.triangle.branch").font(.system(size: 8.5))
+                    Text(branch).font(Fonts.uiMonoSmall)
                 }
-                if let branch = leaf.branch {
-                    HStack(spacing: 3) {
-                        Image(systemName: "arrow.triangle.branch").font(.system(size: 8.5))
-                        Text(branch).font(Fonts.uiMonoSmall)
-                    }
-                    .foregroundStyle(pal.spot.opacity(0.9))
-                }
+                .foregroundStyle(pal.spot.opacity(0.9))
             }
             Spacer()
             if hovering { paneButtons }
@@ -662,12 +683,11 @@ struct PaneView: View {
         (leaf.label ?? agent.name ?? agent.kind) == agent.kind
     }
 
+    /// Only start-agent: the pane's tab strip carries the shared cluster, so
+    /// repeating it here would show every button twice.
     private var paneButtons: some View {
-        HStack(spacing: 2) {
-            // starting an agent only means anything in a terminal, so it stays
-            // here rather than moving into the cluster every pane kind shares
-            headBtn("faceid", "Start agent… (⇧⌘A)") { model.activeSheet = .startAgent(paneId: leaf.paneId) }
-            PaneChromeButtons(model: model, paneId: leaf.paneId, size: 9.5)
+        headBtn("faceid", "Start agent… (⇧⌘A)") {
+            model.activeSheet = .startAgent(paneId: leaf.paneId)
         }
     }
 

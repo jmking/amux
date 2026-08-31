@@ -219,8 +219,6 @@ struct WorldToolbar: View {
             Text(summary)
                 .font(.system(size: 11))
                 .foregroundStyle(pal.faint2)
-            Divider().frame(height: 14).overlay(pal.line2)
-            PaneChromeButtons(model: model, paneId: paneId)
         }
         .padding(.horizontal, 8)
         .frame(height: 34)

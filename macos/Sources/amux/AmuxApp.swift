@@ -54,22 +54,17 @@ struct AmuxApp: App {
                 }
             }
             Button("Rename Tab…") {
-                if let tab = model.focusedTab {
-                    model.activeSheet = .rename(.tab(id: tab.id, current: tab.label))
-                }
-            }
-            Button("Rename Pane…") {
-                if let p = model.focusedTab?.focusedPaneId {
+                if let p = model.focusedWorkspace?.focusedPaneId {
                     model.activeSheet = .rename(.pane(id: p, current: ""))
                 }
             }
             Divider()
             Button("Close Pane") {
-                if let p = model.focusedTab?.focusedPaneId { model.requestClosePane(p) }
+                if let p = model.focusedWorkspace?.focusedPaneId { model.requestClosePane(p) }
             }
             .keyboardShortcut("w", modifiers: [.command, .shift])
-            Button("Close Tab") {
-                if let tab = model.focusedTab { model.requestCloseTab(tab) }
+            Button("Close Group") {
+                if let g = model.focusedGroup { model.requestCloseGroup(g) }
             }
             .keyboardShortcut("w", modifiers: [.command, .option])
             Button("Close Space") {
@@ -142,12 +137,12 @@ struct AmuxApp: App {
             .keyboardShortcut("a", modifiers: [.command, .shift])
             Divider()
             Button("Send Esc") {
-                if let p = model.focusedTab?.focusedPaneId {
+                if let p = model.focusedWorkspace?.focusedPaneId {
                     model.sendKeys(p, keys: ["esc"])
                 }
             }
             Button("Send Ctrl+C") {
-                if let p = model.focusedTab?.focusedPaneId {
+                if let p = model.focusedWorkspace?.focusedPaneId {
                     model.sendKeys(p, keys: ["ctrl+c"])
                 }
             }
@@ -191,6 +186,48 @@ func acceptFirstMouse(_ view: NSView) {
     object_setClass(view, subclass)
 }
 
+/// Holds the live drag session so the drop tracker can decide whether the drag
+/// image slides home.
+///
+/// AppKit slides a drag image back to where it started whenever a drag ends
+/// without an AppKit drop. amux never accepts one through AppKit's protocol --
+/// drags have to cross WKWebView panes, which AppKit will not route into, so a
+/// pointer tracker applies the drop instead. Every successful drag therefore
+/// also looked like a failure, and the tab graphic flew back to its old spot
+/// while the panes were already animating into their new places.
+///
+/// SwiftUI owns the session and .onDrag does not hand it over, so take it from
+/// the only place it appears: the NSView call that creates it.
+@MainActor
+enum DragSession {
+    static weak var current: NSDraggingSession?
+    private static var installed = false
+
+    static func installSlideBackControl() {
+        guard !installed else { return }
+        installed = true
+        let sel = #selector(NSView.beginDraggingSession(with:event:source:))
+        guard let method = class_getInstanceMethod(NSView.self, sel) else { return }
+        typealias Original = @convention(c)
+            (AnyObject, Selector, [NSDraggingItem], NSEvent, any NSDraggingSource) -> NSDraggingSession
+        let original = unsafeBitCast(method_getImplementation(method), to: Original.self)
+        let block: @convention(block)
+            (AnyObject, [NSDraggingItem], NSEvent, any NSDraggingSource) -> NSDraggingSession = {
+                view, items, event, source in
+                let session = original(view, sel, items, event, source)
+                MainActor.assumeIsolated { DragSession.current = session }
+                return session
+            }
+        method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+
+    /// A drag heading somewhere real should just land; one heading nowhere should
+    /// still visibly return, so the gesture reads as refused rather than lost.
+    static func setWillLand(_ landing: Bool) {
+        current?.animatesToStartingPositionsOnCancelOrFail = !landing
+    }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, NSMenuDelegate {
     var model: AppModel? {
@@ -207,6 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
         UNUserNotificationCenter.current().delegate = self
         setupStatusItem()
+        DragSession.installSlideBackControl()
         // Pane/tab drags must never turn into window moves: macOS treats
         // non-interactive chrome as a window-drag handle by default.
         NotificationCenter.default.addObserver(
@@ -351,7 +389,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     @objc private func jumpToAgent(_ sender: NSMenuItem) {
         guard let info = sender.representedObject as? [String: String] else { return }
         NSApp.activate(ignoringOtherApps: true)
-        model?.focus(workspaceId: info["wsId"], tabId: info["tabId"], paneId: info["paneId"])
+        model?.focus(workspaceId: info["wsId"], paneId: info["paneId"])
     }
 
     @objc private func openApp() {
@@ -366,11 +404,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                                 didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
         guard let wsId = info["wsId"] as? String else { return }
-        let tabId = info["tabId"] as? String
         let paneId = info["paneId"] as? String
         await MainActor.run {
             NSApp.activate(ignoringOtherApps: true)
-            model?.focus(workspaceId: wsId, tabId: tabId, paneId: paneId)
+            model?.focus(workspaceId: wsId, paneId: paneId)
         }
     }
 
@@ -428,7 +465,7 @@ struct RootView: View {
         case .runCommand(let paneId): RunCommandSheet(model: model, paneId: paneId)
         case .newWorktree(let repo): NewWorktreeSheet(model: model, initialRepo: repo)
         case .confirmCloseSpace(let ws): ConfirmCloseSpaceSheet(model: model, ws: ws)
-        case .confirmCloseTab(let tab): ConfirmCloseTabSheet(model: model, tab: tab)
+        case .confirmCloseGroup(let g): ConfirmCloseGroupSheet(model: model, group: g)
         case .confirmClosePane(let paneId, let agent):
             ConfirmClosePaneSheet(model: model, paneId: paneId, agent: agent)
         case .rename(let target): RenameSheet(model: model, target: target)

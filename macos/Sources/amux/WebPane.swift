@@ -235,8 +235,6 @@ struct BrowserToolbar: View {
             toolButton("safari", "Open in default browser") {
                 if let url = runtime.url { NSWorkspace.shared.open(url) }
             }
-            Divider().frame(height: 14).overlay(pal.line2)
-            PaneChromeButtons(model: model, paneId: paneId)
         }
         .padding(.horizontal, 8)
         .frame(height: 34)

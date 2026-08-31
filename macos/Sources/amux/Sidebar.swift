@@ -298,7 +298,7 @@ struct AgentRowView: View {
         .padding(.horizontal, 10)
         .contentShape(Rectangle())
         .onTapGesture {
-            model.focus(workspaceId: agent.wsId, tabId: agent.tabId, paneId: agent.paneId)
+            model.focus(workspaceId: agent.wsId, paneId: agent.paneId)
         }
         .onHover { hovering = $0 }
         .help("Jump to this agent")

@@ -84,7 +84,7 @@ struct CommandPaletteView: View {
 
     private func buildActions() -> [PaletteAction] {
         var acts: [PaletteAction] = []
-        let focusPane = model.focusedTab?.focusedPaneId
+        let focusPane = model.focusedWorkspace?.focusedPaneId
         acts.append(PaletteAction(label: "new space…", kind: "action") { model.activeSheet = .newSpace })
         acts.append(PaletteAction(label: "new worktree…", kind: "action") {
             model.activeSheet = .newWorktree(repo: model.focusedWorkspace?.cwd)
@@ -115,15 +115,18 @@ struct CommandPaletteView: View {
                 acts.append(PaletteAction(label: "go to space: \(ws.label)", kind: "space") {
                     model.focus(workspaceId: ws.id)
                 })
-                for tab in ws.tabs {
-                    acts.append(PaletteAction(label: "go to tab: \(ws.label) / \(tab.label)", kind: "tab") {
-                        model.focus(workspaceId: ws.id, tabId: tab.id)
-                    })
+                for g in ws.layout?.groups ?? [] {
+                    for leaf in g.tabs {
+                        let name = leaf.label ?? leaf.proc ?? "shell"
+                        acts.append(PaletteAction(label: "go to tab: \(ws.label) / \(name)", kind: "tab") {
+                            model.focus(workspaceId: ws.id, paneId: leaf.paneId)
+                        })
+                    }
                 }
             }
             for a in st.agents {
                 acts.append(PaletteAction(label: "go to agent: \(a.name ?? a.kind) (\(a.workspace))", kind: "agent") {
-                    model.focus(workspaceId: a.wsId, tabId: a.tabId, paneId: a.paneId)
+                    model.focus(workspaceId: a.wsId, paneId: a.paneId)
                 })
             }
         }
