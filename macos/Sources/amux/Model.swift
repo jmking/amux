@@ -197,6 +197,26 @@ enum Agents {
         "rovo": "rovo",
         "acli": "rovo",       // older Rovo installs ran inside Atlassian's acli
     ]
+    /// Distinctive path components that identify an agent when its own name is
+    /// not argv[0] or argv[1] — a CLI shipped as a script runs as its host
+    /// runtime ("node .../@atlassian/rovo-cli/dist/index.js"), so the only
+    /// recognisable token is a directory in the path. Matched as whole path
+    /// components so that editing a file named after an agent does not count.
+    static let pathMarkers: [(marker: String, kind: String)] = [
+        ("rovo-cli", "rovo"), ("rovodev", "rovo"), ("rovo-dev", "rovo"),
+        ("claude-code", "claude"), ("codex-cli", "codex"),
+    ]
+
+    static func markerKind(_ line: Substring) -> String? {
+        for (marker, kind) in pathMarkers where line.contains(marker) {
+            for token in line.split(separator: " ") {
+                for comp in token.split(whereSeparator: { $0 == "/" || $0 == "\\" })
+                where comp == marker { return kind }
+            }
+        }
+        return nil
+    }
+
     // agent kind -> launch command (first word must be the executable)
     static let launchMap: [String: String] = [
         "claude": "claude",
@@ -1050,11 +1070,9 @@ final class AppModel: ObservableObject {
             guard let shellPid = shellPids[paneId], shellPid > 0 else { continue }
             if let fg = table[shellPid]?.first { rt.procName = fg.base }
             else { rt.procName = "shell" }
-            let kind = findAgent(table: table, root: shellPid, depth: 0)
-            guard let kind else {
-                if rt.agent != nil { rt.agent = nil; changed = true }
-                continue
-            }
+            let found = findAgent(table: table, root: shellPid, depth: 0)
+            guard let kind = resolveAgent(rt: rt, found: found, table: table,
+                                          shellPid: shellPid, changed: &changed) else { continue }
             if rt.agent == nil || rt.agent?.kind != kind {
                 rt.agent = PaneAgent(kind: kind, name: rt.agent?.name, state: "unknown")
                 changed = true
@@ -1085,6 +1103,35 @@ final class AppModel: ObservableObject {
             publish()
             updateSleepAssertion()
         }
+    }
+
+    /// Decides what agent a pane is running, tolerating ticks where the process
+    /// tree cannot name one.
+    ///
+    /// Agent CLIs are often thin launchers: the wrapper we recognise by name
+    /// starts up, hands the session to a long-lived process named after its
+    /// host runtime (node, a JVM, a vendor binary), and exits. From then on the
+    /// tree carries no recognisable name even though the agent is very much
+    /// alive. Dropping on the first miss made those agents flicker into the
+    /// list and vanish a second later, which is what Rovo did.
+    ///
+    /// The tell is whether the pane's shell still has any child at all. A bare
+    /// prompt means the agent really did exit, so let go at once and keep the
+    /// list honest. A live but unrecognised child means we just cannot name it,
+    /// so hold the kind we already established. Note this has to hold for the
+    /// whole session rather than a grace period: after a handoff the tree never
+    /// becomes recognisable again, so any expiring counter would simply move
+    /// the disappearance a few seconds later.
+    private func resolveAgent(rt: PaneRuntime, found: String?, table: [pid_t: [PSEntry]],
+                              shellPid: pid_t, changed: inout Bool) -> String? {
+        if let found { return found }
+        guard let known = rt.agent?.kind else { return nil }
+        if (table[shellPid] ?? []).isEmpty {
+            rt.agent = nil
+            changed = true
+            return nil
+        }
+        return known
     }
 
     private func findAgent(table: [pid_t: [PSEntry]], root: pid_t, depth: Int) -> String? {
@@ -1454,6 +1501,7 @@ func processTable() -> [pid_t: [PSEntry]] {
             let b0 = clean(parts[2])
             let b1 = parts.count > 3 ? clean(parts[3]) : ""
             let kind = Agents.processMap[b0] ?? Agents.processMap[b1]
+                ?? Agents.markerKind(line)
             children[ppid, default: []].append(PSEntry(pid: pid, kind: kind, base: b0))
         }
     } catch {}
