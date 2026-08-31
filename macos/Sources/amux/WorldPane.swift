@@ -393,6 +393,8 @@ struct WorldToolbar: View {
             }
             .buttonStyle(.plain)
             .help("Cycle fake agents through every behaviour")
+            Divider().frame(height: 14).overlay(pal.line2)
+            PaneChromeButtons(model: model, paneId: paneId)
         }
         .padding(.horizontal, 8)
         .frame(height: 34)
