@@ -53,16 +53,22 @@ final class WorldARView: ARView {
 
 @MainActor
 final class WorldRuntime {
-    let view: WorldARView
     let scene: WorldScene
+    /// Exists only while the pane is on screen. RealityKit renders a view at
+    /// the display's full rate for as long as it exists, on screen or not, and
+    /// a view that has once left its window never renders again; so the view
+    /// is made when the pane is shown and thrown away when it is hidden. The
+    /// scene, with the room and the crew, persists in between.
+    private(set) var view: WorldARView?
     private weak var container: NSView?
+    private var teardown: Task<Void, Never>?
     private var timer: Timer?
     private var occlusionObserver: NSObjectProtocol?
     private var demoTick = 0
     private var demoAway: Int?
     /// Cycles fake agents through every phase, so the behaviours can be seen
     /// without standing up five live agents. File > Toggle Agent World Demo.
-    var demoMode = false { didSet { if oldValue != demoMode { demoTick = 0; sync(); applyRunPolicy() } } }
+    var demoMode = false { didSet { if oldValue != demoMode { demoTick = 0; sync() } } }
     /// Whether the pane's tab is the visible one, pushed in by WorldHost.
     var tabActive = true { didSet { if oldValue != tabActive { applyRunPolicy() } } }
     weak var model: AppModel?
@@ -71,19 +77,9 @@ final class WorldRuntime {
 
     init(model: AppModel?) {
         self.model = model
-        view = WorldARView(frame: .zero)
-        view.environment.background = .color(NSColor(red: 0.05, green: 0.10, blue: 0.22, alpha: 1))
-        scene = WorldScene(view: view)
+        scene = WorldScene()
         // `amux -worldDemo 1` starts every world pane in demo mode, for testing
         demoMode = UserDefaults.standard.bool(forKey: "worldDemo")
-
-        view.onWindowChange = { [weak self] in
-            guard let self else { return }
-            self.watchOcclusion(of: self.view.window)
-        }
-        view.onOrbit = { [weak self] dx in self?.scene.camera.orbit(byPixels: dx) }
-        view.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
-        view.onResize = { [weak self] size in self?.scene.camera.viewResized(to: size) }
 
         // Only the roster and phases are pushed from here; all motion runs off
         // the render loop, so this does not need to run anywhere near frame rate.
@@ -100,7 +96,7 @@ final class WorldRuntime {
     }
 
     /// The host gives the runtime its container; the run policy decides whether
-    /// the view is actually in it.
+    /// there is a view in it.
     func attach(to container: NSView) {
         self.container = container
         watchOcclusion(of: container.window)
@@ -116,27 +112,52 @@ final class WorldRuntime {
         }
     }
 
-    /// One place decides whether the scene renders. RealityKit renders whenever
-    /// its view is in a window, so "not rendering" means taking the view out of
-    /// the container. It goes back in as soon as the tab is the visible one
-    /// again in a window that is actually on screen.
+    private func makeView() -> WorldARView {
+        let v = WorldARView(frame: .zero)
+        v.environment.background = .color(NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
+        v.onWindowChange = { [weak self, weak v] in
+            guard let self else { return }
+            self.watchOcclusion(of: v?.window ?? self.container?.window)
+        }
+        v.onOrbit = { [weak self] dx in self?.scene.camera.orbit(byPixels: dx) }
+        v.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
+        v.onResize = { [weak self] size in self?.scene.camera.viewResized(to: size) }
+        return v
+    }
+
+    /// One place decides whether the scene renders: the pane's tab is the
+    /// visible one, in a window that is actually on screen.
     private func applyRunPolicy() {
         guard let container else { return }
         let windowVisible = container.window.map {
             $0.occlusionState.contains(.visible) && $0.isVisible
         } ?? false
         let shouldRun = windowVisible && tabActive
-        scene.active = shouldRun
-        // The view stays in its container once attached. RealityKit ties its
-        // renderer to the view's window; pulling the view out and putting it
-        // back does not reliably bring the renderer back. Hidden is enough to
-        // stop it drawing, and scene.active stops it simulating.
-        if view.superview !== container {
-            view.frame = container.bounds
-            view.autoresizingMask = [.width, .height]
-            container.addSubview(view)
+        if shouldRun {
+            teardown?.cancel()
+            teardown = nil
+            let v = view ?? makeView()
+            view = v
+            if v.superview !== container {
+                v.frame = container.bounds
+                v.autoresizingMask = [.width, .height]
+                container.addSubview(v)
+            }
+            v.isHidden = false
+            scene.attach(to: v)
+        } else if let v = view {
+            v.isHidden = true
+            // a quick flip between tabs should not pay to rebuild the view
+            guard teardown == nil else { return }
+            teardown = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1.5))
+                guard let self, !Task.isCancelled else { return }
+                self.scene.detach()
+                self.view?.removeFromSuperview()
+                self.view = nil
+                self.teardown = nil
+            }
         }
-        view.isHidden = !shouldRun
     }
 
     private static let demoCast: [(String, String)] = [
@@ -154,7 +175,11 @@ final class WorldRuntime {
             // every so often one of them leaves and comes back, to exercise the door
             if demoTick % 90 == 0 { demoAway = (demoAway.map { $0 + 1 } ?? 0) % cast.count }
             if demoTick % 90 == 45 { demoAway = nil }
-            if demoTick % 60 == 30, let a = demoAway { scene.notifyMessage("demo:\(a)") }
+            // now and then the user "sends" something to one of the crew
+            if demoTick % 48 == 24 {
+                let who = (demoTick / 48) % cast.count
+                if who != demoAway { scene.notifyMessage("demo:\(who)") }
+            }
             let roster = cast.enumerated().compactMap { i, c -> WorldAgentState? in
                 if demoAway == i { return nil }
                 return WorldAgentState(
@@ -199,7 +224,7 @@ struct WorldHost: NSViewRepresentable {
     func makeNSView(context: Context) -> WorldContainerView {
         let container = WorldContainerView()
         container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor(red: 0.02, green: 0.02, blue: 0.03, alpha: 1).cgColor
+        container.layer?.backgroundColor = NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1).cgColor
         container.onWindowChange = { [weak runtime, weak container] in
             guard let runtime, let container else { return }
             runtime.attach(to: container)

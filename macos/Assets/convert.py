@@ -7,6 +7,7 @@ Options
     --scale S                uniform scale applied to every root object
     --recenter               move the model so it sits on y=0, centred on x/z
     --bake                   apply rotation and scale into the meshes (not for skinned rigs)
+    --join                   join every mesh into one object (one draw call per material)
     --keep A,B,C             keep only objects whose name contains one of these
     --drop A,B,C             remove objects whose name contains one of these
     --color MAT=r,g,b        set a material's base colour (name match, case-insensitive)
@@ -144,6 +145,30 @@ def bake():
     if bpy.context.selected_objects:
         bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
+
+def join_meshes():
+    """Static props arrive as many small objects (a desk's four drawers, a
+    tower's every ledge); each is a draw call in RealityKit. Join them."""
+    if any(o.type == "ARMATURE" for o in bpy.data.objects):
+        log("rig present, not joining")
+        return
+    ms = meshes()
+    if len(ms) < 2:
+        return
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in ms:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = ms[0]
+    bpy.ops.object.join()
+    # the joined object keeps its parent chain; flatten so its origin is clean
+    joined = bpy.context.view_layer.objects.active
+    joined.select_set(True)
+    bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
+    for o in list(bpy.data.objects):
+        if o.type == "EMPTY" and not o.children:
+            bpy.data.objects.remove(o, do_unlink=True)
+    log("joined %d meshes" % len(ms))
 
 
 def recenter():
@@ -293,6 +318,8 @@ def convert(src, dst):
     import_model(src)
     filter_objects([t for s in opts("--keep") for t in s.split(",")],
                    [t for s in opts("--drop") for t in s.split(",")])
+    if "--join" in ARGS:
+        join_meshes()
     if "--bake" in ARGS:
         bake()
     apply_scale(float(opt("--scale", "1")))

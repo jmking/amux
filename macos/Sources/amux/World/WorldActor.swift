@@ -97,8 +97,6 @@ final class WorldActor {
 
         if let model {
             figure = model
-            // the pack's character is authored 1.5x life size; the room is in metres
-            figure.scale = SIMD3(repeating: 0.66)
             func walk(_ e: Entity) {
                 if let me = e as? ModelEntity, !me.jointNames.isEmpty { skins.append(me) }
                 for c in e.children { walk(c) }
@@ -163,7 +161,7 @@ final class WorldActor {
 
     private func buildTag() {
         tag.name = "tag"
-        tag.position = SIMD3(0, 2.0, 0)
+        tag.position = SIMD3(0, 2.15, 0)
         tag.components.set(BillboardComponent())
         entity.addChild(tag)
         refreshTag()
@@ -187,7 +185,7 @@ final class WorldActor {
 
     private func buildMarker() {
         marker.name = "marker"
-        marker.position = SIMD3(0, 2.4, 0)
+        marker.position = SIMD3(0, 2.55, 0)
         marker.components.set(BillboardComponent())
         marker.isEnabled = false
         entity.addChild(marker)
@@ -339,7 +337,7 @@ final class WorldActor {
         }
         if marker.isEnabled {
             marker.scale = SIMD3(repeating: 1 + sin(clock * 6) * 0.08)
-            marker.position.y = 2.4 + sin(clock * 3) * 0.04
+            marker.position.y = 2.55 + sin(clock * 3) * 0.04
         }
     }
 
@@ -403,7 +401,7 @@ final class WorldActor {
 
     private func poseRig(dt: Float) {
         // the model's origin drops onto the chair when seated
-        let dropTarget: Float = mode == .seated ? -0.30 : 0
+        let dropTarget: Float = mode == .seated ? -0.45 : 0
         figureDrop += (dropTarget - figureDrop) * min(1, dt * 8)
         figure.position.y = figureDrop
 

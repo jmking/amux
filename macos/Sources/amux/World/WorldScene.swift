@@ -9,6 +9,12 @@ import simd
 // agents against the actors in the room: a new agent walks in, a missing one
 // walks out, an existing one changes what it is doing. Everything time-based
 // runs off the render loop's update event so it stays in step with the frame.
+//
+// The scene outlives any view. RealityKit runs a view's render loop at the
+// display's full rate for as long as the view exists, whether or not it is on
+// screen, and a view that has once left its window never renders again. So the
+// runtime gives the scene a fresh ARView when the pane is shown and takes it
+// away when the pane is hidden; the room, the crew and their state stay here.
 
 struct WorldAgentState: Equatable {
     let paneId: String
@@ -19,7 +25,7 @@ struct WorldAgentState: Equatable {
 
 @MainActor
 final class WorldScene {
-    let view: ARView
+    private(set) var view: ARView?
     let root = AnchorEntity(world: .zero)
     let camera = WorldCamera()
 
@@ -31,35 +37,58 @@ final class WorldScene {
     private var pending: [WorldAgentState]?
     private var spawning: Set<String> = []
     private var updateSub: (any Cancellable)?
+    private var environment: EnvironmentResource?
     private var clock: Float = 0
     private var racks: [Entity] = []
     private var neon: Entity?
     private var neonMaterial: PhysicallyBasedMaterial?
+    private var doorSwing: Float = 0
 
     /// Smoothed frames per second, for verification rather than display.
     private(set) var fps: Double = 0
-    /// RealityKit keeps ticking a view that is not in a window; the runtime
-    /// clears this when the pane is hidden so the tick costs nothing.
-    var active = true
 
-    init(view: ARView) {
-        self.view = view
-        view.scene.addAnchor(root)
+    init() {
         root.addChild(camera.rig)
-        updateSub = view.scene.subscribe(to: SceneEvents.Update.self) { [weak self] e in
-            MainActor.assumeIsolated { self?.tick(dt: Float(e.deltaTime)) }
-        }
-        // `amux -worldStats 1` overlays RealityKit's frame and mesh statistics
-        if UserDefaults.standard.bool(forKey: "worldStats") { view.debugOptions = [.showStatistics] }
         Task { await build() }
     }
 
-    private func build() async {
-        if let env = await WorldRoom.environment() {
-            view.environment.lighting.resource = env
-            view.environment.lighting.intensityExponent = 2.0
-            view.environment.background = .skybox(env)
+    // MARK: the view
+
+    /// Puts the room into a view and starts ticking from its render loop.
+    func attach(to view: ARView) {
+        guard self.view !== view else { return }
+        detach()
+        self.view = view
+        applyEnvironment(to: view)
+        // `amux -worldStats 1` overlays RealityKit's frame and mesh statistics
+        if UserDefaults.standard.bool(forKey: "worldStats") { view.debugOptions = [.showStatistics] }
+        updateSub = view.scene.subscribe(to: SceneEvents.Update.self) { [weak self] e in
+            MainActor.assumeIsolated { self?.tick(dt: Float(e.deltaTime)) }
         }
+        view.scene.addAnchor(root)
+    }
+
+    /// Takes the room out of its view. The view is the runtime's to discard.
+    func detach() {
+        updateSub?.cancel()
+        updateSub = nil
+        if let view { view.scene.removeAnchor(root) }
+        view = nil
+    }
+
+    private func applyEnvironment(to view: ARView) {
+        if let environment {
+            view.environment.lighting.resource = environment
+            view.environment.lighting.intensityExponent = 1.25
+            view.environment.background = .skybox(environment)
+        } else {
+            view.environment.background = .color(NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
+        }
+    }
+
+    private func build() async {
+        environment = await WorldRoom.environment()
+        if let view { applyEnvironment(to: view) }
         layout = await WorldRoom.build(under: root)
         camera.focus = layout.focus
         racks = root.children.filter { $0.name.hasPrefix("rack") }
@@ -98,7 +127,7 @@ final class WorldScene {
         let clips = model == nil ? [:] : await WorldAssets.shared.characterClips()
         spawning.remove(a.paneId)
         let actor = WorldActor(paneId: a.paneId, label: a.label, kind: a.kind, model: model, clips: clips)
-        actor.onDoor = { [weak self] in self?.swingDoor() }
+        actor.onDoor = { [weak self] in self?.doorSwing = 1 }
         actor.setPhase(a.phase)
         root.addChild(actor.entity)
         actors[a.paneId] = actor
@@ -124,14 +153,10 @@ final class WorldScene {
         guard let screen = seat.screen else { return }
         var m = PhysicallyBasedMaterial()
         m.baseColor = .init(tint: .black)
-        m.emissiveColor = .init(color: color ?? NSColor(red: 0.3, green: 0.9, blue: 0.7, alpha: 1))
+        m.emissiveColor = .init(color: color ?? WorldRoom.screenGreen)
         m.emissiveIntensity = color == nil ? 1.6 : 1.3
         screen.model?.materials = [m]
     }
-
-    /// The door swings wide when someone passes and drifts back to ajar.
-    private var doorSwing: Float = 0
-    private func swingDoor() { doorSwing = 1 }
 
     func notifyMessage(_ paneId: String) {
         actors[paneId]?.react(.message)
@@ -140,7 +165,6 @@ final class WorldScene {
     // MARK: per frame
 
     private func tick(dt: Float) {
-        guard active else { return }
         let dt = min(dt, 0.1)
         clock += dt
         if dt > 0 { fps = fps == 0 ? Double(1 / dt) : fps * 0.95 + Double(1 / dt) * 0.05 }
@@ -159,17 +183,11 @@ final class WorldScene {
             }
         }
         dress(dt: dt)
-        if let door = layout.door {
-            doorSwing = max(0, doorSwing - dt * 0.35)
-            let ajar: Float = -1.7, wide: Float = -2.6
-            let target = ajar + (wide - ajar) * sin(min(1, doorSwing) * .pi)
-            let q = simd_quatf(angle: target, axis: SIMD3(0, 1, 0))
-            door.orientation = simd_slerp(door.orientation, q, min(1, dt * 6))
-        }
     }
 
     /// The little life the room has on its own: rack LEDs blinking, the neon
-    /// sign buzzing. Cheap, and it is what makes an empty den not look paused.
+    /// sign buzzing, the door swinging wide when someone passes and drifting
+    /// back to ajar. Cheap, and it is what makes an empty den not look paused.
     private func dress(dt: Float) {
         if Int(clock * 10) != Int((clock - dt) * 10) {
             for (r, rack) in racks.enumerated() {
@@ -184,6 +202,13 @@ final class WorldScene {
             let flicker: Float = clock.truncatingRemainder(dividingBy: 7) > 6.7 ? (sin(clock * 90) > 0.2 ? 5 : 1.2) : 5
             m.emissiveIntensity = flicker
             (neon as? ModelEntity)?.model?.materials = [m]
+        }
+        if let door = layout.door {
+            doorSwing = max(0, doorSwing - dt * 0.35)
+            let ajar: Float = 1.7, wide: Float = 2.6
+            let target = ajar + (wide - ajar) * sin(min(1, doorSwing) * .pi)
+            let q = simd_quatf(angle: target, axis: SIMD3(0, 1, 0))
+            door.orientation = simd_slerp(door.orientation, q, min(1, dt * 6))
         }
     }
 }

@@ -82,16 +82,8 @@ enum WorldRoom {
             root.addChild(l)
         }
 
-        // -- floor: 2 m tiles, sunk so their top is the walking surface --
-        if await assets.prototype("floor_tile") != nil {
-            for x in stride(from: -5, through: 5, by: 2) {
-                for z in stride(from: -4, through: 4, by: 2) {
-                    await place("floor_tile", at: SIMD3(Float(x), -0.1, Float(z)))
-                }
-            }
-        } else {
-            root.addChild(WorldPrimitives.plane(floorW, floorD, concrete))
-        }
+        // -- floor: one slab; thirty tiles looked the same and cost thirty draws --
+        root.addChild(WorldPrimitives.plane(floorW, floorD, concrete))
         // the building under it
         let slab = WorldPrimitives.box(SIMD3(floorW + 0.8, 1.2, floorD + 0.8), NSColor(white: 0.14, alpha: 1))
         slab.position.y = -1.3
@@ -117,7 +109,7 @@ enum WorldRoom {
             let h = Entity(); h.addChild(leaf); return h
         })
         let leaf = door.findEntity(named: "door") ?? door
-        leaf.orientation = simd_quatf(angle: -1.7, axis: SIMD3(0, 1, 0))
+        leaf.orientation = simd_quatf(angle: 1.7, axis: SIMD3(0, 1, 0))
         layout.door = leaf
         light(SIMD3(3.0, 2.0, -6.2), warm, 2200, radius: 4.5)
 
@@ -262,15 +254,15 @@ enum WorldRoom {
         var seed: UInt32 = 7
         func rnd() -> Float { seed = seed &* 1664525 &+ 1013904223; return Float(seed >> 8) / Float(1 << 24) }
         // neighbouring rooftops: low blocks with lit windows
-        for i in 0..<22 {
-            let angle = Float(i) / 22 * 2 * .pi + rnd() * 0.25
+        for i in 0..<14 {
+            let angle = Float(i) / 14 * 2 * .pi + rnd() * 0.25
             let r: Float = 16 + rnd() * 12
             let w = 4 + rnd() * 5, h = 2 + rnd() * 5, d = 4 + rnd() * 5
             let b = WorldPrimitives.box(SIMD3(w, h, d), NSColor(white: CGFloat(0.16 + rnd() * 0.08), alpha: 1), roughness: 1)
             b.position = SIMD3(cos(angle) * r, -10 + h / 2, sin(angle) * r)
             root.addChild(b)
-            for _ in 0..<(2 + Int(rnd() * 9)) {
-                let win = WorldPrimitives.emissive(SIMD3(0.28, 0.4, 0.02), rnd() > 0.65 ? warm : cityGlow, intensity: 2.5)
+            for _ in 0..<(1 + Int(rnd() * 4)) {
+                let win = WorldPrimitives.emissive(SIMD3(0.5, 0.5, 0.02), rnd() > 0.65 ? warm : cityGlow, intensity: 2.5)
                 win.position = SIMD3((rnd() - 0.5) * w * 0.8, -h / 2 + 0.6 + rnd() * (h - 1.2), d / 2 + 0.01)
                 b.addChild(win)
             }
@@ -282,12 +274,12 @@ enum WorldRoom {
         await place("ac_unit", at: SIMD3(6, -5.5, -14), scale: 1.8)
         // the skyline: tall towers well back, rising past the horizon
         let towers = ["skyscraper_a", "skyscraper_b", "skyscraper_c", "skyscraper_d", "skyscraper_e", "building_low", "building_wide"]
-        for i in 0..<14 {
-            let angle = Float(i) / 14 * 2 * .pi + rnd() * 0.3
+        for i in 0..<7 {
+            let angle = Float(i) / 7 * 2 * .pi + rnd() * 0.3
             let r: Float = 48 + rnd() * 30
             let t = await place(towers[i % towers.count], at: SIMD3(cos(angle) * r, -40 - rnd() * 8, sin(angle) * r),
                                 yaw: rnd() * 6.28, fallback: { WorldPrimitives.box(SIMD3(10, 40, 10), NSColor(white: 0.08, alpha: 1)) })
-            for _ in 0..<(6 + Int(rnd() * 10)) {
+            for _ in 0..<(3 + Int(rnd() * 4)) {
                 let win = WorldPrimitives.emissive(SIMD3(0.9, 1.2, 0.05), rnd() > 0.6 ? warm : cityGlow, intensity: 3)
                 win.position = SIMD3((rnd() - 0.5) * 8, 6 + rnd() * 36, 6.9)
                 win.orientation = simd_quatf(angle: rnd() * 6.28, axis: SIMD3(0, 1, 0))
@@ -298,7 +290,7 @@ enum WorldRoom {
         // -- light --
         let moon = DirectionalLight()
         moon.light.color = NSColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1)
-        moon.light.intensity = 5500
+        moon.light.intensity = 4200
         moon.shadow = DirectionalLightComponent.Shadow(maximumDistance: 30, depthBias: 2)
         moon.look(at: SIMD3(0, 0, 0), from: SIMD3(-8, 14, 6), relativeTo: nil)
         root.addChild(moon)
@@ -306,7 +298,7 @@ enum WorldRoom {
         // surfaces; the pools of warm light do the rest
         let fill = DirectionalLight()
         fill.light.color = NSColor(red: 0.6, green: 0.66, blue: 0.82, alpha: 1)
-        fill.light.intensity = 2600
+        fill.light.intensity = 1100
         fill.look(at: SIMD3(0, 0, 0), from: SIMD3(9, 9, 9), relativeTo: nil)
         root.addChild(fill)
 
@@ -323,8 +315,8 @@ enum WorldRoom {
                                   space: CGColorSpaceCreateDeviceRGB(),
                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         let colors = [
-            CGColor(red: 0.30, green: 0.36, blue: 0.58, alpha: 1),   // zenith
-            CGColor(red: 0.12, green: 0.14, blue: 0.22, alpha: 1),   // horizon
+            CGColor(red: 0.20, green: 0.24, blue: 0.42, alpha: 1),   // zenith
+            CGColor(red: 0.09, green: 0.10, blue: 0.17, alpha: 1),   // horizon
             CGColor(red: 0.05, green: 0.05, blue: 0.07, alpha: 1),   // ground
         ] as CFArray
         guard let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.5, 1]) else { return nil }
