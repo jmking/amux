@@ -883,6 +883,13 @@ final class AppModel: ObservableObject {
 
     /// Cycles fake agents through every behaviour in every open world pane, so
     /// the visualisation can be seen without standing up five real agents.
+    /// The user just pressed Enter in a pane; if an agent lives there, the
+    /// world shows it receiving the message.
+    func noteUserInput(_ paneId: String) {
+        guard state?.agents.contains(where: { $0.paneId == paneId }) ?? false else { return }
+        for rt in worldRuntimes.values { rt.noteUserInput(paneId) }
+    }
+
     func toggleWorldDemo() {
         let on = !(worldRuntimes.values.first?.demoMode ?? false)
         for rt in worldRuntimes.values { rt.demoMode = on }

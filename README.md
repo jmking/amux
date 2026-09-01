@@ -27,7 +27,7 @@ open it, and drag amux to Applications.
 
 Builds are signed and notarized by Apple, so it opens with a normal double click.
 
-Requires macOS 14 or later on Apple silicon.
+Requires macOS 15 or later on Apple silicon.
 
 ## Features
 

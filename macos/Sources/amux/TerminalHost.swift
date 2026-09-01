@@ -128,6 +128,9 @@ extension PaneRuntime: @MainActor TerminalViewDelegate {
     func send(source: TerminalView, data: ArraySlice<UInt8>) {
         guard !exited, let process else { return }
         process.send(data: data)
+        // a carriage return is the user sending something to whatever is running
+        // here; the agent world uses it to make the figure look up
+        if data.contains(0x0D) { model?.noteUserInput(id) }
     }
 
     func scrolled(source: TerminalView, position: Double) {}

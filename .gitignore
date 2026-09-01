@@ -18,3 +18,11 @@ macos/dist/*.zip
 
 # per-release scratch notes, passed to `gh release create --notes-file`
 NOTES.md
+
+# agent world: local tooling and raw asset sources (converted USDZ is committed)
+tools/
+macos/Assets/src/
+macos/Assets/work/
+
+# ad-hoc signature written by local dev builds
+macos/dist/Amux.app/Contents/_CodeSignature/

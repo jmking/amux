@@ -1,87 +1,92 @@
 import SwiftUI
-import MetalKit
-import simd
+import RealityKit
 import AppKit
 
 // MARK: - The agent world
 //
-// A pane that shows every live agent as an avatar in a shared room and animates
-// it from what that agent is actually doing. Coarse pane state drives the
-// fallback behaviour, and the normalised event stream (AgentSources) sharpens it
-// into thinking / tool / network when the agent is one we can read.
+// A pane that shows every live agent as a hooded figure in a shared den and
+// animates it from what that agent is actually doing. Coarse pane state drives
+// the fallback behaviour, and the normalised event stream (AgentSources)
+// sharpens it into thinking / tool / network when the agent is one we can read.
+//
+// Rendering is RealityKit. The scene lives in WorldScene; this file is the
+// runtime around it: the view, when it is allowed to render, and the bridge
+// from the app model's roster to the scene.
 
-/// Owns the Metal view for a world pane. Held by the model so the scene
-/// survives tab switches instead of being rebuilt on every re-render.
-/// The MTKView tells the runtime when it enters or leaves a window, which the
-/// run policy needs: a view SwiftUI has unmounted (workspace switch) or whose
-/// window is hidden must not keep a render loop alive.
-final class WorldMTKView: MTKView {
+/// The RealityKit view. Reports window changes for the run policy and turns
+/// drags and scrolls into camera moves.
+final class WorldARView: ARView {
     var onWindowChange: (() -> Void)?
+    var onOrbit: ((Float) -> Void)?
+    var onZoom: ((Float) -> Void)?
+    var onResize: ((CGSize) -> Void)?
+
+    override func layout() {
+        super.layout()
+        onResize?(bounds.size)
+    }
+
+    @MainActor required dynamic init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+    }
+
+    @MainActor required dynamic init?(coder decoder: NSCoder) {
+        super.init(coder: decoder)
+    }
+
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         onWindowChange?()
     }
+
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func mouseDragged(with event: NSEvent) {
+        onOrbit?(Float(event.deltaX))
+    }
+
+    override func scrollWheel(with event: NSEvent) {
+        onZoom?(Float(event.scrollingDeltaY))
+    }
 }
 
+@MainActor
 final class WorldRuntime {
-    let view: WorldMTKView
-    private var renderer: WorldRenderer?
+    let view: WorldARView
+    let scene: WorldScene
+    private weak var container: NSView?
     private var timer: Timer?
     private var occlusionObserver: NSObjectProtocol?
     private var demoTick = 0
+    private var demoAway: Int?
     /// Cycles fake agents through every phase, so the behaviours can be seen
     /// without standing up five live agents. File > Toggle Agent World Demo.
-    var demoMode = false { didSet { if oldValue != demoMode { renderer?.resetStats(); applyRunPolicy() } } }
+    var demoMode = false { didSet { if oldValue != demoMode { demoTick = 0; sync(); applyRunPolicy() } } }
     /// Whether the pane's tab is the visible one, pushed in by WorldHost.
     var tabActive = true { didSet { if oldValue != tabActive { applyRunPolicy() } } }
-    private var hasContent = false
     weak var model: AppModel?
 
-    func resetStats() { renderer?.resetStats() }
-    var lastFrameMs: Double { renderer?.lastFrameMs ?? 0 }
-    var worstFrameMs: Double { renderer?.worstFrameMs ?? 0 }
-    var worstGpuMs: Double { renderer?.worstGpuMs ?? 0 }
+    var fps: Double { scene.fps }
 
     init(model: AppModel?) {
         self.model = model
-        let device = MTLCreateSystemDefaultDevice()
-        view = WorldMTKView(frame: .zero, device: device)
-        view.colorPixelFormat = .bgra8Unorm
-        view.depthStencilPixelFormat = .depth32Float
-        view.clearColor = MTLClearColor(red: 0.078, green: 0.078, blue: 0.09, alpha: 1)
-        // paused until the renderer exists and the policy decides to run
-        view.isPaused = true
-        view.enableSetNeedsDisplay = false
-        // match the display rather than assuming 60: this panel is ProMotion,
-        // where a frame budget is 8.3ms, not 16.7
-        view.preferredFramesPerSecond = Int((NSScreen.main?.maximumFramesPerSecond).map(Double.init) ?? 60)
+        view = WorldARView(frame: .zero)
+        view.environment.background = .color(NSColor(red: 0.05, green: 0.10, blue: 0.22, alpha: 1))
+        scene = WorldScene(view: view)
+        // `amux -worldDemo 1` starts every world pane in demo mode, for testing
+        demoMode = UserDefaults.standard.bool(forKey: "worldDemo")
 
         view.onWindowChange = { [weak self] in
             guard let self else { return }
             self.watchOcclusion(of: self.view.window)
-            self.applyRunPolicy()
         }
+        view.onOrbit = { [weak self] dx in self?.scene.camera.orbit(byPixels: dx) }
+        view.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
+        view.onResize = { [weak self] size in self?.scene.camera.viewResized(to: size) }
 
-        // Shader compilation takes long enough to notice; doing it inline meant
-        // the first world pane stalled the SwiftUI body that created it.
-        if let device {
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                let r = WorldRenderer(device: device)
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    self.renderer = r
-                    if let r { self.view.delegate = r } else {
-                        NSLog("amux: world shader failed to build, pane will not render")
-                    }
-                    self.sync()
-                }
-            }
-        } else {
-            NSLog("amux: Metal unavailable, world pane will not render")
-        }
-
-        // Only the roster and phases are pushed from here; all motion is in the
-        // shader, so this does not need to run anywhere near frame rate.
+        // Only the roster and phases are pushed from here; all motion runs off
+        // the render loop, so this does not need to run anywhere near frame rate.
         let t = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.sync() }
         }
@@ -94,6 +99,14 @@ final class WorldRuntime {
         if let occlusionObserver { NotificationCenter.default.removeObserver(occlusionObserver) }
     }
 
+    /// The host gives the runtime its container; the run policy decides whether
+    /// the view is actually in it.
+    func attach(to container: NSView) {
+        self.container = container
+        watchOcclusion(of: container.window)
+        applyRunPolicy()
+    }
+
     private func watchOcclusion(of window: NSWindow?) {
         if let occlusionObserver { NotificationCenter.default.removeObserver(occlusionObserver) }
         occlusionObserver = window.map { w in
@@ -103,22 +116,27 @@ final class WorldRuntime {
         }
     }
 
-    /// One place decides whether the render loop runs. It runs only when the
-    /// renderer exists, the view is in a window that is actually visible, the
-    /// tab is the focused one, and there is something animated to show — an
-    /// empty room is drawn once and then costs nothing.
+    /// One place decides whether the scene renders. RealityKit renders whenever
+    /// its view is in a window, so "not rendering" means taking the view out of
+    /// the container. It goes back in as soon as the tab is the visible one
+    /// again in a window that is actually on screen.
     private func applyRunPolicy() {
-        let windowVisible = view.window.map {
+        guard let container else { return }
+        let windowVisible = container.window.map {
             $0.occlusionState.contains(.visible) && $0.isVisible
         } ?? false
-        let shouldRun = renderer != nil && windowVisible && tabActive
-            && (hasContent || demoMode)
-        if view.isPaused == shouldRun {
-            view.isPaused = !shouldRun
-            if shouldRun { renderer?.resetStats() }
+        let shouldRun = windowVisible && tabActive
+        scene.active = shouldRun
+        // The view stays in its container once attached. RealityKit ties its
+        // renderer to the view's window; pulling the view out and putting it
+        // back does not reliably bring the renderer back. Hidden is enough to
+        // stop it drawing, and scene.active stops it simulating.
+        if view.superview !== container {
+            view.frame = container.bounds
+            view.autoresizingMask = [.width, .height]
+            container.addSubview(view)
         }
-        // a paused pane still needs its static frame (floor, resting avatars)
-        if !shouldRun, renderer != nil, view.window != nil { view.draw() }
+        view.isHidden = !shouldRun
     }
 
     private static let demoCast: [(String, String)] = [
@@ -126,43 +144,49 @@ final class WorldRuntime {
         ("rovo", "triage"), ("claude", "docs"), ("codex", "tests"),
     ]
     private static let demoPhases: [AgentPhase] = [
-        .thinking, .tool, .network, .waiting, .done, .idle,
+        .tool, .thinking, .network, .waiting, .done, .idle,
     ]
 
-    private func brandColor(_ kind: String) -> SIMD4<Float> {
-        let hex = AgentBrand.of(kind).color
-        return SIMD4(Float((hex >> 16) & 0xff) / 255,
-                     Float((hex >> 8) & 0xff) / 255,
-                     Float(hex & 0xff) / 255, 1)
-    }
-
-    @MainActor func sync() {
-        guard let renderer else { return }
-        defer {
-            hasContent = demoMode || !(model?.state?.agents ?? []).isEmpty
-            applyRunPolicy()
-        }
+    func sync() {
         if demoMode {
             demoTick += 1
             let cast = Self.demoCast
-            renderer.update(agents: cast.enumerated().map { i, c in
-                WorldAgentState(
-                    paneId: "demo:\(i)", label: c.1, color: brandColor(c.0),
-                    phase: Self.demoPhases[((demoTick / 12) + i) % Self.demoPhases.count],
-                    slot: i, total: cast.count)
-            })
+            // every so often one of them leaves and comes back, to exercise the door
+            if demoTick % 90 == 0 { demoAway = (demoAway.map { $0 + 1 } ?? 0) % cast.count }
+            if demoTick % 90 == 45 { demoAway = nil }
+            if demoTick % 60 == 30, let a = demoAway { scene.notifyMessage("demo:\(a)") }
+            let roster = cast.enumerated().compactMap { i, c -> WorldAgentState? in
+                if demoAway == i { return nil }
+                return WorldAgentState(
+                    paneId: "demo:\(i)", label: c.1, kind: c.0,
+                    phase: Self.demoPhases[((demoTick / 16) + i) % Self.demoPhases.count])
+            }
+            scene.apply(roster: roster)
             return
         }
         guard let model else { return }
         let agents = model.state?.agents ?? []
-        renderer.update(agents: agents.enumerated().map { slot, a in
+        scene.apply(roster: agents.map { a in
             // an event is a sharper signal than the coarse state, when we have one
             let phase = model.eventLog.latestPhase(paneId: a.paneId, within: 8)?.phase
                 ?? AgentPhase.fromState(a.state)
-            return WorldAgentState(
-                paneId: a.paneId, label: a.name ?? a.tab, color: brandColor(a.kind),
-                phase: phase, slot: slot, total: agents.count)
+            return WorldAgentState(paneId: a.paneId, label: a.name ?? a.tab, kind: a.kind, phase: phase)
         })
+    }
+
+    /// The user just sent something to this agent's terminal.
+    func noteUserInput(_ paneId: String) {
+        scene.notifyMessage(paneId)
+    }
+}
+
+/// The view SwiftUI owns. It is created before it is in a window, and the run
+/// policy needs to know when that changes, so it reports it.
+final class WorldContainerView: NSView {
+    var onWindowChange: (() -> Void)?
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onWindowChange?()
     }
 }
 
@@ -172,23 +196,21 @@ struct WorldHost: NSViewRepresentable {
     /// opened would keep rendering at the display's full rate.
     var isActive: Bool = true
 
-    func makeNSView(context: Context) -> NSView {
-        let container = NSView()
-        attach(to: container)
+    func makeNSView(context: Context) -> WorldContainerView {
+        let container = WorldContainerView()
+        container.wantsLayer = true
+        container.layer?.backgroundColor = NSColor(red: 0.02, green: 0.02, blue: 0.03, alpha: 1).cgColor
+        container.onWindowChange = { [weak runtime, weak container] in
+            guard let runtime, let container else { return }
+            runtime.attach(to: container)
+        }
+        runtime.attach(to: container)
         return container
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
-        if runtime.view.superview !== nsView { attach(to: nsView) }
+    func updateNSView(_ nsView: WorldContainerView, context: Context) {
         runtime.tabActive = isActive
-    }
-
-    private func attach(to container: NSView) {
-        let v = runtime.view
-        v.removeFromSuperview()
-        v.frame = container.bounds
-        v.autoresizingMask = [.width, .height]
-        container.addSubview(v)
+        runtime.attach(to: nsView)
     }
 }
 
