@@ -1,0 +1,6981 @@
+{
+ "roads": [
+  {
+   "file": "bridge-pillar-wide.glb",
+   "size": [
+    0.14,
+    0.5,
+    0.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "bridge-pillar.glb",
+   "size": [
+    0.1,
+    0.5,
+    0.1
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "construction-barrier.glb",
+   "size": [
+    0.14,
+    0.13,
+    0.22
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "construction-cone.glb",
+   "size": [
+    0.08,
+    0.09,
+    0.08
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "construction-fence.glb",
+   "size": [
+    0.08,
+    0.18,
+    0.38
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "construction-light.glb",
+   "size": [
+    0.08,
+    0.23,
+    0.08
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "dumpster.glb",
+   "size": [
+    0.38,
+    0.25,
+    0.37
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-pole-single.glb",
+   "size": [
+    0.08,
+    0.52,
+    0.22
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-pole-wide.glb",
+   "size": [
+    1.08,
+    0.52,
+    0.22
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-pole.glb",
+   "size": [
+    0.58,
+    0.52,
+    0.22
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-side-single.glb",
+   "size": [
+    0.06,
+    0.52,
+    0.43
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-side-wide.glb",
+   "size": [
+    1.06,
+    0.52,
+    0.43
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-side.glb",
+   "size": [
+    0.56,
+    0.52,
+    0.43
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-wires-wide.glb",
+   "size": [
+    1.01,
+    0.1,
+    0.18
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "electricity-wires.glb",
+   "size": [
+    0.5,
+    0.06,
+    0.18
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "light-curved-cross.glb",
+   "size": [
+    0.4,
+    0.67,
+    0.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "light-curved-double.glb",
+   "size": [
+    0.06,
+    0.67,
+    0.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "light-curved.glb",
+   "size": [
+    0.06,
+    0.67,
+    0.23
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "light-square-cross.glb",
+   "size": [
+    0.42,
+    0.6,
+    0.42
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "light-square-double.glb",
+   "size": [
+    0.06,
+    0.6,
+    0.42
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "light-square.glb",
+   "size": [
+    0.06,
+    0.6,
+    0.24
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-bend-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-bend-sidewalk.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-bend-square-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-bend-square.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-bend.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-bridge.glb",
+   "size": [
+    1.0,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-crossing.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-crossroad-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-crossroad-line.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-crossroad-path.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-crossroad.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-curve-barrier.glb",
+   "size": [
+    2.0,
+    0.08,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-curve-intersection-barrier.glb",
+   "size": [
+    2.0,
+    0.08,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-curve-intersection.glb",
+   "size": [
+    2.0,
+    0.02,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-curve-pavement.glb",
+   "size": [
+    2.0,
+    0.02,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-curve.glb",
+   "size": [
+    2.0,
+    0.02,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-driveway-double-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-driveway-double.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-driveway-single-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-driveway-single.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-end-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-end-round-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-end-round.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-end.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-intersection-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-intersection-line.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-intersection-path.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-intersection.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-roundabout-barrier.glb",
+   "size": [
+    3.0,
+    0.08,
+    3.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-roundabout.glb",
+   "size": [
+    3.0,
+    0.02,
+    3.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-side-barrier.glb",
+   "size": [
+    1.31,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-side-entry-barrier.glb",
+   "size": [
+    1.31,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-side-entry.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.31
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-side-exit-barrier.glb",
+   "size": [
+    1.31,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-side-exit.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.31
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-side.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.31
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-empty-hanging.glb",
+   "size": [
+    0.08,
+    0.47,
+    0.29
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-empty.glb",
+   "size": [
+    0.06,
+    0.48,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-object-stop.glb",
+   "size": [
+    0.08,
+    0.12,
+    0.12
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-object-street.glb",
+   "size": [
+    0.04,
+    0.06,
+    0.19
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-object-warning.glb",
+   "size": [
+    0.08,
+    0.14,
+    0.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-stop.glb",
+   "size": [
+    0.08,
+    0.49,
+    0.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-street.glb",
+   "size": [
+    0.2,
+    0.48,
+    0.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-sign-warning.glb",
+   "size": [
+    0.08,
+    0.5,
+    0.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-barrier.glb",
+   "size": [
+    1.0,
+    0.33,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-curve-barrier.glb",
+   "size": [
+    2.0,
+    0.58,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-curve.glb",
+   "size": [
+    2.0,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-flat-curve.glb",
+   "size": [
+    2.0,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-flat-high.glb",
+   "size": [
+    1.0,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-flat.glb",
+   "size": [
+    1.0,
+    0.27,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-high-barrier.glb",
+   "size": [
+    1.0,
+    0.58,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant-high.glb",
+   "size": [
+    1.0,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-slant.glb",
+   "size": [
+    1.0,
+    0.27,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-split-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-split.glb",
+   "size": [
+    1.0,
+    0.02,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-square-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-square.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-straight-barrier-end.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-straight-barrier-half.glb",
+   "size": [
+    1.0,
+    0.08,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-straight-barrier.glb",
+   "size": [
+    1.0,
+    0.08,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-straight-half.glb",
+   "size": [
+    0.5,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "road-straight.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "sign-highway-detailed.glb",
+   "size": [
+    0.14,
+    0.82,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "sign-highway-wide.glb",
+   "size": [
+    0.14,
+    0.71,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "sign-highway.glb",
+   "size": [
+    0.14,
+    0.71,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "tile-high.glb",
+   "size": [
+    1.0,
+    0.25,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "tile-low.glb",
+   "size": [
+    1.0,
+    0.02,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "tile-slant.glb",
+   "size": [
+    1.0,
+    0.27,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "tile-slantHigh.glb",
+   "size": [
+    1.0,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "traffic-light-hanging.glb",
+   "size": [
+    0.11,
+    0.51,
+    0.29
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "traffic-light-object-hanging.glb",
+   "size": [
+    0.1,
+    0.14,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "traffic-light-object-horizontal.glb",
+   "size": [
+    0.1,
+    0.06,
+    0.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "traffic-light-object-vertical.glb",
+   "size": [
+    0.1,
+    0.14,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "traffic-light.glb",
+   "size": [
+    0.11,
+    0.51,
+    0.08
+   ],
+   "materials": [
+    "colormap"
+   ]
+  }
+ ],
+ "commercial": [
+  {
+   "file": "building-a.glb",
+   "size": [
+    0.88,
+    1.29,
+    0.94
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-b.glb",
+   "size": [
+    0.98,
+    1.29,
+    0.94
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-c.glb",
+   "size": [
+    0.88,
+    0.89,
+    1.1
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-d.glb",
+   "size": [
+    0.84,
+    1.29,
+    0.9
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-e.glb",
+   "size": [
+    1.64,
+    0.89,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-f.glb",
+   "size": [
+    0.84,
+    1.69,
+    1.03
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-g.glb",
+   "size": [
+    0.98,
+    1.69,
+    0.92
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-h.glb",
+   "size": [
+    0.88,
+    1.29,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-i.glb",
+   "size": [
+    1.24,
+    1.68,
+    1.3
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-j.glb",
+   "size": [
+    2.08,
+    1.69,
+    1.34
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-k.glb",
+   "size": [
+    2.08,
+    1.47,
+    0.94
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-l.glb",
+   "size": [
+    1.38,
+    2.27,
+    1.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-m.glb",
+   "size": [
+    1.24,
+    3.15,
+    1.24
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-n.glb",
+   "size": [
+    2.32,
+    2.48,
+    1.82
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-skyscraper-a.glb",
+   "size": [
+    1.36,
+    2.88,
+    1.36
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-skyscraper-b.glb",
+   "size": [
+    1.36,
+    4.48,
+    1.36
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-skyscraper-c.glb",
+   "size": [
+    1.28,
+    4.08,
+    1.38
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-skyscraper-d.glb",
+   "size": [
+    1.28,
+    5.47,
+    1.38
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-skyscraper-e.glb",
+   "size": [
+    1.3,
+    4.08,
+    1.24
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-awning-wide.glb",
+   "size": [
+    0.8,
+    0.4,
+    0.15
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-awning.glb",
+   "size": [
+    0.4,
+    0.4,
+    0.15
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-overhang-wide.glb",
+   "size": [
+    1.0,
+    0.4,
+    0.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-overhang.glb",
+   "size": [
+    0.5,
+    0.4,
+    0.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-parasol-a.glb",
+   "size": [
+    0.34,
+    0.45,
+    0.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-parasol-b.glb",
+   "size": [
+    0.34,
+    0.45,
+    0.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-a.glb",
+   "size": [
+    0.5,
+    2.0,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-b.glb",
+   "size": [
+    0.5,
+    2.23,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-c.glb",
+   "size": [
+    0.5,
+    2.25,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-d.glb",
+   "size": [
+    0.5,
+    1.75,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-e.glb",
+   "size": [
+    0.5,
+    1.8,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-f.glb",
+   "size": [
+    0.5,
+    2.0,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-g.glb",
+   "size": [
+    0.5,
+    2.0,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-h.glb",
+   "size": [
+    0.5,
+    2.1,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-i.glb",
+   "size": [
+    0.5,
+    1.77,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-j.glb",
+   "size": [
+    0.5,
+    1.75,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-k.glb",
+   "size": [
+    0.5,
+    1.55,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-l.glb",
+   "size": [
+    0.5,
+    1.85,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-m.glb",
+   "size": [
+    0.5,
+    1.98,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-n.glb",
+   "size": [
+    0.5,
+    0.7,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-wide-a.glb",
+   "size": [
+    1.0,
+    1.1,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "low-detail-building-wide-b.glb",
+   "size": [
+    1.0,
+    1.15,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  }
+ ],
+ "modular": [
+  {
+   "file": "building-block.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-bottom.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-top.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-window-middle.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-window-narrow.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-window-sill.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-window-top-round.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-window-top-square.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner-window.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-corner.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-door-window-narrow.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-door-window.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-door.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-edges-door.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-house-a.glb",
+   "size": [
+    1.1,
+    1.14,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-house-b.glb",
+   "size": [
+    1.1,
+    1.98,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-house-c.glb",
+   "size": [
+    2.0,
+    1.98,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-tower-a.glb",
+   "size": [
+    1.1,
+    2.5,
+    1.25
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-tower-b.glb",
+   "size": [
+    1.1,
+    1.89,
+    1.25
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-tower-c.glb",
+   "size": [
+    1.1,
+    3.14,
+    1.28
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-sample-tower-d.glb",
+   "size": [
+    1.1,
+    3.76,
+    1.1
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-steps-narrow-windows-round.glb",
+   "size": [
+    1.0,
+    0.84,
+    1.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-steps-narrow-windows.glb",
+   "size": [
+    1.0,
+    0.84,
+    1.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-steps-narrow.glb",
+   "size": [
+    1.0,
+    0.84,
+    1.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-steps-wide.glb",
+   "size": [
+    1.0,
+    0.84,
+    1.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-awnings.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.12
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-balcony.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-door-window-round.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-door-window.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-large-left.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-large-middle.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-large-right.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-large.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-left-sill.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-left.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-right-sill.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-right.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-sill.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-wide-sill.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.04
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window-wide.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-window.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows-high-middle.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows-high-top-round.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows-high-top-square.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows-round.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows-sills-round.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.04
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows-sills.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "building-windows.glb",
+   "size": [
+    1.0,
+    0.62,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-ac-a.glb",
+   "size": [
+    0.24,
+    0.11,
+    0.24
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-ac-b.glb",
+   "size": [
+    0.32,
+    0.23,
+    0.13
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-brown-glass.glb",
+   "size": [
+    0.24,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-brown-window.glb",
+   "size": [
+    0.24,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-brown.glb",
+   "size": [
+    0.24,
+    0.5,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-white-glass.glb",
+   "size": [
+    0.24,
+    0.5,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-white-window.glb",
+   "size": [
+    0.24,
+    0.5,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-white.glb",
+   "size": [
+    0.24,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-awning-a.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.11
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-awning-b.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.23
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-awning-c.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.23
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-center-corner.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-center.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-corner-slanted-passage.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-corner-slanted.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-corner.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-end.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-side.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-border-straight.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-center.glb",
+   "size": [
+    1.0,
+    0.11,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-corner-high.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-corner.glb",
+   "size": [
+    1.0,
+    0.11,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-detail-a.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-detail-b.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-detail-c.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-detail-d.glb",
+   "size": [
+    1.0,
+    0.21,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-top.glb",
+   "size": [
+    1.1,
+    0.21,
+    1.1
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-gable-corner.glb",
+   "size": [
+    1.05,
+    0.52,
+    1.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-gable-end.glb",
+   "size": [
+    1.1,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-gable.glb",
+   "size": [
+    1.1,
+    0.52,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-corner-a.glb",
+   "size": [
+    1.14,
+    0.78,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-corner-b.glb",
+   "size": [
+    1.14,
+    0.78,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-corner-c.glb",
+   "size": [
+    1.14,
+    0.78,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-corner-inner.glb",
+   "size": [
+    1.0,
+    0.72,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-detail.glb",
+   "size": [
+    1.0,
+    0.79,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-flat.glb",
+   "size": [
+    1.0,
+    0.11,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted-window.glb",
+   "size": [
+    1.0,
+    0.78,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-slanted.glb",
+   "size": [
+    1.0,
+    0.78,
+    1.14
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-detailed.glb",
+   "size": [
+    0.32,
+    0.38,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-large.glb",
+   "size": [
+    0.38,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-narrow.glb",
+   "size": [
+    0.18,
+    0.42,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-round-low.glb",
+   "size": [
+    0.32,
+    0.35,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-round-middle.glb",
+   "size": [
+    0.32,
+    0.62,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-round-narrow.glb",
+   "size": [
+    0.18,
+    0.42,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-round-top.glb",
+   "size": [
+    0.32,
+    0.47,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-round-wide.glb",
+   "size": [
+    0.32,
+    0.47,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-tall.glb",
+   "size": [
+    0.32,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown-wide.glb",
+   "size": [
+    0.76,
+    0.38,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-brown.glb",
+   "size": [
+    0.32,
+    0.38,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-detailed.glb",
+   "size": [
+    0.32,
+    0.38,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-large.glb",
+   "size": [
+    0.38,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-narrow.glb",
+   "size": [
+    0.18,
+    0.42,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-round-low.glb",
+   "size": [
+    0.32,
+    0.35,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-round-middle.glb",
+   "size": [
+    0.32,
+    0.62,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-round-narrow.glb",
+   "size": [
+    0.18,
+    0.42,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-round-top.glb",
+   "size": [
+    0.32,
+    0.47,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-round-wide.glb",
+   "size": [
+    0.32,
+    0.47,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-tall.glb",
+   "size": [
+    0.32,
+    0.5,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white-wide.glb",
+   "size": [
+    0.76,
+    0.38,
+    0.06
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "window-white.glb",
+   "size": [
+    0.32,
+    0.38,
+    0.05
+   ],
+   "materials": [
+    "colormap"
+   ]
+  }
+ ],
+ "retro-urban": [
+  {
+   "file": "balcony-ladder-bottom.glb",
+   "size": [
+    1.0,
+    0.72,
+    0.28
+   ],
+   "materials": [
+    "bars"
+   ]
+  },
+  {
+   "file": "balcony-ladder-top.glb",
+   "size": [
+    1.0,
+    0.28,
+    0.28
+   ],
+   "materials": [
+    "bars"
+   ]
+  },
+  {
+   "file": "balcony-type-a.glb",
+   "size": [
+    1.0,
+    0.28,
+    0.28
+   ],
+   "materials": [
+    "bars"
+   ]
+  },
+  {
+   "file": "cliff-corner.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "rock",
+    "grass"
+   ]
+  },
+  {
+   "file": "cliff-side.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "grass",
+    "rock"
+   ]
+  },
+  {
+   "file": "detail-awning-small.glb",
+   "size": [
+    0.6,
+    0.28,
+    0.3
+   ],
+   "materials": [
+    "roof"
+   ]
+  },
+  {
+   "file": "detail-awning-wide.glb",
+   "size": [
+    1.0,
+    0.28,
+    0.3
+   ],
+   "materials": [
+    "roof"
+   ]
+  },
+  {
+   "file": "detail-barrier-strong-damaged.glb",
+   "size": [
+    0.66,
+    0.33,
+    0.24
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "detail-barrier-strong-type-a.glb",
+   "size": [
+    0.66,
+    0.33,
+    0.24
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "detail-barrier-strong-type-b.glb",
+   "size": [
+    0.66,
+    0.33,
+    0.24
+   ],
+   "materials": [
+    "concrete",
+    "signs"
+   ]
+  },
+  {
+   "file": "detail-barrier-type-a.glb",
+   "size": [
+    0.44,
+    0.4,
+    0.14
+   ],
+   "materials": [
+    "metal",
+    "signs"
+   ]
+  },
+  {
+   "file": "detail-barrier-type-b.glb",
+   "size": [
+    0.56,
+    0.3,
+    0.14
+   ],
+   "materials": [
+    "metal",
+    "signs"
+   ]
+  },
+  {
+   "file": "detail-beam.glb",
+   "size": [
+    0.24,
+    0.25,
+    1.0
+   ],
+   "materials": [
+    "roof",
+    "metal"
+   ]
+  },
+  {
+   "file": "detail-bench.glb",
+   "size": [
+    0.6,
+    0.41,
+    0.32
+   ],
+   "materials": [
+    "metal",
+    "planks"
+   ]
+  },
+  {
+   "file": "detail-block.glb",
+   "size": [
+    0.5,
+    0.5,
+    0.5
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "detail-bricks-type-a.glb",
+   "size": [
+    0.58,
+    0.2,
+    0.54
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "detail-bricks-type-b.glb",
+   "size": [
+    0.64,
+    0.2,
+    0.42
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "detail-cables-type-a.glb",
+   "size": [
+    1.0,
+    0.14,
+    0.0
+   ],
+   "materials": [
+    "signs"
+   ]
+  },
+  {
+   "file": "detail-cables-type-b.glb",
+   "size": [
+    1.0,
+    0.14,
+    0.0
+   ],
+   "materials": [
+    "signs"
+   ]
+  },
+  {
+   "file": "detail-dumpster-closed.glb",
+   "size": [
+    0.6,
+    0.54,
+    0.45
+   ],
+   "materials": [
+    "wall_metal",
+    "wall",
+    "roof"
+   ]
+  },
+  {
+   "file": "detail-dumpster-open.glb",
+   "size": [
+    0.6,
+    0.55,
+    0.48
+   ],
+   "materials": [
+    "dirt",
+    "wall_metal",
+    "wall",
+    "roof"
+   ]
+  },
+  {
+   "file": "detail-light-double.glb",
+   "size": [
+    0.08,
+    0.96,
+    0.44
+   ],
+   "materials": [
+    "metal"
+   ]
+  },
+  {
+   "file": "detail-light-single.glb",
+   "size": [
+    0.08,
+    0.96,
+    0.26
+   ],
+   "materials": [
+    "metal"
+   ]
+  },
+  {
+   "file": "detail-light-traffic.glb",
+   "size": [
+    0.15,
+    1.04,
+    0.58
+   ],
+   "materials": [
+    "metal",
+    "roof"
+   ]
+  },
+  {
+   "file": "door-type-a.glb",
+   "size": [
+    0.4,
+    0.63,
+    0.06
+   ],
+   "materials": [
+    "doors",
+    "metal"
+   ]
+  },
+  {
+   "file": "door-type-b.glb",
+   "size": [
+    0.4,
+    0.63,
+    0.06
+   ],
+   "materials": [
+    "doors",
+    "metal"
+   ]
+  },
+  {
+   "file": "grass-corner-inner.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "grass"
+   ]
+  },
+  {
+   "file": "grass-corner.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "grass"
+   ]
+  },
+  {
+   "file": "grass-hill.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "grass"
+   ]
+  },
+  {
+   "file": "grass.glb",
+   "size": [
+    1.0,
+    0.0,
+    1.0
+   ],
+   "materials": [
+    "grass"
+   ]
+  },
+  {
+   "file": "pallet-small.glb",
+   "size": [
+    0.5,
+    0.15,
+    0.58
+   ],
+   "materials": [
+    "planks"
+   ]
+  },
+  {
+   "file": "pallet.glb",
+   "size": [
+    1.0,
+    0.15,
+    1.0
+   ],
+   "materials": [
+    "planks"
+   ]
+  },
+  {
+   "file": "planks.glb",
+   "size": [
+    1.12,
+    0.1,
+    0.58
+   ],
+   "materials": [
+    "planks"
+   ]
+  },
+  {
+   "file": "road-asphalt-center.glb",
+   "size": [
+    1.0,
+    0.0,
+    1.0
+   ],
+   "materials": [
+    "asphalt"
+   ]
+  },
+  {
+   "file": "road-asphalt-corner-inner.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "concreteSmooth",
+    "asphalt"
+   ]
+  },
+  {
+   "file": "road-asphalt-corner-outer.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "asphalt",
+    "concreteSmooth"
+   ]
+  },
+  {
+   "file": "road-asphalt-corner.glb",
+   "size": [
+    2.0,
+    0.05,
+    2.0
+   ],
+   "materials": [
+    "asphalt",
+    "concreteSmooth"
+   ]
+  },
+  {
+   "file": "road-asphalt-damaged.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "concreteSmooth",
+    "asphalt"
+   ]
+  },
+  {
+   "file": "road-asphalt-pavement.glb",
+   "size": [
+    1.0,
+    0.0,
+    1.0
+   ],
+   "materials": [
+    "concreteSmooth"
+   ]
+  },
+  {
+   "file": "road-asphalt-side.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "asphalt",
+    "concreteSmooth"
+   ]
+  },
+  {
+   "file": "road-asphalt-straight.glb",
+   "size": [
+    1.0,
+    0.05,
+    2.0
+   ],
+   "materials": [
+    "concreteSmooth",
+    "asphalt"
+   ]
+  },
+  {
+   "file": "road-dirt-center.glb",
+   "size": [
+    1.0,
+    0.0,
+    1.0
+   ],
+   "materials": [
+    "dirt"
+   ]
+  },
+  {
+   "file": "road-dirt-corner-inner.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "dirt"
+   ]
+  },
+  {
+   "file": "road-dirt-corner-outer.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "dirt",
+    "concrete"
+   ]
+  },
+  {
+   "file": "road-dirt-corner.glb",
+   "size": [
+    2.0,
+    0.05,
+    2.0
+   ],
+   "materials": [
+    "dirt",
+    "concreteSmooth",
+    "concrete"
+   ]
+  },
+  {
+   "file": "road-dirt-damaged.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "dirt"
+   ]
+  },
+  {
+   "file": "road-dirt-pavement.glb",
+   "size": [
+    1.0,
+    0.0,
+    1.0
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "road-dirt-side.glb",
+   "size": [
+    1.0,
+    0.05,
+    1.0
+   ],
+   "materials": [
+    "dirt",
+    "concrete"
+   ]
+  },
+  {
+   "file": "road-dirt-straight.glb",
+   "size": [
+    1.0,
+    0.05,
+    2.0
+   ],
+   "materials": [
+    "concrete",
+    "dirt"
+   ]
+  },
+  {
+   "file": "road-dirt-tile.glb",
+   "size": [
+    0.5,
+    0.05,
+    0.5
+   ],
+   "materials": [
+    "concrete"
+   ]
+  },
+  {
+   "file": "roof-metal-poles.glb",
+   "size": [
+    1.0,
+    0.7,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "roof-metal-type-a.glb",
+   "size": [
+    1.14,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "roof_plates"
+   ]
+  },
+  {
+   "file": "roof-metal-type-b.glb",
+   "size": [
+    1.14,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "roof",
+    "roof_plates"
+   ]
+  },
+  {
+   "file": "scaffolding-floor.glb",
+   "size": [
+    1.0,
+    0.07,
+    1.0
+   ],
+   "materials": [
+    "metal",
+    "bars"
+   ]
+  },
+  {
+   "file": "scaffolding-poles.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "metal"
+   ]
+  },
+  {
+   "file": "scaffolding-structure.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "metal",
+    "bars"
+   ]
+  },
+  {
+   "file": "tree-large.glb",
+   "size": [
+    1.3,
+    1.7,
+    1.3
+   ],
+   "materials": [
+    "treeA"
+   ]
+  },
+  {
+   "file": "tree-park-large.glb",
+   "size": [
+    1.04,
+    1.46,
+    1.04
+   ],
+   "materials": [
+    "treeA",
+    "concreteSmooth",
+    "dirt"
+   ]
+  },
+  {
+   "file": "tree-park-pine-large.glb",
+   "size": [
+    1.04,
+    1.46,
+    1.04
+   ],
+   "materials": [
+    "treeB",
+    "concreteSmooth",
+    "dirt"
+   ]
+  },
+  {
+   "file": "tree-pine-large.glb",
+   "size": [
+    1.3,
+    1.7,
+    1.3
+   ],
+   "materials": [
+    "treeB"
+   ]
+  },
+  {
+   "file": "tree-pine-small.glb",
+   "size": [
+    0.7,
+    0.4,
+    0.7
+   ],
+   "materials": [
+    "treeB"
+   ]
+  },
+  {
+   "file": "tree-shrub.glb",
+   "size": [
+    0.78,
+    0.3,
+    0.78
+   ],
+   "materials": [
+    "treeA"
+   ]
+  },
+  {
+   "file": "tree-small.glb",
+   "size": [
+    0.78,
+    0.3,
+    0.78
+   ],
+   "materials": [
+    "treeA"
+   ]
+  },
+  {
+   "file": "truck-flat.glb",
+   "size": [
+    0.82,
+    1.01,
+    1.64
+   ],
+   "materials": [
+    "truck",
+    "metal"
+   ]
+  },
+  {
+   "file": "truck-green-cargo.glb",
+   "size": [
+    0.82,
+    0.74,
+    1.16
+   ],
+   "materials": [
+    "truck_alien"
+   ]
+  },
+  {
+   "file": "truck-green.glb",
+   "size": [
+    0.82,
+    1.01,
+    1.64
+   ],
+   "materials": [
+    "truck_alien"
+   ]
+  },
+  {
+   "file": "truck-grey-cargo.glb",
+   "size": [
+    0.82,
+    0.74,
+    1.16
+   ],
+   "materials": [
+    "truck"
+   ]
+  },
+  {
+   "file": "truck-grey.glb",
+   "size": [
+    0.82,
+    1.01,
+    1.64
+   ],
+   "materials": [
+    "truck"
+   ]
+  },
+  {
+   "file": "wall-a-column-painted.glb",
+   "size": [
+    0.24,
+    1.0,
+    0.24
+   ],
+   "materials": [
+    "wall",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-column.glb",
+   "size": [
+    0.24,
+    1.0,
+    0.24
+   ],
+   "materials": [
+    "concrete",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-corner-painted.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-corner.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-detail-painted.glb",
+   "size": [
+    0.6,
+    1.0,
+    0.2
+   ],
+   "materials": [
+    "_defaultMat",
+    "concrete",
+    "wall"
+   ]
+  },
+  {
+   "file": "wall-a-detail.glb",
+   "size": [
+    0.6,
+    1.0,
+    0.2
+   ],
+   "materials": [
+    "_defaultMat",
+    "concrete",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-diagonal.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-door.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete",
+    "metal",
+    "doors"
+   ]
+  },
+  {
+   "file": "wall-a-flat-garage.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.1
+   ],
+   "materials": [
+    "wall_garage",
+    "wall",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-flat-painted.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.0
+   ],
+   "materials": [
+    "wall"
+   ]
+  },
+  {
+   "file": "wall-a-flat-window.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.1
+   ],
+   "materials": [
+    "metal",
+    "windows",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-flat.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.0
+   ],
+   "materials": [
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-garage.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_garage",
+    "concrete",
+    "wall"
+   ]
+  },
+  {
+   "file": "wall-a-low-painted.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "wall",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-low.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "wall",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-open.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-painted-diagonal.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall"
+   ]
+  },
+  {
+   "file": "wall-a-painted.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-roof-detailed.glb",
+   "size": [
+    1.14,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "roof",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-roof-slant-detailed.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.14
+   ],
+   "materials": [
+    "wall_lines",
+    "roof",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-roof-slant.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "wall_lines",
+    "roof",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-a-roof.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "roof",
+    "wall_lines"
+   ]
+  },
+  {
+   "file": "wall-a-window.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_lines",
+    "metal",
+    "windows"
+   ]
+  },
+  {
+   "file": "wall-a.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-b-column.glb",
+   "size": [
+    0.24,
+    1.0,
+    0.24
+   ],
+   "materials": [
+    "concrete",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-corner.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_metal",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-b-detail-painted.glb",
+   "size": [
+    0.6,
+    1.0,
+    0.2
+   ],
+   "materials": [
+    "_defaultMat",
+    "concrete",
+    "wall_metal",
+    "wall"
+   ]
+  },
+  {
+   "file": "wall-b-diagonal.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-door.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_metal",
+    "concrete",
+    "metal",
+    "doors"
+   ]
+  },
+  {
+   "file": "wall-b-flat-garage.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.1
+   ],
+   "materials": [
+    "wall_metal",
+    "wall_garage"
+   ]
+  },
+  {
+   "file": "wall-b-flat-window.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.1
+   ],
+   "materials": [
+    "metal",
+    "windows",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-flat.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.0
+   ],
+   "materials": [
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-garage.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_metal",
+    "concrete",
+    "wall_garage"
+   ]
+  },
+  {
+   "file": "wall-b-low.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "wall_metal",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-b-open.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-roof-detailed.glb",
+   "size": [
+    1.14,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "roof_plates",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-roof-slant-detailed.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.14
+   ],
+   "materials": [
+    "wall_metal",
+    "roof_plates",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-b-roof-slant.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "wall_metal",
+    "roof_plates",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-b-roof.glb",
+   "size": [
+    1.0,
+    0.5,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "roof_plates",
+    "wall_metal"
+   ]
+  },
+  {
+   "file": "wall-b-window.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "concrete",
+    "wall_metal",
+    "metal",
+    "windows"
+   ]
+  },
+  {
+   "file": "wall-b.glb",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "wall_metal",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-broken-type-a.glb",
+   "size": [
+    1.0,
+    0.4,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-broken-type-b.glb",
+   "size": [
+    1.0,
+    0.5,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-c-flat-low.glb",
+   "size": [
+    1.0,
+    0.5,
+    0.0
+   ],
+   "materials": [
+    "bars"
+   ]
+  },
+  {
+   "file": "wall-c-flat.glb",
+   "size": [
+    1.0,
+    1.0,
+    0.0
+   ],
+   "materials": [
+    "bars"
+   ]
+  },
+  {
+   "file": "wall-fence.glb",
+   "size": [
+    1.0,
+    0.5,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete",
+    "bars"
+   ]
+  },
+  {
+   "file": "wall-steps-type-a.glb",
+   "size": [
+    1.0,
+    0.4,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-steps-type-b.glb",
+   "size": [
+    1.0,
+    0.5,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-type-a.glb",
+   "size": [
+    1.0,
+    0.4,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "wall-type-b.glb",
+   "size": [
+    1.0,
+    0.5,
+    0.08
+   ],
+   "materials": [
+    "wall_lines",
+    "concrete"
+   ]
+  },
+  {
+   "file": "window-small-type-a.glb",
+   "size": [
+    0.34,
+    0.6,
+    0.06
+   ],
+   "materials": [
+    "windows",
+    "metal"
+   ]
+  },
+  {
+   "file": "window-small-type-b.glb",
+   "size": [
+    0.34,
+    0.6,
+    0.06
+   ],
+   "materials": [
+    "windows",
+    "metal"
+   ]
+  },
+  {
+   "file": "window-wide-type-a.glb",
+   "size": [
+    0.6,
+    0.6,
+    0.06
+   ],
+   "materials": [
+    "windows",
+    "metal"
+   ]
+  },
+  {
+   "file": "window-wide-type-b.glb",
+   "size": [
+    0.6,
+    0.6,
+    0.06
+   ],
+   "materials": [
+    "windows",
+    "metal"
+   ]
+  },
+  {
+   "file": "window-wide-type-c.glb",
+   "size": [
+    0.6,
+    0.6,
+    0.06
+   ],
+   "materials": [
+    "windows",
+    "metal"
+   ]
+  },
+  {
+   "file": "window-wide-type-d.glb",
+   "size": [
+    0.6,
+    0.6,
+    0.06
+   ],
+   "materials": [
+    "windows",
+    "metal"
+   ]
+  }
+ ],
+ "building-kit": [
+  {
+   "file": "barricade-doorway-a.glb",
+   "size": [
+    0.08,
+    1.46,
+    1.26
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "barricade-doorway-b.glb",
+   "size": [
+    0.08,
+    1.59,
+    1.26
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "barricade-doorway-c.glb",
+   "size": [
+    0.1,
+    1.75,
+    1.26
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "barricade-window-a.glb",
+   "size": [
+    0.08,
+    0.96,
+    1.26
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "barricade-window-b.glb",
+   "size": [
+    0.08,
+    1.09,
+    1.26
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "barricade-window-c.glb",
+   "size": [
+    0.1,
+    1.36,
+    1.26
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-corner-diagonal.glb",
+   "size": [
+    2.2,
+    0.3,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-corner-round.glb",
+   "size": [
+    2.2,
+    0.3,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-corner-small.glb",
+   "size": [
+    1.2,
+    0.3,
+    1.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-corner.glb",
+   "size": [
+    2.2,
+    0.3,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-high-corner-diagonal.glb",
+   "size": [
+    2.2,
+    0.5,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-high-corner-round.glb",
+   "size": [
+    2.2,
+    0.5,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-high-corner-small.glb",
+   "size": [
+    1.2,
+    0.5,
+    1.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-high-corner.glb",
+   "size": [
+    2.2,
+    0.5,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border-high.glb",
+   "size": [
+    0.2,
+    0.5,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "border.glb",
+   "size": [
+    0.2,
+    0.3,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "column-thin.glb",
+   "size": [
+    0.4,
+    2.4,
+    0.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "column-wide.glb",
+   "size": [
+    0.7,
+    2.4,
+    0.7
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "column.glb",
+   "size": [
+    0.5,
+    2.4,
+    0.5
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "detail-pipe.glb",
+   "size": [
+    0.44,
+    0.43,
+    0.44
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-round-a.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-round-b.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-round-c.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-round-d.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "door-rotate-square-a.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-square-b.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-square-c.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "door-rotate-square-d.glb",
+   "size": [
+    0.24,
+    2.13,
+    1.02
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "floor-corner-diagonal.glb",
+   "size": [
+    2.0,
+    0.1,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "floor-corner-round.glb",
+   "size": [
+    2.0,
+    0.1,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "floor-half.glb",
+   "size": [
+    1.0,
+    0.1,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "floor-quarter.glb",
+   "size": [
+    1.0,
+    0.1,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "floor.glb",
+   "size": [
+    2.0,
+    0.1,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "gutter-vertical-bottom.glb",
+   "size": [
+    0.2,
+    0.3,
+    0.3
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "gutter-vertical-short.glb",
+   "size": [
+    0.3,
+    1.0,
+    0.3
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "gutter-vertical-top.glb",
+   "size": [
+    0.2,
+    0.3,
+    0.3
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "gutter-vertical-wall.glb",
+   "size": [
+    0.3,
+    2.4,
+    0.3
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "gutter-vertical.glb",
+   "size": [
+    0.3,
+    2.0,
+    0.3
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "plating-detailed-wide.glb",
+   "size": [
+    0.13,
+    1.0,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "plating-detailed.glb",
+   "size": [
+    0.13,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "plating-wide.glb",
+   "size": [
+    0.1,
+    1.0,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "plating.glb",
+   "size": [
+    0.1,
+    1.0,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-center.glb",
+   "size": [
+    2.0,
+    0.1,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-corner-inner.glb",
+   "size": [
+    2.2,
+    0.5,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-corner.glb",
+   "size": [
+    2.2,
+    0.4,
+    2.2
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-patch-large.glb",
+   "size": [
+    1.6,
+    0.05,
+    1.6
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-patch.glb",
+   "size": [
+    1.1,
+    0.05,
+    1.1
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-side.glb",
+   "size": [
+    2.2,
+    0.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "roof-flat-square.glb",
+   "size": [
+    2.4,
+    0.4,
+    2.4
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-center-short.glb",
+   "size": [
+    1.3,
+    1.3,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-center.glb",
+   "size": [
+    1.3,
+    2.5,
+    4.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-closed-short.glb",
+   "size": [
+    1.3,
+    1.3,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-closed.glb",
+   "size": [
+    1.3,
+    2.5,
+    4.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-open-short.glb",
+   "size": [
+    1.3,
+    1.3,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-open.glb",
+   "size": [
+    1.3,
+    2.5,
+    4.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-sides-short.glb",
+   "size": [
+    1.3,
+    1.35,
+    4.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "stairs-sides.glb",
+   "size": [
+    1.3,
+    2.55,
+    6.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner-column-bottom.glb",
+   "size": [
+    2.12,
+    2.4,
+    2.12
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner-column-small-bottom.glb",
+   "size": [
+    1.12,
+    2.4,
+    1.12
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner-column-small.glb",
+   "size": [
+    1.07,
+    2.4,
+    1.08
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner-column.glb",
+   "size": [
+    2.07,
+    2.4,
+    2.07
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner-diagonal.glb",
+   "size": [
+    2.0,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner-round.glb",
+   "size": [
+    2.0,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-corner.glb",
+   "size": [
+    2.0,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-doorway-round.glb",
+   "size": [
+    0.2,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-doorway-square.glb",
+   "size": [
+    0.2,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-doorway-wide-round.glb",
+   "size": [
+    0.2,
+    2.4,
+    4.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-doorway-wide-square.glb",
+   "size": [
+    0.2,
+    2.4,
+    4.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-half.glb",
+   "size": [
+    0.1,
+    2.4,
+    1.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-low.glb",
+   "size": [
+    0.1,
+    1.2,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  },
+  {
+   "file": "wall-window-round-detailed.glb",
+   "size": [
+    0.2,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-round.glb",
+   "size": [
+    0.2,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-square-detailed.glb",
+   "size": [
+    0.2,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-square.glb",
+   "size": [
+    0.2,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-wide-round-detailed.glb",
+   "size": [
+    0.2,
+    2.4,
+    4.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-wide-round.glb",
+   "size": [
+    0.2,
+    2.4,
+    4.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-wide-square-detailed.glb",
+   "size": [
+    0.2,
+    2.4,
+    4.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall-window-wide-square.glb",
+   "size": [
+    0.2,
+    2.4,
+    4.0
+   ],
+   "materials": [
+    "colormap",
+    "glass"
+   ]
+  },
+  {
+   "file": "wall.glb",
+   "size": [
+    0.1,
+    2.4,
+    2.0
+   ],
+   "materials": [
+    "colormap"
+   ]
+  }
+ ],
+ "cyberpunk": [
+  {
+   "file": "Ac Stacked.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "LightGrey",
+    "Texture_Signs",
+    "Orange"
+   ]
+  },
+  {
+   "file": "Air Conditioner-0MdE89Ijtt.glb",
+   "size": [
+    0.02,
+    0.01,
+    0.01
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Black",
+    "Orange"
+   ]
+  },
+  {
+   "file": "Air Conditioner.glb",
+   "size": [
+    0.01,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Black",
+    "Orange"
+   ]
+  },
+  {
+   "file": "Antenna-OuHQCigiUR.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "Antenna.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "Cable Long.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.03
+   ],
+   "materials": [
+    "Black"
+   ]
+  },
+  {
+   "file": "Cable.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Black"
+   ]
+  },
+  {
+   "file": "Collectible Board.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Green",
+    "DarkGrey",
+    "Gold",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Collectible Gear.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Orange"
+   ]
+  },
+  {
+   "file": "Computer Large.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "Orange",
+    "Grey",
+    "LightGrey",
+    "Screen",
+    "Texture_Signs",
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "Computer.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "LightGrey",
+    "Orange",
+    "Grey",
+    "Screen"
+   ]
+  },
+  {
+   "file": "Cyberpunk Platform-J3AJSwqmBJ.glb",
+   "size": [
+    0.06,
+    0.02,
+    0.07
+   ],
+   "materials": [
+    "LightGrey",
+    "Black",
+    "Grey",
+    "Orange",
+    "Texture_Signs",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "Cyberpunk Platform-ctQ5CDmraQ.glb",
+   "size": [
+    0.04,
+    0.04,
+    0.04
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Texture_Signs",
+    "DarkGrey",
+    "Black",
+    "Orange"
+   ]
+  },
+  {
+   "file": "Cyberpunk Platform-dHymLbsOMY.glb",
+   "size": [
+    0.03,
+    0.02,
+    0.04
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Texture_Signs",
+    "Black",
+    "DarkGrey",
+    "Orange"
+   ]
+  },
+  {
+   "file": "Cyberpunk Platform.glb",
+   "size": [
+    0.04,
+    0.02,
+    0.03
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Texture_Signs",
+    "Black",
+    "Orange",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "Cyberpunk Signs.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.02
+   ],
+   "materials": [
+    "Grey",
+    "Texture_Signs",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "Door.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Grey",
+    "Orange",
+    "LightGrey",
+    "Screen"
+   ]
+  },
+  {
+   "file": "Lever.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Black"
+   ]
+  },
+  {
+   "file": "Light Square.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "DarkGrey",
+    "Grey",
+    "Light"
+   ]
+  },
+  {
+   "file": "Lootbox.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "DarkGrey",
+    "Grey",
+    "Orange"
+   ]
+  },
+  {
+   "file": "Pickup Health.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "LightGreen"
+   ]
+  },
+  {
+   "file": "Pickup Heart.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "Red"
+   ]
+  },
+  {
+   "file": "Pickup Tank.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Grey",
+    "Orange",
+    "LightGrey",
+    "LightGreen"
+   ]
+  },
+  {
+   "file": "Pipe.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Orange"
+   ]
+  },
+  {
+   "file": "Rail.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Black"
+   ]
+  },
+  {
+   "file": "Robot Enemy Flying Gun.glb",
+   "size": [
+    0.02,
+    0.01,
+    0.01
+   ],
+   "materials": [
+    "Material.002",
+    "Material.001",
+    "Material.004",
+    "Material.003",
+    "Material",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Robot Enemy Flying.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Material.002",
+    "Material.001",
+    "Material.004",
+    "Material.003",
+    "Material",
+    "Main2"
+   ]
+  },
+  {
+   "file": "Robot Enemy Large Gun.glb",
+   "size": [
+    0.12,
+    0.09,
+    0.11
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Orange",
+    "LightGreen",
+    "Edge",
+    "Main2"
+   ]
+  },
+  {
+   "file": "Robot Enemy Large.glb",
+   "size": [
+    0.06,
+    0.06,
+    0.08
+   ],
+   "materials": [
+    "Edge",
+    "Main2",
+    "Dark",
+    "Main",
+    "Eye"
+   ]
+  },
+  {
+   "file": "Robot Enemy Legs Gun.glb",
+   "size": [
+    0.02,
+    0.06,
+    0.02
+   ],
+   "materials": [
+    "Main2",
+    "Main",
+    "Edge",
+    "Dark",
+    "Eye",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Robot Enemy Legs.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Main2",
+    "Main",
+    "Edge",
+    "Dark",
+    "Eye"
+   ]
+  },
+  {
+   "file": "Streetlight-Wp6Eh4r9VX.glb",
+   "size": [
+    0.02,
+    0.01,
+    0.03
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Light"
+   ]
+  },
+  {
+   "file": "Streetlight.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.03
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Light"
+   ]
+  },
+  {
+   "file": "Support Short.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Support.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.04
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey"
+   ]
+  },
+  {
+   "file": "TV Tower.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "Grey",
+    "Black",
+    "LightGrey",
+    "Texture_Signs"
+   ]
+  },
+  {
+   "file": "TV-mBGTVozH1u.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Texture_Signs",
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "TV.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Texture_Signs",
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "Tank.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "Orange",
+    "Black"
+   ]
+  },
+  {
+   "file": "Turret Cannon.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "Orange",
+    "LightGrey",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Turret Gun-hThPXDCbwl.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "Orange",
+    "LightGrey",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Turret Gun.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "Orange",
+    "LightGrey",
+    "Grey"
+   ]
+  },
+  {
+   "file": "Turret Teleporter.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.0
+   ],
+   "materials": [
+    "Black",
+    "Orange",
+    "LightGrey",
+    "Grey"
+   ]
+  }
+ ],
+ "hacker-props": [
+  {
+   "file": "ac-stacked_quaternius_vzpyRsDOP1.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "LightGrey",
+    "Texture_Signs",
+    "Orange"
+   ]
+  },
+  {
+   "file": "ad-board_uykucukoala_8G0qJ84VDS.glb",
+   "size": [
+    4.21,
+    5.46,
+    3.34
+   ],
+   "materials": [
+    "Wood_Black_UA",
+    "Material",
+    "Old_White_Metal"
+   ]
+  },
+  {
+   "file": "air-conditioner_quaternius_0MdE89Ijtt.glb",
+   "size": [
+    0.02,
+    0.01,
+    0.01
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Black",
+    "Orange"
+   ]
+  },
+  {
+   "file": "alarm-clock_creativetrio_y5f363OS9C.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "antenna_quaternius_OuHQCigiUR.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "antenna_quaternius_l5Oc9swvKk.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "backpack_quaternius_2g9Jm7kvIU.glb",
+   "size": [
+    0.02,
+    0.01,
+    0.02
+   ],
+   "materials": [
+    "Brown",
+    "LightGreen",
+    "Gold",
+    "Green"
+   ]
+  },
+  {
+   "file": "bags_quaternius_gzvyAQ797z.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Bag"
+   ]
+  },
+  {
+   "file": "banner_quaternius_svYG8KZxjq.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.04
+   ],
+   "materials": [
+    "Metal",
+    "Wood",
+    "Main",
+    "DarkMetal"
+   ]
+  },
+  {
+   "file": "barrel_quaternius_MraIiFnpAY.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "Atlas.032"
+   ]
+  },
+  {
+   "file": "bed-single_kenney_sn8az3odMR.glb",
+   "size": [
+    0.57,
+    0.38,
+    1.12
+   ],
+   "materials": [
+    "carpetWhite",
+    "wood",
+    "metal",
+    "carpet"
+   ]
+  },
+  {
+   "file": "bedroll_kenney_efwd5fjuMU.glb",
+   "size": [
+    0.26,
+    0.07,
+    0.6
+   ],
+   "materials": [
+    "foliage",
+    "rock"
+   ]
+  },
+  {
+   "file": "box_kenney_HvjissDrdr.glb",
+   "size": [
+    0.24,
+    0.25,
+    0.24
+   ],
+   "materials": [
+    "wood",
+    "rock"
+   ]
+  },
+  {
+   "file": "cable-long_quaternius_WNfAG8VSD5.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.03
+   ],
+   "materials": [
+    "Black"
+   ]
+  },
+  {
+   "file": "cable_quaternius_aoNcGMnNiG.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Black"
+   ]
+  },
+  {
+   "file": "can-fridge_quaternius_8OHbykvREu.glb",
+   "size": [
+    2.36,
+    4.39,
+    1.33
+   ],
+   "materials": [
+    "Atlas",
+    "Glass"
+   ]
+  },
+  {
+   "file": "can_kenney_FEAWUL7Ibp.glb",
+   "size": [
+    0.3,
+    0.32,
+    0.3
+   ],
+   "materials": [
+    "greyLight",
+    "red",
+    "greyDark"
+   ]
+  },
+  {
+   "file": "cardboard-box-closed_kenney_zv8NvYfT9B.glb",
+   "size": [
+    0.21,
+    0.28,
+    0.21
+   ],
+   "materials": [
+    "wood",
+    "woodDark"
+   ]
+  },
+  {
+   "file": "cardboard-box-open_kenney_i1lr4yJFY0.glb",
+   "size": [
+    0.37,
+    0.28,
+    0.21
+   ],
+   "materials": [
+    "wood",
+    "woodDark"
+   ]
+  },
+  {
+   "file": "cardboard-boxes_quaternius_V9KbWC8Vd6.glb",
+   "size": [
+    0.05,
+    0.02,
+    0.04
+   ],
+   "materials": [
+    "Cardboard",
+    "Tape"
+   ]
+  },
+  {
+   "file": "cardboard-boxes_quaternius_rdKKO0DvMG.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.03
+   ],
+   "materials": [
+    "Cardboard",
+    "Tape"
+   ]
+  },
+  {
+   "file": "cartoony-purple-motorcycle_alicecassie_j20srJUjpB.glb",
+   "size": [
+    0.2,
+    0.49,
+    1.03
+   ],
+   "materials": [
+    "DarkPurple",
+    "LightPurple",
+    "Yellow"
+   ]
+  },
+  {
+   "file": "ceiling-fan_creativetrio_pRMxaQQXha.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "ceiling-fan_kenney_6UCDIZTNn3.glb",
+   "size": [
+    0.45,
+    0.13,
+    0.52
+   ],
+   "materials": [
+    "metalLight",
+    "lamp",
+    "wood"
+   ]
+  },
+  {
+   "file": "coat-rack-standing_kenney_8jXUm32dKW.glb",
+   "size": [
+    0.28,
+    0.77,
+    0.28
+   ],
+   "materials": [
+    "wood"
+   ]
+  },
+  {
+   "file": "coat-rack_kenney_E49wno0xUd.glb",
+   "size": [
+    0.45,
+    0.28,
+    0.13
+   ],
+   "materials": [
+    "metalMedium",
+    "wood"
+   ]
+  },
+  {
+   "file": "computer-keyboard_kenney_vsqTUPFSw6.glb",
+   "size": [
+    0.28,
+    0.03,
+    0.12
+   ],
+   "materials": [
+    "metalDark",
+    "metalMedium"
+   ]
+  },
+  {
+   "file": "computer-large_quaternius_or4LLmesjq.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "Orange",
+    "Grey",
+    "LightGrey",
+    "Screen",
+    "Texture_Signs",
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "computer-mouse_creativetrio_V2Ebx3pvo4.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "computer-screen_kenney_V5Qo141OcB.glb",
+   "size": [
+    0.39,
+    0.29,
+    0.1
+   ],
+   "materials": [
+    "metalDark",
+    "metal"
+   ]
+  },
+  {
+   "file": "computer_creativetrio_7KNoiQlSxi.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "computer_quaternius_emxvTSMKnt.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "LightGrey",
+    "Orange",
+    "Grey",
+    "Screen"
+   ]
+  },
+  {
+   "file": "cpu_ipoly3d_oF0cAyddAI.glb",
+   "size": [
+    0.04,
+    0.04,
+    0.0
+   ],
+   "materials": [
+    "Green",
+    "Material.005",
+    "Material",
+    "Material.006",
+    "conduct"
+   ]
+  },
+  {
+   "file": "crate_quaternius_SfJtdV8GDr.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.01
+   ],
+   "materials": [
+    "Wood",
+    "DarkWood"
+   ]
+  },
+  {
+   "file": "crowbar_creativetrio_MkTjC7C7bN.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "Diffuse_Color"
+   ]
+  },
+  {
+   "file": "cup_kenney_aSF8ANEIsX.glb",
+   "size": [
+    0.2,
+    0.2,
+    0.24
+   ],
+   "materials": [
+    "_defaultMat"
+   ]
+  },
+  {
+   "file": "cyberpunk-signs_quaternius_rsZJjigt1X.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.02
+   ],
+   "materials": [
+    "Grey",
+    "Texture_Signs",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "damaged-couch_quaternius_ik7UZdELJE.glb",
+   "size": [
+    0.04,
+    0.01,
+    0.01
+   ],
+   "materials": [
+    "Atlas.045"
+   ]
+  },
+  {
+   "file": "debris-papers_quaternius_MujITy1NRR.glb",
+   "size": [
+    0.1,
+    0.07,
+    0.0
+   ],
+   "materials": [
+    "White"
+   ]
+  },
+  {
+   "file": "desk-fan_creativetrio_OlTLyyXoXY.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "door_quaternius_LbrIuy3mMR.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Grey",
+    "Orange",
+    "LightGrey",
+    "Screen"
+   ]
+  },
+  {
+   "file": "dumpster_quaternius_PKsbolkZSr.glb",
+   "size": [
+    0.04,
+    0.02,
+    0.03
+   ],
+   "materials": [
+    "DarkGrey",
+    "Green",
+    "Grey"
+   ]
+  },
+  {
+   "file": "electronics-board_ipoly3d_mKoBjuxV4R.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.0
+   ],
+   "materials": [
+    "Green",
+    "black",
+    "conduct",
+    "Material.003"
+   ]
+  },
+  {
+   "file": "gas-can_quaternius_eS1OXGo51c.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Red",
+    "DarkRed",
+    "Black"
+   ]
+  },
+  {
+   "file": "headphones_creativetrio_PSsWSIAYIL.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "hoodie-character_quaternius_gKLBoRsyKe.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "White",
+    "Purple",
+    "Skin",
+    "LightBlue",
+    "Eyebrows",
+    "Eye"
+   ]
+  },
+  {
+   "file": "jacket_polygonal-mind_eeKk3ObCbf.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.02
+   ],
+   "materials": [
+    "_060_Angry"
+   ]
+  },
+  {
+   "file": "kitchen-coffee-machine_kenney_jBUiOz36vs.glb",
+   "size": [
+    0.19,
+    0.18,
+    0.24
+   ],
+   "materials": [
+    "metalMedium",
+    "metal",
+    "carpetWhite"
+   ]
+  },
+  {
+   "file": "kitchen-fridge-small_kenney_6O4UXApCiK.glb",
+   "size": [
+    0.43,
+    0.6,
+    0.29
+   ],
+   "materials": [
+    "metalLight",
+    "metalDark",
+    "glass",
+    "metal"
+   ]
+  },
+  {
+   "file": "kitchen-fridge_quaternius_8sjRm8fnHh.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.03
+   ],
+   "materials": [
+    "White",
+    "Black"
+   ]
+  },
+  {
+   "file": "kitchen-microwave_kenney_vUsvf2HGDv.glb",
+   "size": [
+    0.29,
+    0.18,
+    0.23
+   ],
+   "materials": [
+    "metalMedium",
+    "carpetWhite",
+    "metalDark",
+    "glass"
+   ]
+  },
+  {
+   "file": "ladder_creativetrio_p1RR8Ls9EH.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "lamp-round-floor_kenney_8LiDIfXVLi.glb",
+   "size": [
+    0.16,
+    0.86,
+    0.18
+   ],
+   "materials": [
+    "metal",
+    "lamp"
+   ]
+  },
+  {
+   "file": "laptop_kenney_GnbwSUiVty.glb",
+   "size": [
+    0.26,
+    0.16,
+    0.24
+   ],
+   "materials": [
+    "metalDark",
+    "metal",
+    "metalMedium"
+   ]
+  },
+  {
+   "file": "lever_quaternius_guR2QhKFLT.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey",
+    "Black"
+   ]
+  },
+  {
+   "file": "light-bulb_reelpersen_kDo0SbQW9Y.glb",
+   "size": [
+    2.0,
+    6.57,
+    2.0
+   ],
+   "materials": [
+    "clip",
+    "light",
+    "cable"
+   ]
+  },
+  {
+   "file": "light-ceiling-single_quaternius_JT44JUXU2d.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Grey",
+    "LightMetal",
+    "Light"
+   ]
+  },
+  {
+   "file": "light-desk_quaternius_uJDWrSJGVH.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "LightMetal",
+    "White"
+   ]
+  },
+  {
+   "file": "light-square_quaternius_PSoamNnBPO.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "DarkGrey",
+    "Grey",
+    "Light"
+   ]
+  },
+  {
+   "file": "light-stand_quaternius_9L6lLUl9sD.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.03
+   ],
+   "materials": [
+    "LightMetal",
+    "White"
+   ]
+  },
+  {
+   "file": "lootbox_quaternius_LNQWE3LzNf.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "DarkGrey",
+    "Grey",
+    "Orange"
+   ]
+  },
+  {
+   "file": "metal-ladder_hat-my-guy_9clpHNZoya.glb",
+   "size": [
+    0.02,
+    0.26,
+    0.06
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "mic_ipoly3d_yqbacXdPsg.glb",
+   "size": [
+    0.0,
+    0.02,
+    0.0
+   ],
+   "materials": [
+    "Black",
+    "Metal",
+    "Glow",
+    "LightGrey"
+   ]
+  },
+  {
+   "file": "monitor_armory-3d_M9Lpzbr0bA.glb",
+   "size": [
+    0.04,
+    0.02,
+    0.03
+   ],
+   "materials": [
+    "Material.002",
+    "Material.001"
+   ]
+  },
+  {
+   "file": "monitor_creativetrio_PvSjEbz11k.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "mug-with-office-tool_creativetrio_4jSgnM5WWk.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "mug_milkandbanana_54cOZNS04L.glb",
+   "size": [
+    2.95,
+    2.73,
+    2
+   ],
+   "materials": [
+    "Solid.181"
+   ]
+  },
+  {
+   "file": "package_quaternius_mWkgWyrCfM.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Bag",
+    "Leather"
+   ]
+  },
+  {
+   "file": "painting_creativetrio_Pi6oReAizt.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "pallet-broken_quaternius_Gp43iUyyAX.glb",
+   "size": [
+    0.02,
+    0.02,
+    0.0
+   ],
+   "materials": [
+    "Wood",
+    "Wood_Light"
+   ]
+  },
+  {
+   "file": "pallet_quaternius_cUAsYHDqfD.glb",
+   "size": [
+    0.18,
+    0.02,
+    0.02
+   ],
+   "materials": [
+    "Wood"
+   ]
+  },
+  {
+   "file": "paneling_kenney_PcMUlGoC2C.glb",
+   "size": [
+    0.5,
+    0.59,
+    0.03
+   ],
+   "materials": [
+    "wood"
+   ]
+  },
+  {
+   "file": "paper_quaternius_4qDtAbPYnT.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Atlas"
+   ]
+  },
+  {
+   "file": "phone_quaternius_k2kgBepoMU.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "White",
+    "Grey",
+    "Black"
+   ]
+  },
+  {
+   "file": "pipe_quaternius_zpHDL1CzGU.glb",
+   "size": [
+    0.02,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Orange"
+   ]
+  },
+  {
+   "file": "printer_creativetrio_77K2TCL5Lz.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "propane-tank_quaternius_3revwBHxDC.glb",
+   "size": [
+    0.02,
+    0.01,
+    0.02
+   ],
+   "materials": [
+    "White",
+    "Black",
+    "Red",
+    "Orange"
+   ]
+  },
+  {
+   "file": "radio_quaternius_TPqvwkyWdV.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Black",
+    "DarkGrey",
+    "LightGrey",
+    "Red"
+   ]
+  },
+  {
+   "file": "shelf-tall_quaternius_TDgvIuorcX.glb",
+   "size": [
+    0.02,
+    0.03,
+    0.0
+   ],
+   "materials": [
+    "Accent",
+    "Main",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "signpost_kenney_3U2lj1gpeH.glb",
+   "size": [
+    0.21,
+    0.46,
+    0.04
+   ],
+   "materials": [
+    "wood"
+   ]
+  },
+  {
+   "file": "skateboard_kenney_TyiZbm5TNL.glb",
+   "size": [
+    0.3,
+    0.14,
+    0.7
+   ],
+   "materials": [
+    "colormap.001"
+   ]
+  },
+  {
+   "file": "smartphone_smallbigsquare_4DRZmTs3jq.glb",
+   "size": [
+    0.1,
+    0.01,
+    0.22
+   ],
+   "materials": [
+    "endesga64"
+   ]
+  },
+  {
+   "file": "soda_quaternius_IqXSdKUMnY.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "White",
+    "Red"
+   ]
+  },
+  {
+   "file": "speaker-small_kenney_YaVrUj51TV.glb",
+   "size": [
+    0.15,
+    0.3,
+    0.13
+   ],
+   "materials": [
+    "wood",
+    "metalMedium"
+   ]
+  },
+  {
+   "file": "speaker_kenney_GWfUJDmiOO.glb",
+   "size": [
+    0.15,
+    0.64,
+    0.15
+   ],
+   "materials": [
+    "wood",
+    "metalMedium"
+   ]
+  },
+  {
+   "file": "structure_kenney_VEPqHzZlSo.glb",
+   "size": [
+    0.5,
+    0.52,
+    0.5
+   ],
+   "materials": [
+    "wood"
+   ]
+  },
+  {
+   "file": "support_quaternius_Z1TYxDMXMx.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.04
+   ],
+   "materials": [
+    "LightGrey",
+    "Grey"
+   ]
+  },
+  {
+   "file": "table-lamp_quaternius_9Mo3JruPHY.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "White",
+    "LightMetal"
+   ]
+  },
+  {
+   "file": "tank_quaternius_j59k7ctnZM.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "LightGrey",
+    "Orange",
+    "Black"
+   ]
+  },
+  {
+   "file": "television_kenney_9trLeWoBek.glb",
+   "size": [
+    0.68,
+    0.45,
+    0.12
+   ],
+   "materials": [
+    "metalDark",
+    "metal"
+   ]
+  },
+  {
+   "file": "toolbox_creativetrio_3ImQcIK0Gp.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "trash-bag_quaternius_jYrMKg2Q7C.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "Atlas.030"
+   ]
+  },
+  {
+   "file": "trash-bags_quaternius_eitNk4I4R1.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "Atlas.028"
+   ]
+  },
+  {
+   "file": "trash-container-open_quaternius_IvvdNqXmAW.glb",
+   "size": [
+    0.05,
+    0.04,
+    0.06
+   ],
+   "materials": [
+    "Oil",
+    "Black",
+    "Green",
+    "Grey",
+    "DarkGrey"
+   ]
+  },
+  {
+   "file": "trashcan-small_quaternius_i7HDuYDLkx.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "LightMetal",
+    "Black"
+   ]
+  },
+  {
+   "file": "trashcan_kenney_eoC8NFaafh.glb",
+   "size": [
+    0.2,
+    0.43,
+    0.23
+   ],
+   "materials": [
+    "metal",
+    "metalDark"
+   ]
+  },
+  {
+   "file": "tv-tower_quaternius_R8DtfW6Nx5.glb",
+   "size": [
+    0.0,
+    0.0,
+    0.02
+   ],
+   "materials": [
+    "Grey",
+    "Black",
+    "LightGrey",
+    "Texture_Signs"
+   ]
+  },
+  {
+   "file": "tv_quaternius_mBGTVozH1u.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Texture_Signs",
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "tv_quaternius_tdXTODKZlx.glb",
+   "size": [
+    0.01,
+    0.0,
+    0.01
+   ],
+   "materials": [
+    "Grey",
+    "LightGrey",
+    "Texture_Signs",
+    "MetalLight"
+   ]
+  },
+  {
+   "file": "wall-corkboard_creativetrio_U8yQZ9l0HZ.glb",
+   "size": [
+    0.0,
+    0.01,
+    0.0
+   ],
+   "materials": [
+    "Material"
+   ]
+  },
+  {
+   "file": "wireless-machine_kenney_OJffxxkMtZ.glb",
+   "size": [
+    0.09,
+    0.08,
+    0.06
+   ],
+   "materials": [
+    "metal",
+    "metalRed",
+    "dark",
+    "metalDark"
+   ]
+  }
+ ],
+ "converted_world_assets": [
+  "ac_stacked",
+  "ac_unit",
+  "antenna",
+  "arcade",
+  "barrier_concrete",
+  "barrier_striped",
+  "boxes",
+  "building_low",
+  "building_wide",
+  "building_window",
+  "cable",
+  "cable_short",
+  "cables_droop",
+  "can",
+  "can_crushed",
+  "chair",
+  "coat_rack",
+  "coffee_machine",
+  "column",
+  "cone",
+  "container",
+  "container_tagged",
+  "couch",
+  "crate",
+  "crt",
+  "cup",
+  "desk",
+  "door",
+  "drum",
+  "dumpster",
+  "dumpster_open",
+  "elec_pole",
+  "elec_wires",
+  "facade_garage",
+  "facade_garage_metal",
+  "facade_metal",
+  "facade_painted",
+  "facade_wall",
+  "facade_window",
+  "fence_rail",
+  "floor_tile",
+  "fridge",
+  "headphones",
+  "jacket",
+  "keyboard",
+  "kitchen_cabinet",
+  "ladder",
+  "lamp_post",
+  "monitor",
+  "mouse",
+  "mug",
+  "neon_sign",
+  "pallet",
+  "pallet_broken",
+  "pallet_yard",
+  "papers",
+  "pendant",
+  "pillow",
+  "pipe",
+  "pipe_detail",
+  "pizza",
+  "pizza_box",
+  "pizza_slice",
+  "propane_tank",
+  "rail",
+  "roof_metal",
+  "router",
+  "scaffold",
+  "server_rack",
+  "server_tower",
+  "shelf",
+  "skateboard",
+  "skip_open",
+  "skyscraper_a",
+  "skyscraper_b",
+  "skyscraper_c",
+  "skyscraper_d",
+  "skyscraper_e",
+  "streetlight",
+  "styrofoam",
+  "trash_bags",
+  "truck_box",
+  "tv_tower",
+  "wall",
+  "wall_doorway",
+  "wall_plaster",
+  "wall_window",
+  "warning_light",
+  "yard_asphalt"
+ ]
+}

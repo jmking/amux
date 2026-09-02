@@ -1,0 +1,1132 @@
+{
+ "grid_unit": 8,
+ "roads": [
+  {
+   "piece": "road_intersection",
+   "x": -36,
+   "z": 14,
+   "yaw": 180,
+   "note": "T-junction at the west end: through road along x, branch to -z (the side road running north). kenney-city-kit-roads/road-intersection.glb @8 (converted). Tile spans x -40..-32, z 10..18. ALL TILES sit at y = -0.29 so the footpath top (+0.16) lands at -0.13 flush with the yard slab and the carriageway (+0.08) sits 8 cm lower; the 160 m base plane must drop from -0.14 to -0.32 so it does not show through the carriageway."
+  },
+  {
+   "piece": "road_straight",
+   "x": -28,
+   "z": 14,
+   "yaw": 0,
+   "note": "road runs along x (yaw 0 = along x). kenney-city-kit-roads/road-straight.glb @8: 8 m tile, carriageway z 10.8..17.2 (6.4 m), footpaths z 10.0..10.8 and 17.2..18.0, centre line at z 14, kerb 8 cm."
+  },
+  {
+   "piece": "road_straight",
+   "x": -20,
+   "z": 14,
+   "yaw": 0,
+   "note": "spans x -24..-16"
+  },
+  {
+   "piece": "road_driveway",
+   "x": -12,
+   "z": 14,
+   "yaw": 180,
+   "note": "road-driveway-single @8 turned 180 so the dropped kerb is on the -z (lot) side: opening x -13.04..-10.96, flares to -13.44..-10.56. This is the compound gate's crossover (gate x -13.5..-9.5 at z 9.7)."
+  },
+  {
+   "piece": "road_straight",
+   "x": -4,
+   "z": 14,
+   "yaw": 0,
+   "note": "spans x -8..0; the den's frontage tile"
+  },
+  {
+   "piece": "road_driveway",
+   "x": 4,
+   "z": 14,
+   "yaw": 0,
+   "note": "dropped kerb on the +z side (x 2.96..5.04): the crossover into Unit A's forecourt across the street."
+  },
+  {
+   "piece": "road_driveway",
+   "x": 12,
+   "z": 14,
+   "yaw": 180,
+   "note": "dropped kerb on the -z side (x 10.96..13.04, flares 10.56..13.44): the lot's own driveway, boom gate 1.1 m inside at z 8.6."
+  },
+  {
+   "piece": "road_straight",
+   "x": 20,
+   "z": 14,
+   "yaw": 0,
+   "note": "spans x 16..24"
+  },
+  {
+   "piece": "road_straight",
+   "x": 28,
+   "z": 14,
+   "yaw": 0,
+   "note": "spans x 24..32"
+  },
+  {
+   "piece": "road_straight",
+   "x": 36,
+   "z": 14,
+   "yaw": 0,
+   "note": "spans x 32..40; off-frame at zoom 1"
+  },
+  {
+   "piece": "road_end",
+   "x": 44,
+   "z": 14,
+   "yaw": 180,
+   "note": "road-end @8 turned 180 so the closed end is at +x (x 47.2): the service road is a cul-de-sac, which is why it is quiet. Off-frame; only seen at the left orbit limit."
+  },
+  {
+   "piece": "road_straight",
+   "x": -36,
+   "z": 6,
+   "yaw": 90,
+   "note": "side road, road along z (yaw 90), x -40..-32, z 2..10; meets the T's -z branch at z 10 (carriageway x -39.2..-32.8 on both)."
+  },
+  {
+   "piece": "road_straight",
+   "x": -36,
+   "z": -2,
+   "yaw": 90,
+   "note": "z -6..2"
+  },
+  {
+   "piece": "road_straight",
+   "x": -36,
+   "z": -10,
+   "yaw": 90,
+   "note": "z -14..-6; passes 3 m west of the wing's roof (which ends at x -29.1)"
+  },
+  {
+   "piece": "road_straight",
+   "x": -36,
+   "z": -18,
+   "yaw": 90,
+   "note": "z -22..-14"
+  },
+  {
+   "piece": "road_straight",
+   "x": -36,
+   "z": -26,
+   "yaw": 90,
+   "note": "z -30..-22; runs on toward the distant block; nothing beyond, the base plane carries it out"
+  }
+ ],
+ "ground": {
+  "base_color": "Base plane: keep the 160 m plane but lower it to y = -0.32, colour (0.30, 0.30, 0.31): the far ground, 19 cm below the slabs, which reads as darker tarmac beyond the estate. Lot and neighbour slabs at y = -0.135 are concrete (0.37, 0.37, 0.38) as now; nothing lit or coloured. Slabs must stop at the tile edges (z 10 and z 18, x -32) or they cover the sunken carriageway.",
+  "areas": [
+   {
+    "x": 4,
+    "z": -4.25,
+    "w": 72,
+    "d": 28.5,
+    "kind": "lot slab, concrete 0.37, y -0.135: x -32..40, z -18.5..10 (replaces the 44x34 slab; its south edge is the back of the footpath, its west edge the side road's east footpath)"
+   },
+   {
+    "x": 1,
+    "z": 27,
+    "w": 66,
+    "d": 18,
+    "kind": "far slab, concrete 0.37, y -0.135: x -32..34, z 18..36, the ground of the units across the street"
+   },
+   {
+    "x": 16,
+    "z": -0.65,
+    "w": 11,
+    "d": 20.7,
+    "kind": "car park and driveway asphalt 0.30, y -0.132: x 10.5..21.5, z -11..9.7 (throat 4 m wide at the crossover, 6 m aisle north of z 2, bays x 16.5..21.5)"
+   },
+   {
+    "x": 5.25,
+    "z": -14,
+    "w": 22.5,
+    "d": 6,
+    "kind": "loading apron asphalt 0.30, y -0.132: x -6..16.5, z -17..-11; the existing lane paint (x 0.4, 5.6) and bay stripes (x 7.5, 10.5, 13.5) stay on top at -0.128"
+   },
+   {
+    "x": -13.25,
+    "z": -1.65,
+    "w": 7.5,
+    "d": 22.7,
+    "kind": "compound gravel, pale 0.42, y -0.132: x -17..-9.5, z -13..9.7"
+   },
+   {
+    "x": 0.25,
+    "z": 8.8,
+    "w": 19.5,
+    "d": 2.4,
+    "kind": "the den's verge: dead grass (0.36, 0.38, 0.32), y -0.13, x -9.5..10, z 7.6..10 (0.35 m of slab left between it and the plinth)"
+   },
+   {
+    "x": 3,
+    "z": 24.5,
+    "w": 12,
+    "d": 13,
+    "kind": "Unit A forecourt asphalt 0.30: x -3..9, z 18..31"
+   },
+   {
+    "x": 22,
+    "z": 24,
+    "w": 20,
+    "d": 12,
+    "kind": "vacant lot across the street, dirt 0.40: x 12..32, z 18..30"
+   },
+   {
+    "x": 31,
+    "z": -3.65,
+    "w": 18,
+    "d": 26.7,
+    "kind": "vacant lot east of the lot fence, dirt 0.40: x 22..40, z -17..9.7 (the hoarding stands on it)"
+   }
+  ]
+ },
+ "buildings": [
+  {
+   "piece": "facade_wall / facade_painted / facade_garage / facade_window (existing rows)",
+   "x": -1.5,
+   "z": -17,
+   "yaw": 180,
+   "note": "KEEP unchanged: ground row x -18..15 step 3 at y -0.13, upper row at y 2.87, parapet, roof box, canopy over the working bay at x 3 (in line with the door), UNIT 7 sign, roof plant, bay glow, flood. Its apron (z -17..-11) is now reached from the street by the lot's driveway up the +x side, which is why the truck lane and bay stripes exist."
+  },
+  {
+   "piece": "facade_metal / facade_garage_metal (existing wing)",
+   "x": -17,
+   "z": -5,
+   "yaw": -90,
+   "note": "KEEP: tiles z -16..6.5 step 3 facing +x, parapet and roof box. It is now the west wall of the fenced compound; scaffold, HELLO FRIEND tag and eave flood stay."
+  },
+  {
+   "piece": "shed_wall_garage",
+   "x": -4.5,
+   "z": 23.5,
+   "yaw": -90,
+   "note": "UNIT A (retro-urban wall-a-garage @3, 3 m cube, roller door on its -z face; yaw -90 turns the door to +x so the camera sees it). First of two roller doors on the +x face facing the forecourt."
+  },
+  {
+   "piece": "shed_wall_garage",
+   "x": -4.5,
+   "z": 26.5,
+   "yaw": -90,
+   "note": "Unit A second roller door"
+  },
+  {
+   "piece": "shed_wall_door",
+   "x": -4.5,
+   "z": 20.5,
+   "yaw": -90,
+   "note": "Unit A personnel door at the street end of the +x face"
+  },
+  {
+   "piece": "shed_wall_window",
+   "x": -4.5,
+   "z": 29.5,
+   "yaw": -90,
+   "note": "Unit A office window at the back end of the +x face (a second shed_wall_window at (-7.5, 20.5) yaw 0 faces the street, hidden from the camera but right when orbiting)"
+  },
+  {
+   "piece": "shed_wall",
+   "x": -10.5,
+   "z": 25,
+   "yaw": 0,
+   "note": "Unit A remaining perimeter cubes, six of them: (-10.5, 20.5), (-10.5, 23.5), (-10.5, 26.5), (-10.5, 29.5), (-7.5, 29.5) and (-7.5, 20.5 is the window above); footprint x -12..-3, z 19..31; the two interior cells stay empty under the roof"
+  },
+  {
+   "piece": "shed_roof_slant",
+   "x": -7.5,
+   "z": 25,
+   "yaw": 180,
+   "note": "Unit A roof: twelve wall-a-roof-slant wedges at y 3.0 on every 3 m cell (x -10.5/-7.5/-4.5 by z 20.5/23.5/26.5/29.5), all yaw 180 so the three wedges across x make a sawtooth factory roof 4.5 m at the ridges with the slopes toward the camera"
+  },
+  {
+   "piece": "facade_metal",
+   "x": -19.5,
+   "z": 23.5,
+   "yaw": 0,
+   "note": "UNIT B, further west across the street, built like the wing: street face at z 19 = facade_metal (-22.5, 19) yaw 0, facade_garage_metal (-19.5, 19) yaw 0, facade_metal (-16.5, 19) yaw 0; east end at x -15 = facade_metal at (-15, 20.5), (-15, 23.5), (-15, 26.5) yaw -90; parapet box 9.3 x 0.35 x 0.4 along z 19 and x -15, flat roof box x -24..-15, z 19..28 at y 3.0-3.3. Off-frame at zoom 1, fills the left at zoom 0.8 / right orbit."
+  }
+ ],
+ "fence": [
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": -11.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": -8.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": -5.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": -2.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": 0.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": 3.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": 6.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -9.5,
+   "z": 8.85,
+   "yaw": 90,
+   "length": 1.7
+  },
+  {
+   "kind": "gate",
+   "x": -11.5,
+   "z": 9.7,
+   "yaw": 0,
+   "length": 4
+  },
+  {
+   "kind": "chainlink",
+   "x": -15.25,
+   "z": 9.7,
+   "yaw": 0,
+   "length": 3.5
+  },
+  {
+   "kind": "chainlink",
+   "x": -17,
+   "z": 8.35,
+   "yaw": 90,
+   "length": 2.7
+  },
+  {
+   "kind": "chainlink",
+   "x": -8,
+   "z": -13,
+   "yaw": 0,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -5,
+   "z": -13,
+   "yaw": 0,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": -2,
+   "z": -13,
+   "yaw": 0,
+   "length": 3
+  },
+  {
+   "kind": "gate",
+   "x": -0.5,
+   "z": -11.25,
+   "yaw": 90,
+   "length": 3.5
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": -15.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": -12.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": -9.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": -6.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": -3.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": -0.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": 2.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": 5.5,
+   "yaw": 90,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 22,
+   "z": 8.35,
+   "yaw": 90,
+   "length": 2.7
+  },
+  {
+   "kind": "chainlink",
+   "x": 16,
+   "z": 9.7,
+   "yaw": 0,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 19,
+   "z": 9.7,
+   "yaw": 0,
+   "length": 3
+  },
+  {
+   "kind": "chainlink",
+   "x": 21.25,
+   "z": 9.7,
+   "yaw": 0,
+   "length": 1.5
+  }
+ ],
+ "props": [
+  {
+   "piece": "street_light",
+   "x": -22,
+   "z": 17.6,
+   "yaw": 0,
+   "note": "LIGHT sodium. Municipal column on the far footpath, arm toward -z over the carriageway (light-curved @9, 6.07 m, head at base + (0, 5.9, -1.35)). Four at 16 m spacing, all on the far side so no pole stands in front of the den."
+  },
+  {
+   "piece": "street_light",
+   "x": -6,
+   "z": 17.6,
+   "yaw": 0,
+   "note": "LIGHT sodium; at the left edge of the frame at zoom 1, its head shows over Unit A's roof"
+  },
+  {
+   "piece": "street_light",
+   "x": 10,
+   "z": 17.6,
+   "yaw": 0,
+   "note": "LIGHT sodium; only its head pokes up at the bottom of the frame, well below the room's front edge (screen check: room front at down 2.6, this head at 5.9)"
+  },
+  {
+   "piece": "street_light",
+   "x": 26,
+   "z": 17.6,
+   "yaw": 0,
+   "note": "LIGHT sodium; off-frame at zoom 1"
+  },
+  {
+   "piece": "elec_pole_single",
+   "x": -33,
+   "z": 10.4,
+   "yaw": 0,
+   "note": "CONVERT kenney-city-kit-roads/Models/GLB format/electricity-pole-single.glb --scale 12 --recenter (6.3 m single wooden pole; crossarm across the line so the wires run along x). Power poles on the near side, back of footpath, 12 m spacing, only west of the den's frontage."
+  },
+  {
+   "piece": "elec_pole_single",
+   "x": -21,
+   "z": 10.4,
+   "yaw": 0,
+   "note": "second pole"
+  },
+  {
+   "piece": "elec_pole_single",
+   "x": -9,
+   "z": 10.4,
+   "yaw": 0,
+   "note": "terminal pole beside the compound crossover: the line goes underground here (primitive riser conduit, box 0.06 x 5.5 x 0.06, on its -z face). Fully in frame at the left, screen-right -14.6, outside the room band."
+  },
+  {
+   "piece": "elec_wires_wide",
+   "x": -27,
+   "z": 10.4,
+   "yaw": 0,
+   "note": "CONVERT kenney-city-kit-roads/Models/GLB format/electricity-wires-wide.glb --scale 12 --recenter: a 12.1 m span; set y so the ends meet the crossarms at about 5.9 (sag 1.25 m)"
+  },
+  {
+   "piece": "elec_wires_wide",
+   "x": -15,
+   "z": 10.4,
+   "yaw": 0,
+   "note": "second span"
+  },
+  {
+   "piece": "sign_street",
+   "x": -31.6,
+   "z": 10.4,
+   "yaw": 0,
+   "note": "street name blades on the T corner (road-sign-street @6); off-frame"
+  },
+  {
+   "piece": "primitive:bus stop flag",
+   "x": 1,
+   "z": 17.85,
+   "yaw": 0,
+   "note": "pole 0.08 dia x 2.6 m, flag 0.45 x 0.3 x 0.03 at y 2.3 facing -z (the road), grey; back edge of the far footpath"
+  },
+  {
+   "piece": "bench",
+   "x": -1.2,
+   "z": 18.6,
+   "yaw": 0,
+   "note": "retro-urban detail-bench @3 (1.8 m), seat toward the road, on the far slab behind the footpath"
+  },
+  {
+   "piece": "primitive:litter bin",
+   "x": 2.2,
+   "z": 18.5,
+   "yaw": 0,
+   "note": "cylinder 0.4 dia x 0.9"
+  },
+  {
+   "piece": "primitive:gutter drain",
+   "x": 1.5,
+   "z": 10.6,
+   "yaw": 0,
+   "note": "flat dark quad 0.5 x 0.35 at y -0.205 in the near gutter"
+  },
+  {
+   "piece": "primitive:gutter drain",
+   "x": 13.6,
+   "z": 10.6,
+   "yaw": 0,
+   "note": "second drain just east of the lot crossover"
+  },
+  {
+   "piece": "cone",
+   "x": 1.8,
+   "z": 11.3,
+   "yaw": 0,
+   "note": "ACCENT. A lone cone on the drain in the gutter (moved from the verge at (2.5, 8.4), which was 1.15 m off the plinth)"
+  },
+  {
+   "piece": "primitive:hydrant",
+   "x": 9.4,
+   "z": 10.3,
+   "yaw": 0,
+   "note": "0.75 m, cylinder + cap + two side nozzles, grey (not a colour accent); 3.3 m from the plinth corner"
+  },
+  {
+   "piece": "primitive:bollard",
+   "x": 9.9,
+   "z": 9.5,
+   "yaw": 0,
+   "note": "cylinder 0.2 x 0.9, guards the verge corner at the crossover; 2.8 m from the plinth corner"
+  },
+  {
+   "piece": "cone",
+   "x": 10.9,
+   "z": 9.9,
+   "yaw": 0,
+   "note": "ACCENT. Cone at the boom arm's tip post"
+  },
+  {
+   "piece": "primitive:boom gate",
+   "x": 14.6,
+   "z": 8.6,
+   "yaw": 0,
+   "note": "cabinet box 0.4 x 1.1 x 0.4 at (14.6, 8.6); arm box 4.2 x 0.08 x 0.12 at y 0.9 from x 14.4 to 10.3, grey with darker bands (no red/white, colour budget); tip post 0.1 x 0.9 at (10.4, 8.6). Closed. Arm tip is 2.05 m from the plinth's east edge and beyond its +z corner."
+  },
+  {
+   "piece": "primitive:sign board",
+   "x": 15.3,
+   "z": 9.2,
+   "yaw": 180,
+   "note": "WorldLabel 'UNIT 7 - DELIVERIES' 0.9 x 0.5 on a 1.9 m post, facing +z to the street; 1.9 m tall but 7 m east of the plinth and outside the room's screen band"
+  },
+  {
+   "piece": "truck_grey",
+   "x": 19.2,
+   "z": -0.75,
+   "yaw": -90,
+   "scale": 0.75,
+   "note": "THE VAN: retro-urban truck-grey @3 at entity scale 0.75 = 1.9 w x 2.3 h x 3.7 l, nose toward +x (cab is at -z at yaw 0), parked nose-in in the middle bay. Lower-right of frame, screen-right 13.3, clear of the room band; the one vehicle allowed on the +x side."
+  },
+  {
+   "piece": "primitive:bay lines",
+   "x": 19,
+   "z": -0.75,
+   "yaw": 0,
+   "note": "four white lines 0.12 x 0.004 x 5 along x from x 16.5 to 21.5 at z -4.5, -2.0, 0.5, 3.0, y -0.128: three 2.5 m bays; the same faded white as the apron stripes"
+  },
+  {
+   "piece": "lamp_post",
+   "x": 21.5,
+   "z": -4,
+   "yaw": 90,
+   "note": "LIGHT cold LED. light-square @8 (4.8 m), arm toward -x over the bays, head at (20.2, 4.7, -4.0). On the lot's east edge, 13 m from the plinth."
+  },
+  {
+   "piece": "lamp_post",
+   "x": 21.5,
+   "z": -13.5,
+   "yaw": 90,
+   "note": "LIGHT cold LED. Second post on the same line, head (20.2, 4.7, -13.5), lights the aisle's arrival on the apron. Replaces the post at (11.5, -10.8), which would have stood in the aisle."
+  },
+  {
+   "piece": "yard_asphalt",
+   "x": 12,
+   "z": 5.5,
+   "yaw": 50,
+   "note": "cracked patch on the driveway throat (moved from (10.2, 6.8))"
+  },
+  {
+   "piece": "primitive:puddle",
+   "x": 12.5,
+   "z": 2,
+   "yaw": 45,
+   "note": "2.0 x 1.2 wet patch on the aisle (moved from (9.8, 2.2))"
+  },
+  {
+   "piece": "dumpster",
+   "x": 5.4,
+   "z": -6.9,
+   "yaw": 0,
+   "note": "KEEP the hero bin group by the door as now: trash_bags (6.7, -6.5) 30 and (4.7, -7.9) 100, crate (6.9, -8.4) 20, boxes (6.3, -9.3) 60. 1.5 m clear of the x 3 door path."
+  },
+  {
+   "piece": "trash_bags",
+   "x": 8.6,
+   "z": -8.6,
+   "yaw": 80,
+   "note": "moved from (9.3, -1.5), which was 1 m off the plinth's east edge; now behind the bin group, north of the back wall line"
+  },
+  {
+   "piece": "streetlight",
+   "x": 5.2,
+   "z": -8.2,
+   "yaw": 0,
+   "note": "LIGHT warm. KEEP the cyberpunk light by the door"
+  },
+  {
+   "piece": "cone",
+   "x": 1.4,
+   "z": -7.2,
+   "yaw": 0,
+   "note": "ACCENT. KEEP, 1.6 m off the door path, seen through the open door"
+  },
+  {
+   "piece": "warning_light",
+   "x": 0.6,
+   "z": -12.6,
+   "yaw": 0,
+   "note": "LIGHT amber, blinking. KEEP the beacon at the open gate in the apron fence"
+  },
+  {
+   "piece": "cone",
+   "x": -2.6,
+   "z": -12.2,
+   "yaw": 0,
+   "note": "ACCENT. KEEP, by the swung-open gate leaf"
+  },
+  {
+   "piece": "barrier_striped",
+   "x": 6.8,
+   "z": -12.4,
+   "yaw": 10,
+   "note": "KEEP: soft east edge of the gate opening (x -0.5..6.8) between back yard and apron"
+  },
+  {
+   "piece": "barrier_concrete",
+   "x": 8.6,
+   "z": -12.8,
+   "yaw": 0,
+   "note": "ONE jersey barrier (x 7.6..9.6) closing the gap to the aisle; the second at (12, -12.8) is REMOVED because the aisle (x 10.5..16.5) enters the apron there"
+  },
+  {
+   "piece": "yard_asphalt",
+   "x": -3,
+   "z": -9.5,
+   "yaw": 110,
+   "note": "KEEP the back-yard patches: (-7.6, -6.2) 25, (-3, -9.5) 110, (8.5, -9) 150; DROP (-9, 7.5), which is now under the fence line"
+  },
+  {
+   "piece": "truck_box",
+   "x": -7,
+   "z": -15.2,
+   "yaw": 90,
+   "note": "KEEP the lorry side-on at the closed bay (x -9.5..-4.5, z -16.45..-13.95); clear of the moved container by 0.7 m"
+  },
+  {
+   "piece": "pallet_yard",
+   "x": 0.6,
+   "z": -15.4,
+   "yaw": 0,
+   "note": "KEEP the four-pallet stack with the crate on top, and boxes (1.6, -14) 40, left of the working bay; 0.9 m off the door's sightline"
+  },
+  {
+   "piece": "propane_tank",
+   "x": 7,
+   "z": -16.2,
+   "yaw": 200,
+   "note": "KEEP with its three drums (5.6, -16.1), (6.15, -16.45), (5.85, -15.5)"
+  },
+  {
+   "piece": "scaffold",
+   "x": 12,
+   "z": -15.85,
+   "yaw": 0,
+   "note": "KEEP both lifts on the facade's east end"
+  },
+  {
+   "piece": "pallet_yard",
+   "x": -13.9,
+   "z": -14.9,
+   "yaw": 50,
+   "note": "KEEP, loose pallet in the apron's west corner"
+  },
+  {
+   "piece": "container_tagged",
+   "x": -13.2,
+   "z": -12,
+   "yaw": 90,
+   "note": "INTO THE COMPOUND (entity scale 0.85, 1, 1.5 as now): x -16.26..-10.14, z -13.23..-10.77, against the compound's north end, 0.74 m off the wing. NB greyOut flattens its vertex-painted tags; the two wall tags carry the graffiti."
+  },
+  {
+   "piece": "container",
+   "x": -11.5,
+   "z": -6.5,
+   "yaw": 0,
+   "note": "INTO THE COMPOUND (scale 0.85, 1, 1.5): x -12.73..-10.27, z -9.56..-3.44, 0.77 m inside the east fence; primitive doors (two 1.15 x 2.5 quads + four lock bars) on its +z end at z -3.42, the end the z=-2 window looks at"
+  },
+  {
+   "piece": "ladder",
+   "x": -12,
+   "z": -9.9,
+   "yaw": 90,
+   "note": "leans on the tagged container's south face, yaw 90 then pitch -20 as now"
+  },
+  {
+   "piece": "drum",
+   "x": -11.4,
+   "z": -2.7,
+   "yaw": 0,
+   "note": "three drums at the container's door end: (-11.4, -2.7) 0, (-10.8, -2.3) 40, (-11.1, -1.75) 110; all inside x -9.5"
+  },
+  {
+   "piece": "skip_open",
+   "x": -14.9,
+   "z": 3,
+   "yaw": 0,
+   "note": "open skip against the wing, bags toward +z (seen); its north face sits on the z=+2 window's line"
+  },
+  {
+   "piece": "dumpster_open",
+   "x": -16.15,
+   "z": -9.3,
+   "yaw": -90,
+   "note": "rusty Kenney dumpster against the wing between the closed bay and the tagged container"
+  },
+  {
+   "piece": "pallet_broken",
+   "x": -15.5,
+   "z": -3,
+   "yaw": 15,
+   "note": "scrap pallets at the foot of the wing: second at (-15.8, 0.05, -2.8) yaw -30"
+  },
+  {
+   "piece": "primitive:tyres",
+   "x": -13.8,
+   "z": -2.6,
+   "yaw": 0,
+   "note": "two tyres lying flat, second at (-14.3, -2.1), as now"
+  },
+  {
+   "piece": "elec_pole",
+   "x": -14.8,
+   "z": -6.8,
+   "yaw": 90,
+   "note": "KEEP the warehouse's private pole pair (roads-kit electricity-pole @10, two shafts 6 m apart along z: z -9.8 and -3.8), moved 0.7 m north so it clears the container"
+  },
+  {
+   "piece": "elec_wires",
+   "x": -14.8,
+   "z": -8.8,
+   "yaw": 90,
+   "note": "at y 4.55; second span at (-14.8, 4.55, -14.5) ending at the facade's junction box (primitive at (-15, 5.0, -16.9)); the 0.8 m overlap reads as a splice"
+  },
+  {
+   "piece": "lamp_post",
+   "x": -13.4,
+   "z": -13.6,
+   "yaw": -135,
+   "note": "LIGHT cold LED (was sodium; the lot's lights are all cold, the street's all sodium). KEEP position, 0.4 m north of the container; head (-12.7, 4.7, -12.9) over the container."
+  },
+  {
+   "piece": "lamp_post",
+   "x": -15,
+   "z": 8.6,
+   "yaw": -45,
+   "note": "LIGHT cold LED. Compound south post by the gate, arm toward +x -z, head (-14.08, 4.7, 7.68). Replaces the post at (-11.8, 9.4), which is now on the fence line."
+  },
+  {
+   "piece": "scaffold",
+   "x": -15.85,
+   "z": 4.5,
+   "yaw": 0,
+   "note": "KEEP both lifts against the wing's south end, and barrier_striped (-13.4, 6.8) 80 beside them"
+  },
+  {
+   "piece": "yard_asphalt",
+   "x": -13.5,
+   "z": 3.5,
+   "yaw": -40,
+   "note": "KEEP the compound patch and the puddle at (-11.5, 5.5)"
+  },
+  {
+   "piece": "streetlight",
+   "x": -8.4,
+   "z": -2.2,
+   "yaw": 90,
+   "note": "LIGHT cold LED. KEEP both window lights, second at (-8.4, 2.2); they stand in the den's 3.25 m strip between the window wall and the compound fence"
+  },
+  {
+   "piece": "pallet_yard",
+   "x": -8.2,
+   "z": 1,
+   "yaw": 0,
+   "note": "KEEP the three-pallet stack outside the z=+2 window (0.54 m, below the sill)"
+  },
+  {
+   "piece": "primitive:tyre stack",
+   "x": -8.7,
+   "z": 3.4,
+   "yaw": 0,
+   "note": "three tyres stacked, moved from (-10.3, 1.7) which is now inside the compound"
+  },
+  {
+   "piece": "trash_bags",
+   "x": -7.3,
+   "z": 3.9,
+   "yaw": 40,
+   "note": "KEEP"
+  },
+  {
+   "piece": "pallet_broken",
+   "x": -7.2,
+   "z": 4.9,
+   "yaw": 25,
+   "note": "moved from (-9.7, 3.2), now inside the compound"
+  },
+  {
+   "piece": "pallet_yard",
+   "x": -8.4,
+   "z": 6.3,
+   "yaw": 15,
+   "note": "KEEP, the single pallet at the strip's south end"
+  },
+  {
+   "piece": "primitive:puddles",
+   "x": -8.2,
+   "z": 0.2,
+   "yaw": 30,
+   "note": "KEEP (-8.2, 0.2), (-8.6, -5.2), (0.6, -7.8), (-6.2, -14); the (9.8, 2.2) one moves to (12.5, 2.0)"
+  },
+  {
+   "piece": "tree_shrub",
+   "x": -9.8,
+   "z": 9.2,
+   "yaw": 0,
+   "note": "weeds growing through the compound's fence corner (2.3 m wide, 0.9 m tall); 2.5 m from the plinth corner, laps 0.37 m onto the footpath"
+  },
+  {
+   "piece": "truck_grey",
+   "x": 1,
+   "z": 26.5,
+   "yaw": -90,
+   "scale": 1,
+   "note": "box lorry in Unit A's forecourt, nose out (+x), 1.5 m off the second roller door; only its roof shows at the bottom-left corner at zoom 1"
+  },
+  {
+   "piece": "pallet_yard",
+   "x": -0.5,
+   "z": 20.3,
+   "yaw": 10,
+   "note": "three pallets stacked at the forecourt's street corner (y 0, 0.18, 0.36)"
+  },
+  {
+   "piece": "city_dumpster",
+   "x": -1.6,
+   "z": 30.2,
+   "yaw": 0,
+   "note": "Unit A's bin at the back of the forecourt (roads-kit dumpster @5); off-frame"
+  },
+  {
+   "piece": "primitive:bulkhead lights",
+   "x": -2.95,
+   "z": 23.5,
+   "yaw": -90,
+   "note": "emissive warm quads 0.3 x 0.12 at y 2.75 over each roller door (second at z 26.5), driven by streetLevel; faces only, no PointLight"
+  },
+  {
+   "piece": "tree_shrub",
+   "x": 15,
+   "z": 21,
+   "yaw": 0,
+   "note": "weeds on the vacant lot across: also (21, 25) yaw 40, (13, 28) yaw 110, and tree_small at (26, 20)"
+  },
+  {
+   "piece": "billboard",
+   "x": 26.5,
+   "z": 2,
+   "yaw": 90,
+   "note": "LIGHT cold spot on it. roads-kit sign-highway @7 (7 m wide, 4.95 m tall; the board is on the model's -x side, so yaw 90 faces it +z toward the street). The hoarding on the vacant lot east of the car park; its top 2.9 screen-m poke into the bottom-right corner at zoom 1. Blank grey face."
+  },
+  {
+   "piece": "tree_shrub",
+   "x": 27,
+   "z": -8,
+   "yaw": 0,
+   "note": "weeds on the near-side vacant lot, second at (33, 3) yaw 70"
+  }
+ ],
+ "lights": [
+  {
+   "kind": "point sodium (street column head)",
+   "x": -22,
+   "y": 5.9,
+   "z": 16.25,
+   "color": "1.0, 0.72, 0.42",
+   "lumens": 120000,
+   "note": "attenuation 20; emissive head 0.5 x 0.15 x 0.3 at the same point; daylight.addStreetLight. One per street_light."
+  },
+  {
+   "kind": "point sodium",
+   "x": -6,
+   "y": 5.9,
+   "z": 16.25,
+   "color": "1.0, 0.72, 0.42",
+   "lumens": 120000,
+   "note": "as above"
+  },
+  {
+   "kind": "point sodium",
+   "x": 10,
+   "y": 5.9,
+   "z": 16.25,
+   "color": "1.0, 0.72, 0.42",
+   "lumens": 120000,
+   "note": "the pool at the bottom of the frame in front of the lot crossover"
+  },
+  {
+   "kind": "point sodium",
+   "x": 26,
+   "y": 5.9,
+   "z": 16.25,
+   "color": "1.0, 0.72, 0.42",
+   "lumens": 120000,
+   "note": "off-frame; its pool shows at the left orbit limit"
+  },
+  {
+   "kind": "point cold LED (lamp_post head)",
+   "x": 20.2,
+   "y": 4.6,
+   "z": -4,
+   "color": "0.75, 0.85, 1.0",
+   "lumens": 90000,
+   "note": "attenuation 16; the bays"
+  },
+  {
+   "kind": "point cold LED",
+   "x": 20.2,
+   "y": 4.6,
+   "z": -13.5,
+   "color": "0.75, 0.85, 1.0",
+   "lumens": 90000,
+   "note": "apron east end"
+  },
+  {
+   "kind": "point cold LED",
+   "x": -12.7,
+   "y": 4.6,
+   "z": -12.9,
+   "color": "0.75, 0.85, 1.0",
+   "lumens": 90000,
+   "note": "compound north post (existing post, recoloured from sodium)"
+  },
+  {
+   "kind": "point cold LED",
+   "x": -14.08,
+   "y": 4.6,
+   "z": 7.68,
+   "color": "0.75, 0.85, 1.0",
+   "lumens": 90000,
+   "note": "compound south post by the gate"
+  },
+  {
+   "kind": "point cold LED (existing window streetlights)",
+   "x": -8.4,
+   "y": 2.47,
+   "z": -2.2,
+   "color": "0.75, 0.85, 1.0",
+   "lumens": 80000,
+   "note": "and its twin at (-8.4, 2.47, 2.2); the two window spill spots on x -6.3 stay as they are"
+  },
+  {
+   "kind": "point warm (existing door light)",
+   "x": 5.2,
+   "y": 2.47,
+   "z": -8.2,
+   "color": "1.0, 0.86, 0.62",
+   "lumens": 80000,
+   "note": "unchanged"
+  },
+  {
+   "kind": "spot flood cold (existing)",
+   "x": 3,
+   "y": 5.3,
+   "z": -16.7,
+   "color": "0.85, 0.90, 1.0",
+   "lumens": 80000,
+   "note": "aimed at (3, -0.13, -11.5), inner 25 outer 60, radius 26; unchanged"
+  },
+  {
+   "kind": "spot flood cold (existing)",
+   "x": -16.7,
+   "y": 2.75,
+   "z": -8,
+   "color": "0.85, 0.90, 1.0",
+   "lumens": 50000,
+   "note": "wing eave, aimed at (-10.5, -0.13, -9), now onto the containers inside the compound; unchanged"
+  },
+  {
+   "kind": "point warm (existing lit bay)",
+   "x": 3,
+   "y": 1.6,
+   "z": -16,
+   "color": "1.0, 0.82, 0.6",
+   "lumens": 25000,
+   "note": "with the emissive door quad, the four office-window quads and the sign face; unchanged"
+  },
+  {
+   "kind": "point amber blink (existing beacon)",
+   "x": 0.6,
+   "y": 1.05,
+   "z": -12.6,
+   "color": "1.0, 0.6, 0.12",
+   "lumens": 1500,
+   "note": "radius 4, blinked by the scene; unchanged"
+  },
+  {
+   "kind": "spot cold (hoarding floods)",
+   "x": 26.5,
+   "y": 5.3,
+   "z": 3.4,
+   "color": "0.85, 0.90, 1.0",
+   "lumens": 15000,
+   "note": "aimed at the board's face (26.5, 3.3, 2.15), inner 45 outer 90, radius 8, with two small emissive housings on the board's top edge; streetLevel"
+  },
+  {
+   "kind": "emissive face only",
+   "x": -2.95,
+   "y": 2.75,
+   "z": 23.5,
+   "color": "1.0, 0.86, 0.62",
+   "lumens": 0,
+   "note": "Unit A bulkheads over the two roller doors (second at z 26.5); faces only, no light, so the outdoor light count stays at 16"
+  }
+ ],
+ "distant": [
+  {
+   "piece": "building_wide",
+   "x": -6,
+   "z": -42,
+   "yaw": 0,
+   "scale": 1,
+   "note": "KEEP: the 10 x 11 x 5 m block whose top shows over the warehouse parapet"
+  },
+  {
+   "piece": "unit_k",
+   "x": 30,
+   "z": -40,
+   "yaw": 0,
+   "scale": 1.4,
+   "note": "commercial building-k @7 scaled 1.4 = 20 x 14 x 9 m, the big shed to the north-east; replaces building_low at (24, -32)"
+  },
+  {
+   "piece": "lowdetail_wide_b",
+   "x": -52,
+   "z": -6,
+   "yaw": 90,
+   "scale": 2,
+   "note": "14 x 16 x 7 m block west of the side road; replaces building_low at (-40, -12), which sat on the new side road"
+  },
+  {
+   "piece": "unit_e",
+   "x": -50,
+   "z": 30,
+   "yaw": 0,
+   "scale": 1.6,
+   "note": "building-e @7 scaled 1.6 = 18 x 10 x 11 m, south-west beyond Unit B; only at the right orbit limit"
+  }
+ ],
+ "colour_accents": [
+  "Sodium orange: the four street_light heads (1.0, 0.72, 0.42) and their pools on the carriageway. The street is the old municipal estate road, so it is sodium; nothing on the lot is.",
+  "Cold LED blue-white: the lot's four lamp_post heads, the two window streetlights, the two floods and the hoarding spot (0.75-0.85, 0.85-0.90, 1.0). The lot has been relit with LEDs, which is what separates it from the street at night.",
+  "Warm: the door light, the lit bay door, the four office windows, the UNIT 7 sign and Unit A's two bulkheads. Interior colour leaking out, all driven by the lamp/street levels as now.",
+  "Amber: the blinking beacon on the warning_light at the apron gate, unchanged.",
+  "The two spray tags, HELLO FRIEND (pink) on the wing and 404 (cyan) on the warehouse brick, unchanged; note container_tagged loses its vertex-painted tags to greyOut so it counts as grey.",
+  "Four cones, orange: (1.4, -7.2) outside the door, (-2.6, -12.2) at the gate leaf, (1.8, 11.3) on the drain in the gutter, (10.9, 9.9) at the boom tip. Everything else, including the boom arm, hydrant, van, hoarding face, bench and bus flag, goes through the grey wash."
+ ],
+ "sightlines": [
+  "OVER THE BACK WALL (upper right): the back yard from z -7.4 out: the bin group and cone by the door, the cold LED pool from the compound's north post at the far left, the divider fence at z -13 with the leaf swung open and the amber beacon, the pallet stack, the lorry's flank at the closed bay, the lit bay and canopy dead ahead of the door; the truck lane's yellow paint runs from the bay to the gate. At zoom 0.8 the upper facade row, the UNIT 7 sign and the roof plant come in. Nothing new was added in this band except the aisle mouth (flat asphalt) at x 10.5..16.5.",
+  "THROUGH THE DOOR (looking -z from (3, -5)): the stoop, the puddle at (0.6, -7.8) left of the path, the cone 1.6 m left, the open gap in the divider fence (x -0.5..6.8, jersey barrier at 7.6..9.6 and sawhorse at 6.8 framing it), the boxes at (1.6, -14) 0.9 m off the line, and the working bay's roller door (x 1.8..4.2 at z -17) glowing warm at night. The door path x 2.5..3.5, z -7..-4 has no prop, fence or tile on it.",
+  "THROUGH THE z=-2 WINDOW (looking -x): the cold light right outside at x -8.4, the compound fence at -9.5 (see-through), the plain container's door end and lock bars at z -3.42 with the three drums in front of it (x -10.3..-12.7), the wing's closed metal bay at z -6.5 beyond, the pole pair's shaft at z -3.8 and the wire spans above the sill, the rusty dumpster far left against the wing.",
+  "THROUGH THE z=+2 WINDOW: the pallet stack under the sill, the tyre stack and bags, the fence, the skip against the wing (its north face on the line, bags toward the camera), HELLO FRIEND on the wing at x -17, the compound's south cold post and its pool at the far right of the view at night; the scaffold's top lift above the wing's parapet.",
+  "FOREGROUND LEFT (+z side, below the room): 0.35 m of slab, the 2.4 m dead-grass verge with the weed clump at the compound's fence corner, the near footpath and 8 cm kerb running from the compound gate at the frame's left edge down to the boom gate at bottom centre, the drain with its cone, the 6.4 m carriageway with its centre line, the far kerb, the bench and bus flag, the sodium head of the x=10 column poking up at the bottom, the terminal power pole at the left, Unit A's near corner and sawtooth roof at the left edge with the x=-6 column's head above it. Nothing taller than 0.9 m stands between the plinth and the far footpath inside the room's screen band (screen-right -10..8.6); the tallest thing there, the boom cabinet, is 1.1 m and at 6.5 m.",
+  "FOREGROUND RIGHT (+x side): the driveway from the crossover through the boom gate (arm tip 2.05 m off the plinth's east edge), the 6 m aisle beside the den (its edge 2.25 m off the plinth), the three bays with the van nose-in against the east fence, the two cold posts on the fence line (13 m out, screen-right 17+ so they never cross the room), the east chain-link running out of the bottom-right corner, and the top of the hoarding on the vacant lot next door poking in at that corner."
+ ],
+ "notes": "The den is the old gatehouse-office of Unit 7, a brick outbuilding on the street corner of a warehouse lot at the end of a cul-de-sac service road; the road runs along the +z side, 8 m tiles at z 10..18, T-ing into a side road at x -36 and dead-ending at x 47.\nBehind the den the warehouse (z -17) and its wing (x -17) stay where they are; the lot's driveway now comes in from the street at x 10..14 through a boom gate, up the +x side past three bays and a van, and onto the loading apron, which is why the truck lane, bay stripes and lit bay exist.\nWest of the den a chain-link compound (x -17..-9.5, z -13..9.7) holds the warehouse's containers, skip, drums and scrap, walled by the wing, open to the apron at its north end, with a locked double gate onto the street and its own crossover; the den keeps a 3.25 m strip of its own junk between its windows and that fence.\nAcross the street a small joinery (Unit A, sawtooth roof, roller doors turned to face +x so the camera sees them) sits at the frame's left edge with a lorry in its forecourt, a second metal unit further west, and a vacant lot with weeds and a hoarding to the east; a bench and bus flag stand on the far footpath.\nLighting tells the story at night: sodium columns on the far kerb every 16 m, cold LED posts on the lot, the warm bay and door, the amber beacon, with the power poles kept to the near side west of the den so no pole ever crosses the room on screen; 16 outdoor lights in all (10 today).\nHousekeeping for WorldYard: tiles at y -0.29, base plane to -0.32, slab re-cut to x -32..40 z -18.5..10 plus a far slab z 18..36, fence runs re-cut per the table, containers/skip/ladder/scrap moved inside x -9.5, one jersey barrier, both foreground drums and the front cone gone, two posts moved, two building_low replaced; two conversions needed (elec_pole_single, elec_wires_wide); the second-wave USDZs (road_*, street_light, shed_*, unit_*, billboard, bench, truck_grey, tree_*) already exist untracked in Resources/world with entries in the modified build_assets.py."
+}
