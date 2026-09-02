@@ -41,11 +41,21 @@ final class WorldActor {
     private(set) var seatIndex: Int?
     /// Fired when the actor crosses the threshold, so the door can swing.
     var onDoor: (() -> Void)?
+    /// Fired at the coat rack: the coat goes on a hook, and comes off again.
+    var onHang: (() -> Void)?
+    var onTake: (() -> Void)?
+    /// The coat worn in from outside: the brand colour, darkened.
+    let coatColor: NSColor
 
     private enum Mode { case walking, seated, standing, gone }
     private var mode: Mode = .standing
-    private var path: [SIMD3<Float>] = []
+    /// A leg of a walk: where to, how long to stop there, what to do on arrival.
+    private struct Leg { var to: SIMD3<Float>; var dwell: Float = 0; var onReach: (() -> Void)? = nil }
+    private var path: [Leg] = []
+    private var dwellUntil: Float = -1
+    private var dwelling: Bool { clock < dwellUntil }
     private var onArrive: (() -> Void)?
+    private var coat: Entity?
     private var leaving = false
     private var yaw: Float = 0
     private var targetYaw: Float = 0
@@ -78,6 +88,7 @@ final class WorldActor {
         color = NSColor(red: CGFloat((brand >> 16) & 0xff) / 255,
                         green: CGFloat((brand >> 8) & 0xff) / 255,
                         blue: CGFloat(brand & 0xff) / 255, alpha: 1)
+        coatColor = color.blended(withFraction: 0.55, of: NSColor(white: 0.10, alpha: 1)) ?? color
         entity.name = "actor:" + paneId
 
         // the same agent keeps the same face across launches
@@ -87,6 +98,14 @@ final class WorldActor {
             if let j = figure.findEntity(named: name) { joints[name] = j }
         }
         entity.addChild(figure)
+        // the coat: a shell around the torso, worn outside and hung up inside
+        if let hips = joints["hips"] {
+            let px = WorldPrimitives.px
+            let c = WorldPrimitives.box(SIMD3(9.2 * px, 12.6 * px, 5.4 * px), coatColor, roughness: 1, corner: 0.012)
+            c.position = SIMD3(0, 6.3 * px, 0)
+            hips.addChild(c)
+            coat = c
+        }
         buildTag()
         buildMarker()
         entity.isEnabled = false
@@ -146,20 +165,22 @@ final class WorldActor {
 
     // MARK: choreography
 
-    func enter(from spawn: SIMD3<Float>, via threshold: SIMD3<Float>, to seat: WorldSeat?, index: Int?) {
+    func enter(from spawn: SIMD3<Float>, via threshold: SIMD3<Float>, rack: SIMD3<Float>?, to seat: WorldSeat?, index: Int?) {
         entity.position = spawn
         entity.isEnabled = true
+        coat?.isEnabled = true
         self.seat = seat
         self.seatIndex = index
         yaw = Self.yaw(from: spawn, to: threshold)
         targetYaw = yaw
         onDoor?()
-        var waypoints = [threshold]
+        var legs = [Leg(to: threshold)]
+        if let rack { legs.append(hangLeg(at: rack)) }
         if let seat {
-            waypoints.append(seat.approach)
-            waypoints.append(seat.position)
+            legs.append(Leg(to: seat.approach))
+            legs.append(Leg(to: seat.position))
         }
-        walk(waypoints) { [weak self] in
+        walk(legs) { [weak self] in
             guard let self else { return }
             if let seat = self.seat {
                 self.targetYaw = seat.yaw
@@ -170,41 +191,60 @@ final class WorldActor {
         }
     }
 
-    func stand(at spot: SIMD3<Float>, from spawn: SIMD3<Float>, via threshold: SIMD3<Float>) {
+    func stand(at spot: SIMD3<Float>, from spawn: SIMD3<Float>, via threshold: SIMD3<Float>, rack: SIMD3<Float>?) {
         entity.position = spawn
         entity.isEnabled = true
+        coat?.isEnabled = true
         yaw = Self.yaw(from: spawn, to: threshold)
         targetYaw = yaw
         onDoor?()
-        walk([threshold, spot]) { [weak self] in
+        var legs = [Leg(to: threshold)]
+        if let rack { legs.append(hangLeg(at: rack)) }
+        legs.append(Leg(to: spot))
+        walk(legs) { [weak self] in
             self?.mode = .standing
             self?.targetYaw = .pi * 0.75
         }
     }
 
-    func leave(via threshold: SIMD3<Float>, to spawn: SIMD3<Float>) {
+    func leave(via threshold: SIMD3<Float>, rack: SIMD3<Float>?, to spawn: SIMD3<Float>) {
         guard !leaving else { return }
         leaving = true
         showMarker(nil, color: .white)
-        var waypoints: [SIMD3<Float>] = []
-        if let seat { waypoints.append(seat.approach) }
-        waypoints.append(threshold)
-        waypoints.append(spawn)
-        walk(waypoints) { [weak self] in
+        var legs: [Leg] = []
+        if let seat { legs.append(Leg(to: seat.approach)) }
+        if let rack {
+            legs.append(Leg(to: rack, dwell: 0.7) { [weak self] in
+                self?.coat?.isEnabled = true
+                self?.onTake?()
+            })
+        }
+        legs.append(Leg(to: threshold))
+        legs.append(Leg(to: spawn))
+        walk(legs) { [weak self] in
             self?.mode = .gone
             self?.entity.isEnabled = false
         }
         // the door swings as they reach it
-        let delay = Double(waypoints.dropLast().reduce((0, entity.position)) { acc, p in
-            (acc.0 + simd_length(p - acc.1), p) }.0 / 1.6)
+        let walkTime = legs.dropLast().reduce((Float(0), entity.position)) { acc, l in
+            (acc.0 + simd_length(l.to - acc.1) / 1.6 + l.dwell, l.to) }.0
         Task { [weak self] in
-            try? await Task.sleep(for: .seconds(max(0, delay - 0.4)))
+            try? await Task.sleep(for: .seconds(max(0, Double(walkTime) - 0.4)))
             self?.onDoor?()
         }
     }
 
-    private func walk(_ waypoints: [SIMD3<Float>], then: @escaping () -> Void) {
-        path = waypoints
+    /// The stop at the coat rack on the way in: a moment facing it, the coat
+    /// comes off and goes on a hook.
+    private func hangLeg(at rack: SIMD3<Float>) -> Leg {
+        Leg(to: rack, dwell: 0.7) { [weak self] in
+            self?.coat?.isEnabled = false
+            self?.onHang?()
+        }
+    }
+
+    private func walk(_ legs: [Leg], then: @escaping () -> Void) {
+        path = legs
         onArrive = then
         mode = .walking
     }
@@ -270,7 +310,9 @@ final class WorldActor {
     }
 
     private func step(dt: Float) {
-        guard let next = path.first else { return }
+        guard let leg = path.first else { return }
+        if dwelling { return }
+        let next = leg.to
         let here = entity.position
         let delta = next - here
         let dist = simd_length(SIMD3(delta.x, 0, delta.z))
@@ -278,12 +320,23 @@ final class WorldActor {
         if dist < speed * dt * 1.2 || dist < 0.02 {
             entity.position = next
             path.removeFirst()
+            if leg.dwell > 0 {
+                // stop here a moment, turned to whatever we stopped for
+                dwellUntil = clock + leg.dwell
+                targetYaw = Self.yaw(from: next, to: SIMD3(WorldRoom.Den.coatRack.x, 0, WorldRoom.Den.coatRack.z))
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(Double(leg.dwell) * 0.5))
+                    leg.onReach?()
+                }
+            } else {
+                leg.onReach?()
+            }
             if path.isEmpty {
                 mode = .standing
                 onArrive?()
                 onArrive = nil
-            } else {
-                targetYaw = Self.yaw(from: next, to: path[0])
+            } else if leg.dwell == 0 {
+                targetYaw = Self.yaw(from: next, to: path[0].to)
             }
             return
         }
@@ -318,6 +371,11 @@ final class WorldActor {
         let breathe = sin(t * 1.4) * 0.012
 
         switch mode {
+        case .walking where dwelling:
+            // at the rack: one arm up to the hook
+            arms = (-2.3, sin(t * 1.2) * 0.05)
+            armsOut = (0.1, -0.08)
+            neckPitch = -0.25
         case .walking:
             let s = sin(t * 9)
             legs = (s * 0.7, -s * 0.7)

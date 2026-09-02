@@ -75,6 +75,8 @@ MANIFEST = {
     "coat_rack": ("polypizza-hacker-props/coat-rack-standing_*.glb", ["--join", "--recenter"]),
     "jacket": ("polypizza-hacker-props/jacket_*.glb", ["--join", "--recenter"]),
     "skateboard": ("polypizza-hacker-props/skateboard_*.glb", ["--join", "--recenter"]),
+    "coffee_machine": ("polypizza-hacker-props/kitchen-coffee-machine_kenney_*.glb", ["--join", "--recenter"]),
+    "kitchen_cabinet": ("kenney-furniture-kit/Models/GLTF format/kitchenCabinet.glb", ["--join", "--recenter"]),
     "fridge": ("polypizza-hacker-props/can-fridge_*.glb", ["--join", "--scale", "0.42", "--recenter"]),
     "router": ("polypizza-hacker-props/wireless-machine_*.glb", ["--join", "--recenter"]),
 

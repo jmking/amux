@@ -182,16 +182,71 @@ enum WorldPrimitives {
     }
 
     /// A server rack: dark cabinet, a column of blinking-capable LEDs.
+    /// A 19-inch rack cabinet: dark steel, a column of unit faceplates, and
+    /// nine LEDs named led0…led8 that the scene blinks.
     static func serverRack() -> Entity {
         let root = Entity()
-        let cab = box(SIMD3(0.6, 2.0, 0.8), NSColor(white: 0.07, alpha: 1), roughness: 0.6, metallic: true)
+        let steel = NSColor(white: 0.08, alpha: 1)
+        let cab = box(SIMD3(0.6, 2.0, 0.8), steel, roughness: 0.55, metallic: true, corner: 0.01)
         root.addChild(cab)
-        for i in 0..<9 {
-            let led = emissive(SIMD3(0.04, 0.04, 0.01), i % 3 == 0 ? .systemOrange : .systemGreen, intensity: 3)
-            led.name = "led\(i)"
-            led.position = SIMD3(-0.2 + Float(i % 3) * 0.2, 0.3 + Float(i / 3) * 0.55, 0.405)
-            root.addChild(led)
+        // the frame around the front, a shade lighter
+        for x: Float in [-0.27, 0.27] {
+            let rail = box(SIMD3(0.04, 1.9, 0.02), NSColor(white: 0.2, alpha: 1), roughness: 0.5, metallic: true, corner: 0)
+            rail.position = SIMD3(x, 1.0, 0.405)
+            root.addChild(rail)
         }
+        // units: faceplates of different heights, some blank, some with grilles
+        var y: Float = 0.12
+        var unit = 0
+        var led = 0
+        while y < 1.8 {
+            let h: Float = [0.09, 0.13, 0.18, 0.09, 0.26, 0.13][unit % 6]
+            let shade = NSColor(white: unit % 3 == 1 ? 0.16 : 0.12, alpha: 1)
+            let face = box(SIMD3(0.5, h - 0.015, 0.02), shade, roughness: 0.45, metallic: true, corner: 0.004)
+            face.position = SIMD3(0, y + h / 2, 0.41)
+            root.addChild(face)
+            if unit % 3 != 2 {
+                // a slot of vents on the left
+                for k in 0..<3 {
+                    let vent = box(SIMD3(0.09, 0.008, 0.005), NSColor(white: 0.03, alpha: 1), roughness: 1, corner: 0)
+                    vent.position = SIMD3(-0.15, y + h * (0.3 + Float(k) * 0.2), 0.421)
+                    root.addChild(vent)
+                }
+            }
+            // LEDs on the right; the named ones blink
+            for k in 0..<2 where led < 9 {
+                let l = emissive(SIMD3(0.025, 0.012, 0.006), k == 0 ? .systemGreen : (led % 4 == 0 ? .systemOrange : .systemGreen), intensity: 3)
+                l.name = "led\(led)"
+                l.position = SIMD3(0.14 + Float(k) * 0.05, y + h / 2, 0.424)
+                root.addChild(l)
+                led += 1
+            }
+            y += h
+            unit += 1
+        }
+        // a fan grille on top
+        let grille = box(SIMD3(0.36, 0.01, 0.36), NSColor(white: 0.03, alpha: 1), roughness: 1, corner: 0)
+        grille.position = SIMD3(0, 2.006, -0.05)
+        root.addChild(grille)
+        return root
+    }
+
+    /// A coat on a hook: the hook point is the entity's origin, the coat hangs
+    /// below it, its front toward +z.
+    static func jacket(color: NSColor) -> Entity {
+        let root = Entity()
+        let body = box(SIMD3(0.30, 0.42, 0.10), color, roughness: 1, corner: 0.02)
+        body.position = SIMD3(0, -0.23, 0)
+        root.addChild(body)
+        for x: Float in [-0.185, 0.185] {
+            let sleeve = box(SIMD3(0.085, 0.36, 0.09), color, roughness: 1, corner: 0.02)
+            sleeve.position = SIMD3(x, -0.24, 0)
+            sleeve.orientation = simd_quatf(angle: x < 0 ? 0.12 : -0.12, axis: SIMD3(0, 0, 1))
+            root.addChild(sleeve)
+        }
+        let hood = box(SIMD3(0.2, 0.08, 0.14), color, roughness: 1, corner: 0.03)
+        hood.position = SIMD3(0, -0.04, -0.03)
+        root.addChild(hood)
         return root
     }
 

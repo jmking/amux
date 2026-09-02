@@ -36,6 +36,8 @@ final class WorldScene {
     private var actors: [String: WorldActor] = [:]
     private var occupancy: [Int: String] = [:]
     private var standingUse: [Int: String] = [:]
+    private var hookUse: [Int: String] = [:]
+    private var coats: [String: Entity] = [:]
     private var pending: [WorldAgentState]?
     private var spawning: Set<String> = []
     private var clock: Float = 0
@@ -126,7 +128,7 @@ final class WorldScene {
             }
         }
         for (id, actor) in actors where !live.contains(id) {
-            actor.leave(via: layout.threshold, to: layout.spawn)
+            actor.leave(via: layout.threshold, rack: hookUse.values.contains(id) ? layout.rackApproach : nil, to: layout.spawn)
         }
     }
 
@@ -137,13 +139,37 @@ final class WorldScene {
         actor.setPhase(a.phase)
         root.addChild(actor.entity)
         actors[a.paneId] = actor
+        // a free hook on the coat rack, if there is one; the coat hangs there
+        // while the agent is in and comes down again on the way out
+        var rack: SIMD3<Float>?
+        if let hook = (0..<layout.rackHooks.count).first(where: { hookUse[$0] == nil }) {
+            hookUse[hook] = a.paneId
+            rack = layout.rackApproach
+            let id = a.paneId
+            actor.onHang = { [weak self] in
+                guard let self, self.coats[id] == nil else { return }
+                let coat = WorldPrimitives.jacket(color: actor.coatColor)
+                let p = self.layout.rackHooks[hook]
+                coat.position = p
+                let out = p - SIMD3(WorldRoom.Den.coatRack.x, p.y, WorldRoom.Den.coatRack.z)
+                coat.orientation = simd_quatf(angle: atan2(out.x, out.z), axis: SIMD3(0, 1, 0))
+                self.root.addChild(coat)
+                self.coats[id] = coat
+            }
+            actor.onTake = { [weak self] in
+                guard let self else { return }
+                self.coats[id]?.removeFromParent()
+                self.coats[id] = nil
+                self.hookUse[hook] = nil
+            }
+        }
         if let (i, seat) = claimSeat(for: a.paneId) {
             tintScreen(seat, to: actor.color)
-            actor.enter(from: layout.spawn, via: layout.threshold, to: seat, index: i)
+            actor.enter(from: layout.spawn, via: layout.threshold, rack: rack, to: seat, index: i)
         } else {
             let i = (0..<layout.standing.count).first { standingUse[$0] == nil } ?? 0
             standingUse[i] = a.paneId
-            actor.stand(at: layout.standing[i], from: layout.spawn, via: layout.threshold)
+            actor.stand(at: layout.standing[i], from: layout.spawn, via: layout.threshold, rack: rack)
         }
     }
 
@@ -184,6 +210,9 @@ final class WorldScene {
                     tintScreen(layout.seats[i], to: nil)
                 }
                 for (k, v) in standingUse where v == id { standingUse[k] = nil }
+                for (k, v) in hookUse where v == id { hookUse[k] = nil }
+                coats[id]?.removeFromParent()
+                coats[id] = nil
                 actor.entity.removeFromParent()
                 actors[id] = nil
             }

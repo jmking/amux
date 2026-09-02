@@ -116,7 +116,6 @@ final class WorldDaylight {
     private var neonLights: [(Float, (Float) -> Void)] = []
     private var streetLights: [(Float, (Float) -> Void)] = []
     private var streetFaces: [(ModelEntity, NSColor, Float)] = []
-    private var windows: [ModelEntity] = []
     var sky: ModelEntity?
     weak var renderer: RealityRenderer?
 
@@ -156,7 +155,6 @@ final class WorldDaylight {
     func addStreetLight(_ light: SpotLight) {
         streetLights.append((light.light.intensity, { light.light.intensity = $0 }))
     }
-    func addWindow(_ glass: ModelEntity) { windows.append(glass) }
 
     // MARK: applying an hour
 
@@ -217,19 +215,6 @@ final class WorldDaylight {
             appliedStreetLevel = streetLevel
             for (m, c, i) in streetFaces { setEmissive(m, c, max(0.05, i * streetLevel)) }
         }
-
-        // the glass shows the sky by day and the yard's cold light by night
-        let dayGlass = k.horizon * 1.3
-        let nightGlass = SIMD3<Float>(0.16, 0.24, 0.40)
-        let glass = nightGlass * night + dayGlass * (1 - night)
-        // by day the openings are open and the sun comes through them; the
-        // glowing glass is only there for the night, when there is nothing to see
-        let glassOn = night > 0.35
-        for w in windows {
-            w.isEnabled = glassOn
-            if glassOn, abs(night - appliedNight) > 0.02 || appliedNight.isNaN { setEmissive(w, nsColor(glass), 1.2) }
-        }
-        if glassOn { appliedNight = night }
 
         // the sky is a texture; rebuild it when it has changed enough, and not
         // more than a few times a second while the slider is dragged

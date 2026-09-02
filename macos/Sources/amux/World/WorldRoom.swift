@@ -39,6 +39,12 @@ struct WorldLayout {
     var standing: [SIMD3<Float>] = WorldRoom.Den.standing.map { SIMD3($0.x, 0, $0.z) }
     /// The wall clock, redrawn by the scene as the minute changes.
     var clock: WorldClock?
+    /// Where an agent stands to hang a coat on the way in, and the hooks.
+    var rackApproach = SIMD3<Float>(WorldRoom.Den.coatRack.x - 0.55, 0, WorldRoom.Den.coatRack.z + 0.8)
+    var rackHooks: [SIMD3<Float>] = (0..<6).map { i in
+        let a = Float(i) / 6 * 2 * .pi + 0.3
+        return SIMD3(WorldRoom.Den.coatRack.x + sin(a) * 0.27, 1.42, WorldRoom.Den.coatRack.z + cos(a) * 0.27)
+    }
     /// The door leaf, for swinging when someone passes.
     weak var door: Entity?
     /// The amber beacon in the lane, blinked by the scene after dark.
@@ -80,7 +86,7 @@ enum WorldRoom {
         static let bed: (x: Float, z: Float, yaw: Float) = (-4.7, 5.6, 0.15)
         static let arcade: (x: Float, z: Float, yaw: Float) = (-5.3, 4.2, .pi / 2)
         static let shelf: (x: Float, z: Float, yaw: Float) = (-5.55, -0.6, .pi / 2)
-        static let fridge: (x: Float, z: Float, yaw: Float) = (7.4, -4.55, .pi)
+        static let fridge: (x: Float, z: Float, yaw: Float) = (7.4, -4.55, 0)
         static let coatRack: (x: Float, z: Float) = (4.2, -4.5)
         static let crate: (x: Float, z: Float, yaw: Float) = (0.6, 5.7, 0.2)
         static let standing: [(x: Float, z: Float)] = [(0.8, 4.6), (-1.6, 4.0), (1.8, 6.0)]
@@ -172,11 +178,16 @@ enum WorldRoom {
                 root.addChild(seg)
             }
             if window {
-                // the city outside the glass, and its cold spill across the floor
-                let glass = WorldPrimitives.emissive(SIMD3(0.04, 1.4, 1.2), cityGlow, intensity: 1.2)
-                glass.position = SIMD3(minX - 0.12, 0.85, Float(z))
+                // glass you can see through, and the yard's cold spill across the floor at night
+                var gm = PhysicallyBasedMaterial()
+                gm.baseColor = .init(tint: NSColor(red: 0.75, green: 0.85, blue: 0.95, alpha: 1))
+                gm.roughness = .init(floatLiteral: 0.05)
+                gm.metallic = .init(floatLiteral: 0)
+                gm.blending = .transparent(opacity: .init(floatLiteral: 0.16))
+                gm.faceCulling = .none
+                let glass = ModelEntity(mesh: .generateBox(width: 0.02, height: 1.4, depth: 1.2), materials: [gm])
+                glass.position = SIMD3(minX, 1.55, Float(z))
                 root.addChild(glass)
-                daylight.addWindow(glass)
                 let spill = SpotLight()
                 spill.light.color = cityGlow
                 spill.light.intensity = 15000
@@ -299,22 +310,19 @@ enum WorldRoom {
         daylight.addLamp(fill)
 
         // -- infrastructure along the back-left --
-        let rack0 = await place("server_rack", at: SIMD3(-4.7, 0, -4.55), fallback: WorldPrimitives.serverRack)
-        rack0.name = "rack0"
-        let rack1 = await place("server_tower", at: SIMD3(-3.35, 0, -4.6), fallback: WorldPrimitives.serverRack)
-        rack1.name = "rack1"
-        await place("router", at: SIMD3(-3.35, 2.08, -4.6), scale: 0.4)
+        for (i, x) in [Float(-4.85), -4.1].enumerated() {
+            let rack = WorldPrimitives.serverRack()
+            rack.name = "rack\(i)"
+            rack.position = SIMD3(x, 0, -4.55)
+            root.addChild(rack)
+        }
+        await place("router", at: SIMD3(-4.1, 2.02, -4.6), scale: 0.4)
         light(SIMD3(-4.2, 1.4, -3.9), screenGreen, 500, radius: 2.5)
         // cables down the wall from the racks, and across the floor to the desks
-        for (i, x) in [Float(-2.1), -0.6, 1.9, 4.6].enumerated() {
+        for (i, x) in [Float(-3.9), -0.9, 1.9, 4.9].enumerated() {
             await place("cable", at: SIMD3(x, tileH, minZ + 0.12), yaw: Float(i) * 0.7, fallback: {
                 let c = WorldPrimitives.box(SIMD3(0.03, 2.4, 0.03), NSColor(white: 0.05, alpha: 1)); c.position.y = -1.2
                 let h = Entity(); h.addChild(c); return h
-            })
-        }
-        for (i, x) in [Float(-2.6), -0.9, 1.7, 4.3].enumerated() {
-            await place("cables_droop", at: SIMD3(x + 0.6, 0.01, -4.3), yaw: quarter + Float(i % 2) * 0.2, scale: 1.4, fallback: {
-                let c = WorldPrimitives.box(SIMD3(0.03, 0.02, 1.2), NSColor(white: 0.05, alpha: 1)); let h = Entity(); h.addChild(c); return h
             })
         }
         await place("pipe_detail", at: SIMD3(5.6, 0, -4.6), scale: 1.5)
@@ -327,7 +335,12 @@ enum WorldRoom {
         await place("neon_sign", at: SIMD3(minX + 0.08, 1.6, 3.6), yaw: quarter)
         daylight.addNeon(light(SIMD3(minX + 0.6, 1.7, 3.6), neon, 900, radius: 3))
         await place("coat_rack", at: SIMD3(Den.coatRack.x, 0, Den.coatRack.z), scale: 2.2)
-        await place("extinguisher", at: SIMD3(6.6, 0, -4.7), fallback: WorldPrimitives.extinguisher)
+        await place("extinguisher", at: SIMD3(6.55, 0, -4.75), fallback: WorldPrimitives.extinguisher)
+        // the kitchen corner: a cabinet with the coffee machine on it, next to the fridge
+        await place("kitchen_cabinet", at: SIMD3(5.6, 0, -4.58), scale: 2)
+        await place("coffee_machine", at: SIMD3(5.5, 0.9, -4.6), yaw: 0.1, scale: 2)
+        await place("mug", at: SIMD3(5.95, 0.9, -4.45), yaw: 0.8)
+        await place("mug", at: SIMD3(5.2, 0.9, -4.4), yaw: -0.5)
 
         // -- the wall clock, red digits on the window wall between the windows --
         let clock = WorldClock()
