@@ -52,8 +52,11 @@ final class WorldARView: ARView {
 }
 
 @MainActor
-final class WorldRuntime {
+final class WorldRuntime: ObservableObject {
     let scene: WorldScene
+    /// True once the room has been built and drawn; the pane shows a loading
+    /// state until then rather than pieces popping in.
+    @Published private(set) var isReady = false
     /// Exists only while the pane is on screen. RealityKit renders a view at
     /// the display's full rate for as long as it exists, on screen or not, and
     /// a view that has once left its window never renders again; so the view
@@ -62,6 +65,8 @@ final class WorldRuntime {
     private(set) var view: WorldARView?
     private weak var container: NSView?
     private var teardown: Task<Void, Never>?
+    private var lastDiscard: CFAbsoluteTime = 0
+    private var rebuildPending = false
     private var timer: Timer?
     private var occlusionObserver: NSObjectProtocol?
     private var demoTick = 0
@@ -78,6 +83,7 @@ final class WorldRuntime {
     init(model: AppModel?) {
         self.model = model
         scene = WorldScene()
+        scene.onFirstFrame = { [weak self] in self?.revealView() }
         // `amux -worldDemo 1` starts every world pane in demo mode, for testing
         demoMode = UserDefaults.standard.bool(forKey: "worldDemo")
 
@@ -98,7 +104,15 @@ final class WorldRuntime {
     /// The host gives the runtime its container; the run policy decides whether
     /// there is a view in it.
     func attach(to container: NSView) {
-        self.container = container
+        if container !== self.container {
+            // When a pane moves, SwiftUI builds the new host and dismantles the
+            // old one, and the old container reports leaving its window last
+            // of all. Taking that as the current container hid the fresh view
+            // and tore it down: a container with no window that is not ours
+            // is a host on its way out.
+            guard container.window != nil || self.container == nil else { return }
+            self.container = container
+        }
         watchOcclusion(of: container.window)
         applyRunPolicy()
     }
@@ -115,9 +129,19 @@ final class WorldRuntime {
     private func makeView() -> WorldARView {
         let v = WorldARView(frame: .zero)
         v.environment.background = .color(NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
+        // invisible until the room has drawn; revealView fades it up
+        v.alphaValue = 0
         v.onWindowChange = { [weak self, weak v] in
-            guard let self else { return }
-            self.watchOcclusion(of: v?.window ?? self.container?.window)
+            guard let self, let v else { return }
+            if v.window == nil {
+                // The pane was moved (or its window closed). A RealityKit view
+                // that has left its window never renders again, so this one is
+                // finished; the run policy makes a fresh one if the pane is
+                // still on screen.
+                if self.view === v { self.discardView() }
+            } else {
+                self.watchOcclusion(of: v.window)
+            }
         }
         v.onOrbit = { [weak self] dx in self?.scene.camera.orbit(byPixels: dx) }
         v.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
@@ -136,6 +160,20 @@ final class WorldRuntime {
         if shouldRun {
             teardown?.cancel()
             teardown = nil
+            // a view that is not in this container has been through a move
+            if let v = view, v.superview !== container { discardView() ; _ = v }
+            // A view created in the same turn as another was destroyed never
+            // renders (RealityKit tears its renderer down asynchronously); the
+            // fresh one waits a beat.
+            if view == nil, CFAbsoluteTimeGetCurrent() - lastDiscard < 0.25 {
+                guard !rebuildPending else { return }
+                rebuildPending = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                    self?.rebuildPending = false
+                    self?.applyRunPolicy()
+                }
+                return
+            }
             let v = view ?? makeView()
             view = v
             if v.superview !== container {
@@ -152,12 +190,31 @@ final class WorldRuntime {
             teardown = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1.5))
                 guard let self, !Task.isCancelled else { return }
-                self.scene.detach()
-                self.view?.removeFromSuperview()
-                self.view = nil
+                self.discardView()
                 self.teardown = nil
             }
         }
+    }
+
+    private func discardView() {
+        // clear first: removing the view fires its window-change callback,
+        // which must not find it current and discard it again
+        let v = view
+        view = nil
+        lastDiscard = CFAbsoluteTimeGetCurrent()
+        scene.detach()
+        v?.removeFromSuperview()
+    }
+
+    /// The room has drawn: fade the view up and drop the loading state.
+    private func revealView() {
+        guard let v = view else { return }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.5
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            v.animator().alphaValue = 1
+        }
+        if !isReady { isReady = true }
     }
 
     private static let demoCast: [(String, String)] = [
@@ -236,6 +293,35 @@ struct WorldHost: NSViewRepresentable {
     func updateNSView(_ nsView: WorldContainerView, context: Context) {
         runtime.tabActive = isActive
         runtime.attach(to: nsView)
+    }
+}
+
+/// The pane's content: the RealityKit host, with a quiet loading state over it
+/// until the room has been built and drawn.
+struct WorldPaneView: View {
+    @ObservedObject var runtime: WorldRuntime
+    var isActive: Bool = true
+    @Environment(\.palette) private var pal
+
+    var body: some View {
+        ZStack {
+            WorldHost(runtime: runtime, isActive: isActive)
+            if !runtime.isReady {
+                VStack(spacing: 10) {
+                    Image(systemName: "cube.transparent")
+                        .font(.system(size: 24, weight: .light))
+                        .foregroundStyle(pal.faint)
+                        .symbolEffect(.pulse, options: .repeating)
+                    Text("opening the den")
+                        .font(.system(size: 12))
+                        .foregroundStyle(pal.faint2)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(red: 0.05, green: 0.05, blue: 0.08))
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.4), value: runtime.isReady)
     }
 }
 

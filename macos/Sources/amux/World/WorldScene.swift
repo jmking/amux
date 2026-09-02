@@ -46,6 +46,12 @@ final class WorldScene {
 
     /// Smoothed frames per second, for verification rather than display.
     private(set) var fps: Double = 0
+    /// Fires once the attached view has drawn the complete room a couple of
+    /// times, so the runtime can fade it in over the loading state instead of
+    /// letting the pieces pop in as they load.
+    var onFirstFrame: (() -> Void)?
+    private var anchored = false
+    private var framesSinceAnchor = 0
 
     init() {
         root.addChild(camera.rig)
@@ -65,15 +71,24 @@ final class WorldScene {
         updateSub = view.scene.subscribe(to: SceneEvents.Update.self) { [weak self] e in
             MainActor.assumeIsolated { self?.tick(dt: Float(e.deltaTime)) }
         }
-        view.scene.addAnchor(root)
+        // the room goes in whole, once built, never piece by piece
+        if ready { anchor() }
     }
 
     /// Takes the room out of its view. The view is the runtime's to discard.
     func detach() {
         updateSub?.cancel()
         updateSub = nil
-        if let view { view.scene.removeAnchor(root) }
+        if let view, anchored { view.scene.removeAnchor(root) }
+        anchored = false
         view = nil
+    }
+
+    private func anchor() {
+        guard let view, !anchored else { return }
+        view.scene.addAnchor(root)
+        anchored = true
+        framesSinceAnchor = 0
     }
 
     private func applyEnvironment(to view: ARView) {
@@ -99,6 +114,7 @@ final class WorldScene {
             neonMaterial = m
         }
         ready = true
+        anchor()
         if let p = pending { pending = nil; apply(roster: p) }
     }
 
@@ -165,8 +181,11 @@ final class WorldScene {
     // MARK: per frame
 
     private func tick(dt: Float) {
+        guard anchored else { return }
         let dt = min(dt, 0.1)
         clock += dt
+        framesSinceAnchor += 1
+        if framesSinceAnchor == 3 { onFirstFrame?() }
         if dt > 0 { fps = fps == 0 ? Double(1 / dt) : fps * 0.95 + Double(1 / dt) * 0.05 }
         camera.tick(dt: dt)
         let forward = camera.forward
