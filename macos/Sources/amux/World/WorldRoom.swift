@@ -39,6 +39,8 @@ struct WorldLayout {
     var standing: [SIMD3<Float>] = [SIMD3(1.0, 0, 2.6), SIMD3(-2.4, 0, 2.2), SIMD3(-1.0, 0, 3.4)]
     /// The door leaf, for swinging when someone passes.
     weak var door: Entity?
+    /// The amber beacon in the lane, blinked by the scene after dark.
+    var blinker: (light: PointLight, face: ModelEntity)?
 }
 
 @MainActor
@@ -254,14 +256,13 @@ enum WorldRoom {
         await place("trash_bags", at: SIMD3(5.4, 0, 0.6), yaw: 0.8)
         await place("cup", at: SIMD3(2.9, 0.02, 2.3), yaw: 0.2)
 
-        // -- outside: the room is on the ground in a yard. The yard's dressing
-        //    is placed by buildYard; this is the ground it stands on. --
+        // -- outside: the room is on the ground in a warehouse yard; see WorldYard --
         let ground = WorldPrimitives.plane(160, 160, NSColor(red: 0.12, green: 0.12, blue: 0.13, alpha: 1), roughness: 1)
         ground.position.y = -0.14
         root.addChild(ground)
-        await buildYard(under: root, daylight: daylight, place: { name, p, yaw, scale, parent, fallback in
+        await WorldYard.build(under: root, daylight: daylight, layout: &layout) { name, p, yaw, scale, parent, fallback in
             await place(name, at: p, yaw: yaw, scale: scale, under: parent, fallback: fallback)
-        })
+        }
 
         // -- the sky: the renderer has no skybox, so it is a dome around everything --
         if let sky = await skyDome() {
@@ -271,36 +272,6 @@ enum WorldRoom {
 
         layout.focus = SIMD3(0, 0.6, -0.6)
         return layout
-    }
-
-    /// The yard around the room: street lights outside each window and by the
-    /// door, on when it is dark. The rest of the dressing lands here as it is
-    /// designed.
-    static func buildYard(under root: Entity, daylight: WorldDaylight,
-                          place: (String, SIMD3<Float>, Float, Float, Entity?, (() -> Entity)?) async -> Entity) async {
-        let lampWarm = NSColor(red: 1.0, green: 0.86, blue: 0.62, alpha: 1)
-        let lampCold = NSColor(red: 0.75, green: 0.85, blue: 1.0, alpha: 1)
-        for (p, yaw, cold) in [(SIMD3<Float>(-8.4, 0, -2.2), Float.pi / 2, true),
-                               (SIMD3<Float>(-8.4, 0, 2.2), Float.pi / 2, true),
-                               (SIMD3<Float>(5.2, 0, -8.2), Float(0), false)] {
-            _ = await place("streetlight", p, yaw, 1, nil, {
-                let pole = WorldPrimitives.box(SIMD3(0.12, 4.2, 0.12), NSColor(white: 0.16, alpha: 1), metallic: true)
-                let arm = WorldPrimitives.box(SIMD3(0.1, 0.1, 1.0), NSColor(white: 0.16, alpha: 1), metallic: true)
-                arm.position = SIMD3(0, 4.1, 0.5)
-                let h = Entity(); h.addChild(pole); h.addChild(arm); return h
-            })
-            let color = cold ? lampCold : lampWarm
-            let head = WorldPrimitives.emissive(SIMD3(0.36, 0.12, 0.36), color, intensity: 5)
-            head.position = p + SIMD3(0, 2.75, 0)
-            root.addChild(head)
-            let l = PointLight()
-            l.light.color = color
-            l.light.intensity = 2600
-            l.light.attenuationRadius = 9
-            l.position = p + SIMD3(0, 2.6, 0)
-            root.addChild(l)
-            daylight.addStreetLight(l, face: head, faceColor: color, faceIntensity: 5)
-        }
     }
 
     /// The gradient as a textured sphere seen from inside, at a distance the

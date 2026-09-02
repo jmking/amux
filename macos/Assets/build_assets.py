@@ -87,6 +87,36 @@ MANIFEST = {
     "cup": ("kenney-food-kit/Models/GLB format/cup-coffee.glb", ["--join", "--scale", "0.35", "--recenter"]),
     "styrofoam": ("kenney-food-kit/Models/GLB format/styrofoam.glb", ["--join", "--scale", "0.45", "--recenter"]),
 
+
+    # -- the yard (scouted for a warehouse exterior; see Assets/work/yard-design.json) --
+    "container": ("kenney-retro-urban-kit/Models/GLB format/truck-grey-cargo.glb", ["--join", "--recenter", "--scale", "3.5", "--color", "truck=0.30,0.36,0.42"]),
+    "container_tagged": ("kenney-retro-urban-kit/Models/GLB format/truck-green-cargo.glb", ["--join", "--recenter", "--scale", "3.5", "--color", "truck_alien=0.46,0.24,0.18"]),
+    "truck_box": ("kenney-retro-urban-kit/Models/GLB format/truck-grey.glb", ["--join", "--recenter", "--scale", "3", "--color", "truck=0.62,0.60,0.56"]),
+    "dumpster": ("polypizza-hacker-props/dumpster_quaternius_*.glb", ["--join", "--recenter", "--scale", "0.72"]),
+    "skip_open": ("polypizza-hacker-props/trash-container-open_quaternius_*.glb", ["--join", "--recenter", "--scale", "0.5"]),
+    "dumpster_open": ("kenney-retro-urban-kit/Models/GLB format/detail-dumpster-open.glb", ["--join", "--recenter", "--scale", "2.7", "--color", "dirt=0.12,0.10,0.08", "--color", "roof=0.20,0.26,0.22", "--color", "wall=0.22,0.30,0.24", "--color", "wall_metal=0.20,0.22,0.24"]),
+    "drum": ("polypizza-hacker-props/barrel_quaternius_*.glb", ["--join", "--recenter", "--scale", "0.8"]),
+    "propane_tank": ("polypizza-hacker-props/propane-tank_quaternius_*.glb", ["--join", "--recenter", "--scale", "0.5"]),
+    "pallet_yard": ("kenney-retro-urban-kit/Models/GLB format/pallet.glb", ["--join", "--recenter", "--scale", "1.2", "--color", "planks=0.48,0.36,0.22"]),
+    "pallet_broken": ("polypizza-hacker-props/pallet-broken_quaternius_*.glb", ["--join", "--recenter", "--scale", "0.7"]),
+    "scaffold": ("kenney-retro-urban-kit/Models/GLB format/scaffolding-structure.glb", ["--join", "--recenter", "--scale", "2", "--color", "bars=0.36,0.34,0.32", "--color", "metal=0.40,0.38,0.36"]),
+    "facade_wall": ("kenney-retro-urban-kit/Models/GLB format/wall-a-flat.glb", ["--join", "--recenter", "--scale", "3", "--color", "wall_lines=0.40,0.25,0.20"]),
+    "facade_painted": ("kenney-retro-urban-kit/Models/GLB format/wall-a-flat-painted.glb", ["--join", "--recenter", "--scale", "3", "--color", "wall=0.33,0.36,0.38"]),
+    "facade_garage": ("kenney-retro-urban-kit/Models/GLB format/wall-a-flat-garage.glb", ["--join", "--recenter", "--scale", "3", "--color", "concrete=0.36,0.36,0.35", "--color", "wall=0.40,0.25,0.20", "--color", "wall_garage=0.28,0.30,0.32"]),
+    "facade_garage_metal": ("kenney-retro-urban-kit/Models/GLB format/wall-b-flat-garage.glb", ["--join", "--recenter", "--scale", "3", "--color", "wall_garage=0.26,0.28,0.30", "--color", "wall_metal=0.30,0.32,0.34"]),
+    "facade_window": ("kenney-retro-urban-kit/Models/GLB format/wall-a-flat-window.glb", ["--join", "--recenter", "--scale", "3", "--color", "metal=0.18,0.18,0.19", "--color", "wall_lines=0.40,0.25,0.20", "--color", "windows=0.22,0.28,0.34"]),
+    "facade_metal": ("kenney-retro-urban-kit/Models/GLB format/wall-b-flat.glb", ["--join", "--recenter", "--scale", "3", "--color", "wall_metal=0.34,0.36,0.38"]),
+    "roof_metal": ("kenney-retro-urban-kit/Models/GLB format/roof-metal-type-a.glb", ["--join", "--recenter", "--scale", "3", "--color", "concrete=0.30,0.30,0.30", "--color", "roof_plates=0.26,0.28,0.30"]),
+    "barrier_concrete": ("kenney-retro-urban-kit/Models/GLB format/detail-barrier-strong-type-a.glb", ["--join", "--recenter", "--scale", "3", "--color", "concrete=0.50,0.50,0.48"]),
+    "barrier_striped": ("kenney-retro-urban-kit/Models/GLB format/detail-barrier-type-a.glb", ["--join", "--recenter", "--scale", "3", "--color", "metal=0.35,0.35,0.35", "--color", "signs=0.78,0.66,0.30"]),
+    "cone": ("kenney-city-kit-roads/Models/GLB format/construction-cone.glb", ["--join", "--recenter", "--scale", "8"]),
+    "fence_rail": ("kenney-retro-urban-kit/Models/GLB format/wall-fence.glb", ["--join", "--recenter", "--scale", "3", "--color", "bars=0.25,0.25,0.26", "--color", "concrete=0.40,0.40,0.39", "--color", "wall_lines=0.40,0.25,0.20"]),
+    "elec_pole": ("kenney-city-kit-roads/Models/GLB format/electricity-pole.glb", ["--join", "--recenter", "--scale", "10", "--color", "colormap=0.30,0.24,0.18"]),
+    "elec_wires": ("kenney-city-kit-roads/Models/GLB format/electricity-wires.glb", ["--join", "--recenter", "--scale", "10", "--color", "colormap=0.12,0.12,0.12"]),
+    "lamp_post": ("kenney-city-kit-roads/Models/GLB format/light-square.glb", ["--join", "--recenter", "--scale", "8", "--color", "colormap=0.20,0.21,0.22"]),
+    "warning_light": ("kenney-city-kit-roads/Models/GLB format/construction-light.glb", ["--join", "--recenter", "--scale", "5"]),
+    "ladder": ("polypizza-hacker-props/metal-ladder_*.glb", ["--join", "--recenter", "--scale", "0.1"]),
+    "yard_asphalt": ("kenney-retro-urban-kit/Models/GLB format/road-asphalt-damaged.glb", ["--join", "--recenter", "--scale", "3", "--color", "asphalt=0.10,0.10,0.11", "--color", "concreteSmooth=0.14,0.14,0.145"]),
     # -- the city outside --
     "skyscraper_a": ("kenney-city-kit-commercial/Models/GLB format/building-skyscraper-a.glb", ["--join", "--scale", "10", "--recenter", "--color", "colormap=" + DARK]),
     "skyscraper_b": ("kenney-city-kit-commercial/Models/GLB format/building-skyscraper-b.glb", ["--join", "--scale", "10", "--recenter", "--color", "colormap=" + DARK]),
@@ -112,6 +142,9 @@ def run(name, pattern, options):
         return name, None, "MISSING source: " + pattern
     src = matches[0]
     dst = os.path.join(OUT, name + ".usdz")
+    # matte by default: the kits' 0.5 roughness mirrors the day sky and washes every colour out
+    if "--rough" not in options:
+        options = options + ["--rough", "0.85"]
     cmd = [BLENDER, "-b", "--python", CONVERT, "--", src, dst] + options
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     lines = [l for l in (p.stdout + p.stderr).splitlines() if l.startswith("convert:") or "Error" in l or "Traceback" in l]

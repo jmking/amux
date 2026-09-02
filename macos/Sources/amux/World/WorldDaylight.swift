@@ -34,31 +34,42 @@ final class WorldDaylight {
     }
 
     /// The day, from midnight to midnight. The sun rises through the windows
-    /// (-x), crosses over the back wall and sets on the camera's side, so the
-    /// viewer gets morning stripes on the floor and long warm light at the end.
+    /// (-x), climbs over the camera's shoulder at noon so the walls the viewer
+    /// looks at are lit, and sets on the far side (+x) with long light raking
+    /// across the floor. Night is flat from 22:00 to 04:30 so nothing drifts.
     static let keys: [Key] = [
-        Key(hour: 0,    sunElevation: -30, sunAzimuth: 0,   sunColor: [1, 1, 1],            sunLux: 0,     moonLux: 1500,
-            zenith: [0.06, 0.08, 0.16], horizon: [0.04, 0.05, 0.09], ground: [0.03, 0.03, 0.04], ibl: 1.0,  fillLux: 300),
-        Key(hour: 5,    sunElevation: -10, sunAzimuth: 275, sunColor: [1, 0.7, 0.5],        sunLux: 0,     moonLux: 1100,
-            zenith: [0.10, 0.12, 0.24], horizon: [0.20, 0.13, 0.17], ground: [0.04, 0.04, 0.05], ibl: 1.1,  fillLux: 400),
-        Key(hour: 6.25, sunElevation: 2,   sunAzimuth: 270, sunColor: [1, 0.6, 0.35],       sunLux: 2500,  moonLux: 0,
-            zenith: [0.35, 0.40, 0.65], horizon: [0.95, 0.55, 0.35], ground: [0.25, 0.20, 0.18], ibl: 1.4,  fillLux: 800),
-        Key(hour: 7.5,  sunElevation: 15,  sunAzimuth: 255, sunColor: [1, 0.8, 0.6],        sunLux: 6000,  moonLux: 0,
-            zenith: [0.45, 0.62, 0.90], horizon: [0.85, 0.75, 0.65], ground: [0.35, 0.33, 0.30], ibl: 1.7,  fillLux: 1500),
-        Key(hour: 10,   sunElevation: 40,  sunAzimuth: 225, sunColor: [1, 0.95, 0.88],      sunLux: 9000,  moonLux: 0,
-            zenith: [0.40, 0.62, 0.95], horizon: [0.75, 0.82, 0.92], ground: [0.40, 0.40, 0.38], ibl: 1.9,  fillLux: 2200),
-        Key(hour: 13,   sunElevation: 58,  sunAzimuth: 180, sunColor: [1, 0.98, 0.95],      sunLux: 10000, moonLux: 0,
-            zenith: [0.35, 0.58, 0.95], horizon: [0.72, 0.80, 0.90], ground: [0.42, 0.42, 0.40], ibl: 2.0,  fillLux: 2600),
-        Key(hour: 16,   sunElevation: 35,  sunAzimuth: 110, sunColor: [1, 0.9, 0.75],       sunLux: 8000,  moonLux: 0,
-            zenith: [0.40, 0.58, 0.90], horizon: [0.85, 0.75, 0.60], ground: [0.40, 0.38, 0.34], ibl: 1.8,  fillLux: 2000),
-        Key(hour: 18,   sunElevation: 8,   sunAzimuth: 60,  sunColor: [1, 0.62, 0.35],      sunLux: 4000,  moonLux: 0,
-            zenith: [0.35, 0.35, 0.60], horizon: [0.95, 0.50, 0.30], ground: [0.30, 0.22, 0.18], ibl: 1.4,  fillLux: 1000),
-        Key(hour: 19,   sunElevation: -3,  sunAzimuth: 45,  sunColor: [0.9, 0.5, 0.4],      sunLux: 500,   moonLux: 300,
-            zenith: [0.15, 0.15, 0.35], horizon: [0.50, 0.28, 0.30], ground: [0.10, 0.08, 0.09], ibl: 1.2,  fillLux: 500),
-        Key(hour: 20.5, sunElevation: -15, sunAzimuth: 30,  sunColor: [1, 1, 1],            sunLux: 0,     moonLux: 900,
-            zenith: [0.08, 0.09, 0.20], horizon: [0.12, 0.09, 0.15], ground: [0.04, 0.04, 0.05], ibl: 1.05, fillLux: 350),
-        Key(hour: 24,   sunElevation: -30, sunAzimuth: 0,   sunColor: [1, 1, 1],            sunLux: 0,     moonLux: 1500,
-            zenith: [0.06, 0.08, 0.16], horizon: [0.04, 0.05, 0.09], ground: [0.03, 0.03, 0.04], ibl: 1.0,  fillLux: 300),
+        Key(hour: 0, sunElevation: -45, sunAzimuth: 200, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
+        Key(hour: 4.5, sunElevation: -20, sunAzimuth: 250, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4000,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
+        Key(hour: 5.5, sunElevation: -6, sunAzimuth: 262, sunColor: [1, 0.55, 0.35], sunLux: 0, moonLux: 2200,
+            zenith: [0.12, 0.15, 0.3], horizon: [0.55, 0.34, 0.3], ground: [0.08, 0.07, 0.08], ibl: 1.35, fillLux: 1000),
+        Key(hour: 6.25, sunElevation: 2.5, sunAzimuth: 264, sunColor: [1, 0.52, 0.28], sunLux: 1800, moonLux: 0,
+            zenith: [0.22, 0.32, 0.62], horizon: [1, 0.68, 0.42], ground: [0.14, 0.12, 0.11], ibl: 1.5, fillLux: 1200),
+        Key(hour: 6.75, sunElevation: 8, sunAzimuth: 270, sunColor: [1, 0.7, 0.45], sunLux: 4500, moonLux: 0,
+            zenith: [0.28, 0.42, 0.78], horizon: [0.95, 0.78, 0.58], ground: [0.18, 0.17, 0.16], ibl: 1.6, fillLux: 1400),
+        Key(hour: 7.5, sunElevation: 16, sunAzimuth: 278, sunColor: [1, 0.82, 0.62], sunLux: 7000, moonLux: 0,
+            zenith: [0.32, 0.52, 0.9], horizon: [0.8, 0.85, 0.9], ground: [0.24, 0.24, 0.23], ibl: 1.72, fillLux: 1700),
+        Key(hour: 9.5, sunElevation: 38, sunAzimuth: 302, sunColor: [1, 0.93, 0.85], sunLux: 9500, moonLux: 0,
+            zenith: [0.3, 0.52, 0.94], horizon: [0.78, 0.86, 0.92], ground: [0.28, 0.28, 0.27], ibl: 1.85, fillLux: 2200),
+        Key(hour: 12, sunElevation: 63, sunAzimuth: 356, sunColor: [1, 0.98, 0.94], sunLux: 11000, moonLux: 0,
+            zenith: [0.3, 0.5, 0.96], horizon: [0.8, 0.86, 0.9], ground: [0.3, 0.3, 0.29], ibl: 1.95, fillLux: 2600),
+        Key(hour: 15, sunElevation: 45, sunAzimuth: 40, sunColor: [1, 0.95, 0.86], sunLux: 9800, moonLux: 0,
+            zenith: [0.3, 0.48, 0.9], horizon: [0.82, 0.84, 0.86], ground: [0.28, 0.28, 0.27], ibl: 1.85, fillLux: 2200),
+        Key(hour: 17.5, sunElevation: 18, sunAzimuth: 62, sunColor: [1, 0.74, 0.45], sunLux: 6500, moonLux: 0,
+            zenith: [0.3, 0.44, 0.8], horizon: [0.96, 0.74, 0.48], ground: [0.24, 0.22, 0.2], ibl: 1.65, fillLux: 1600),
+        Key(hour: 18.75, sunElevation: 8, sunAzimuth: 78, sunColor: [1, 0.6, 0.32], sunLux: 3800, moonLux: 0,
+            zenith: [0.24, 0.3, 0.62], horizon: [1, 0.55, 0.32], ground: [0.16, 0.13, 0.12], ibl: 1.5, fillLux: 1300),
+        Key(hour: 19.25, sunElevation: 4, sunAzimuth: 85, sunColor: [1, 0.48, 0.25], sunLux: 2000, moonLux: 0,
+            zenith: [0.18, 0.22, 0.5], horizon: [1, 0.42, 0.22], ground: [0.1, 0.08, 0.09], ibl: 1.45, fillLux: 1200),
+        Key(hour: 19.75, sunElevation: 1.5, sunAzimuth: 90, sunColor: [0.95, 0.38, 0.2], sunLux: 450, moonLux: 0,
+            zenith: [0.12, 0.14, 0.36], horizon: [0.85, 0.32, 0.2], ground: [0.07, 0.06, 0.07], ibl: 1.4, fillLux: 1100),
+        Key(hour: 20.5, sunElevation: -6, sunAzimuth: 95, sunColor: [0.95, 0.38, 0.2], sunLux: 0, moonLux: 1400,
+            zenith: [0.07, 0.09, 0.26], horizon: [0.32, 0.22, 0.34], ground: [0.05, 0.04, 0.06], ibl: 1.32, fillLux: 1000),
+        Key(hour: 22, sunElevation: -25, sunAzimuth: 120, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
+        Key(hour: 24, sunElevation: -45, sunAzimuth: 200, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
     ]
 
     static func sample(_ hour: Float) -> Key {
@@ -91,9 +102,13 @@ final class WorldDaylight {
 
     // MARK: what is driven
 
+    /// One shadow-casting light: the sun while it is up, the moon after. Two
+    /// shadowing directional lights is the expensive case and they are never
+    /// both needed.
     let sun = DirectionalLight()
-    let moon = DirectionalLight()
     let fill = DirectionalLight()
+    private let moonFrom = SIMD3<Float>(-8, 14, 6)
+    private let moonColor = NSColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1)
     /// Registered lights as (full intensity, setter), so point and spot lights
     /// are driven alike; faces are the emissive bits that glow with them.
     private var lamps: [(Float, (Float) -> Void)] = []
@@ -109,18 +124,18 @@ final class WorldDaylight {
     private(set) var neonLevel: Float = 1
     /// How dark it is outside, 0 in daylight and 1 at night.
     private(set) var night: Float = 1
+    /// Whether the street lights are on, for things that blink with them.
+    private(set) var streetLevel: Float = 1
 
     init() {
-        sun.shadow = DirectionalLightComponent.Shadow(maximumDistance: 40, depthBias: 2)
-        moon.light.color = NSColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1)
-        moon.look(at: .zero, from: SIMD3(-20, 30, 12), relativeTo: nil)
+        // the camera is 90 m out, so the shadow range has to reach past it
+        sun.shadow = DirectionalLightComponent.Shadow(maximumDistance: 130, depthBias: 2)
         fill.light.color = NSColor(red: 0.6, green: 0.66, blue: 0.82, alpha: 1)
         fill.look(at: .zero, from: SIMD3(9, 9, 9), relativeTo: nil)
     }
 
     func install(under root: Entity) {
         root.addChild(sun)
-        root.addChild(moon)
         root.addChild(fill)
     }
 
@@ -128,6 +143,8 @@ final class WorldDaylight {
         lamps.append((light.light.intensity, { light.light.intensity = $0 }))
         if let face { lampFaces.append((face, faceColor, faceIntensity)) }
     }
+    func addLampFace(_ face: ModelEntity, color: NSColor, intensity: Float) { lampFaces.append((face, color, intensity)) }
+    func addStreetFace(_ face: ModelEntity, color: NSColor, intensity: Float) { streetFaces.append((face, color, intensity)) }
     func addNeon(_ light: PointLight) { neonLights.append((light.light.intensity, { light.light.intensity = $0 })) }
     func addStreetLight(_ light: PointLight, face: ModelEntity? = nil, faceColor: NSColor = .white, faceIntensity: Float = 5) {
         streetLights.append((light.light.intensity, { light.light.intensity = $0 }))
@@ -143,40 +160,73 @@ final class WorldDaylight {
     private var lastSkyKey: SIMD3<Float>?
     private var lastSkyAt: CFAbsoluteTime = 0
     private var skyTask: Task<Void, Never>?
+    private var lastHour: Float = .nan
+    private var appliedLampLevel: Float = .nan
+    private var appliedStreetLevel: Float = .nan
+    private var appliedNight: Float = .nan
 
     func apply(hour: Float) {
+        // the clock moves once a minute and the slider in small steps; nothing
+        // below is cheap enough to redo every frame for an unchanged hour.
+        // Reassigning a material is the expensive part: RealityKit binds its
+        // parameters by string hashing, and twenty faces at 30 fps was most of
+        // a core.
+        if abs(hour - lastHour) < 0.001 { return }
+        lastHour = hour
         let k = Self.sample(hour)
         let e = k.sunElevation
 
-        // sun and moon
-        let az = k.sunAzimuth * .pi / 180, el = max(-89, e) * .pi / 180
-        let from = SIMD3(sin(az) * cos(el), sin(el), cos(az) * cos(el)) * 60
-        sun.look(at: .zero, from: from, relativeTo: nil)
-        sun.light.color = nsColor(k.sunColor)
-        sun.light.intensity = e > -6 ? k.sunLux : 0
+        // the key light: sun direction and colour while there is sun, the
+        // moon's fixed place over the windows otherwise. Below 1.5 degrees the
+        // sun is a disc on the horizon with no light worth casting.
+        let sunLux: Float = e > 1.5 ? k.sunLux : 0
+        if sunLux >= k.moonLux, sunLux > 0 {
+            let az = k.sunAzimuth * .pi / 180, el = e * .pi / 180
+            let from = SIMD3(sin(az) * cos(el), sin(el), cos(az) * cos(el)) * 60
+            sun.look(at: .zero, from: from, relativeTo: nil)
+            sun.light.color = nsColor(k.sunColor)
+            sun.light.intensity = sunLux
+        } else {
+            sun.look(at: .zero, from: moonFrom * 4, relativeTo: nil)
+            sun.light.color = moonColor
+            sun.light.intensity = k.moonLux
+        }
         sun.isEnabled = sun.light.intensity > 0
-        moon.light.intensity = k.moonLux
-        moon.isEnabled = k.moonLux > 0
         fill.light.intensity = k.fillLux
         renderer?.lighting.intensityExponent = k.ibl
 
-        // the switches: darkness by elevation, each with its own threshold
-        let lampLevel = Self.darkness(e, on: 4, off: 12)
-        let streetLevel = Self.darkness(e, on: 0, off: 6)
-        neonLevel = Self.darkness(e, on: 5, off: 15)
+        // the switches: darkness by elevation, each with its own threshold.
+        // Dusk is layered: pendants first, neon to full, then the street
+        // lights while the sun is still a disc; morning unwinds it in reverse.
+        let lampLevel = Self.darkness(e, on: 8, off: 14)
+        streetLevel = Self.darkness(e, on: 3, off: 7)
+        neonLevel = 0.25 + 0.75 * Self.darkness(e, on: 8, off: 16)
         night = Self.darkness(e, on: -6, off: 8)
 
         for (full, set) in lamps { set(full * (0.08 + 0.92 * lampLevel)) }
-        for (m, c, i) in lampFaces { setEmissive(m, c, i * (0.05 + 0.95 * lampLevel)) }
         for (full, set) in neonLights { set(full * neonLevel) }
         for (full, set) in streetLights { set(full * streetLevel) }
-        for (m, c, i) in streetFaces { setEmissive(m, c, max(0.05, i * streetLevel)) }
+        if abs(lampLevel - appliedLampLevel) > 0.01 || appliedLampLevel.isNaN {
+            appliedLampLevel = lampLevel
+            for (m, c, i) in lampFaces { setEmissive(m, c, i * (0.05 + 0.95 * lampLevel)) }
+        }
+        if abs(streetLevel - appliedStreetLevel) > 0.01 || appliedStreetLevel.isNaN {
+            appliedStreetLevel = streetLevel
+            for (m, c, i) in streetFaces { setEmissive(m, c, max(0.05, i * streetLevel)) }
+        }
 
         // the glass shows the sky by day and the yard's cold light by night
         let dayGlass = k.horizon * 1.3
         let nightGlass = SIMD3<Float>(0.16, 0.24, 0.40)
         let glass = nightGlass * night + dayGlass * (1 - night)
-        for w in windows { setEmissive(w, nsColor(glass), 1.2 + 1.5 * (1 - night)) }
+        // by day the openings are open and the sun comes through them; the
+        // glowing glass is only there for the night, when there is nothing to see
+        let glassOn = night > 0.35
+        for w in windows {
+            w.isEnabled = glassOn
+            if glassOn, abs(night - appliedNight) > 0.02 || appliedNight.isNaN { setEmissive(w, nsColor(glass), 1.2) }
+        }
+        if glassOn { appliedNight = night }
 
         // the sky is a texture; rebuild it when it has changed enough, and not
         // more than a few times a second while the slider is dragged

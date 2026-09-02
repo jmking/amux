@@ -10,7 +10,9 @@ Options
     --join                   join every mesh into one object (one draw call per material)
     --keep A,B,C             keep only objects whose name contains one of these
     --drop A,B,C             remove objects whose name contains one of these
-    --color MAT=r,g,b        set a material's base colour (name match, case-insensitive)
+    --color MAT=r,g,b        set a material's base colour, given in sRGB like the app's own
+                             primitives (name match, case-insensitive)
+    --rough R                set every material's roughness (kit defaults of 0.5 mirror the sky)
     --emissive MAT=r,g,b,S   set a material's emission colour and strength
     --rename MAT=NEW         rename a material (so the app can find it by name)
     --action NAME            make this the active clip on every rig, export only it
@@ -201,9 +203,15 @@ def principled(mat):
     return n
 
 
+def srgb_to_linear(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
 def set_color(spec):
     name, rgb = spec.split("=")
-    r, g, b = (float(x) for x in rgb.split(","))
+    # USD stores linear colour; the manifest is written in sRGB so that the same
+    # numbers mean the same colour as an NSColor in the app
+    r, g, b = (srgb_to_linear(float(x)) for x in rgb.split(","))
     mats = find_materials(name)
     if not mats:
         log("WARNING no material matches '%s' (have: %s)" % (name, ", ".join(m.name for m in bpy.data.materials)))
@@ -215,6 +223,21 @@ def set_color(spec):
                 m.node_tree.links.remove(l)
         node.inputs["Base Color"].default_value = (r, g, b, 1)
         log("colour %s -> %.2f %.2f %.2f" % (m.name, r, g, b))
+
+
+def set_roughness(r):
+    for m in bpy.data.materials:
+        if not m.use_nodes and not m.node_tree:
+            m.roughness = r
+            continue
+        node = principled(m)
+        for l in list(m.node_tree.links):
+            if l.to_node == node and l.to_socket.name == "Roughness":
+                m.node_tree.links.remove(l)
+        node.inputs["Roughness"].default_value = r
+        if "Specular IOR Level" in node.inputs:
+            node.inputs["Specular IOR Level"].default_value = 0.25
+    log("roughness %.2f on %d materials" % (r, len(bpy.data.materials)))
 
 
 def set_emissive(spec):
@@ -329,6 +352,8 @@ def convert(src, dst):
         set_color(spec)
     for spec in opts("--emissive"):
         set_emissive(spec)
+    if opt("--rough"):
+        set_roughness(float(opt("--rough")))
     for spec in opts("--rename"):
         rename_material(spec)
     if "--strip-anim-prefix" in ARGS:

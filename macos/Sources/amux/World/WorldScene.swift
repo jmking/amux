@@ -206,6 +206,11 @@ final class WorldScene {
             m.emissiveIntensity = max(0.15, flicker * daylight.neonLevel)
             (neon as? ModelEntity)?.model?.materials = [m]
         }
+        if let (light, face) = layout.blinker {
+            let on = daylight.streetLevel > 0.5 && clock.truncatingRemainder(dividingBy: 1.2) < 0.5
+            light.isEnabled = on
+            face.isEnabled = on
+        }
         if let door = layout.door {
             doorSwing = max(0, doorSwing - dt * 0.35)
             let ajar: Float = 1.7, wide: Float = 2.6
