@@ -57,7 +57,7 @@ enum WorldRoom {
     static let warm = NSColor(red: 1.0, green: 0.82, blue: 0.6, alpha: 1)
 
     /// Builds the room under `root`, returning the layout the choreography uses.
-    static func build(under root: Entity) async -> WorldLayout {
+    static func build(under root: Entity, daylight: WorldDaylight) async -> WorldLayout {
         var layout = WorldLayout()
         let assets = WorldAssets.shared
         let quarter: Float = .pi / 2
@@ -73,20 +73,22 @@ enum WorldRoom {
             (parent ?? root).addChild(e)
             return e
         }
-        func light(_ p: SIMD3<Float>, _ color: NSColor, _ lux: Float, radius: Float) {
+        @discardableResult
+        func light(_ p: SIMD3<Float>, _ color: NSColor, _ lux: Float, radius: Float) -> PointLight {
             let l = PointLight()
             l.light.color = color
             l.light.intensity = lux
             l.light.attenuationRadius = radius
             l.position = p
             root.addChild(l)
+            return l
         }
 
         // -- floor: one slab; thirty tiles looked the same and cost thirty draws --
         root.addChild(WorldPrimitives.plane(floorW, floorD, concrete))
-        // the building under it
-        let slab = WorldPrimitives.box(SIMD3(floorW + 0.8, 1.2, floorD + 0.8), NSColor(white: 0.14, alpha: 1))
-        slab.position.y = -1.3
+        // a concrete plinth the room sits on, a step above the yard
+        let slab = WorldPrimitives.box(SIMD3(floorW + 0.5, 0.12, floorD + 0.5), NSColor(white: 0.24, alpha: 1))
+        slab.position.y = -0.12
         root.addChild(slab)
 
         // -- back wall along x at z = -5: brick, with the doorway at x = 3 --
@@ -111,7 +113,7 @@ enum WorldRoom {
         let leaf = door.findEntity(named: "door") ?? door
         leaf.orientation = simd_quatf(angle: 1.7, axis: SIMD3(0, 1, 0))
         layout.door = leaf
-        light(SIMD3(3.0, 2.0, -6.2), warm, 2200, radius: 4.5)
+        daylight.addLamp(light(SIMD3(3.0, 2.0, -6.2), warm, 2200, radius: 4.5))
 
         // -- left wall along z at x = -6: plaster, two windows onto the city --
         for z in stride(from: -4, through: 4, by: 2) {
@@ -128,6 +130,7 @@ enum WorldRoom {
                 let glass = WorldPrimitives.emissive(SIMD3(0.04, 1.4, 1.2), cityGlow, intensity: 1.2)
                 glass.position = SIMD3(-floorW / 2 - 0.12, 0.85, Float(z))
                 root.addChild(glass)
+                daylight.addWindow(glass)
                 let spill = SpotLight()
                 spill.light.color = cityGlow
                 spill.light.intensity = 5000
@@ -137,6 +140,7 @@ enum WorldRoom {
                 spill.position = SIMD3(-floorW / 2 - 0.3, 2.2, Float(z))
                 spill.look(at: SIMD3(-2, 0, Float(z)), from: spill.position, relativeTo: nil)
                 root.addChild(spill)
+                daylight.addStreetLight(spill)
             }
         }
         await place("column", at: SIMD3(-floorW / 2, 0, -floorD / 2))
@@ -181,7 +185,10 @@ enum WorldRoom {
         // -- light over the rows: pendants on their cords --
         for (x, z) in [(Float(-3.0), Float(-2.0)), (1.5, -2.0), (3.5, 2.6)] {
             await place("pendant", at: SIMD3(x, ceiling, z), fallback: WorldPrimitives.bareBulb)
-            light(SIMD3(x, ceiling - 0.6, z), warm, 6500, radius: 8)
+            let bulb = WorldPrimitives.emissive(SIMD3(0.14, 0.12, 0.14), warm, intensity: 6)
+            bulb.position = SIMD3(x, ceiling - 0.6, z)
+            root.addChild(bulb)
+            daylight.addLamp(light(SIMD3(x, ceiling - 0.6, z), warm, 6500, radius: 8), face: bulb, faceColor: warm, faceIntensity: 6)
         }
 
         // -- infrastructure along the back-left --
@@ -209,9 +216,9 @@ enum WorldRoom {
         await place("whiteboard", at: SIMD3(0.6, 0, -floorD / 2 + 0.07), fallback: WorldPrimitives.whiteboard)
         let sign = await place("neon", at: SIMD3(-2.4, 2.0, -floorD / 2 + 0.1), fallback: { WorldPrimitives.neonSign("amux", color: neon) })
         sign.name = "neon"
-        light(SIMD3(-2.4, 2.0, -floorD / 2 + 0.7), neon, 2400, radius: 4.5)
+        daylight.addNeon(light(SIMD3(-2.4, 2.0, -floorD / 2 + 0.7), neon, 2400, radius: 4.5))
         await place("neon_sign", at: SIMD3(-floorW / 2 + 0.08, 1.6, 3.6), yaw: quarter)
-        light(SIMD3(-floorW / 2 + 0.6, 1.7, 3.6), neon, 900, radius: 3)
+        daylight.addNeon(light(SIMD3(-floorW / 2 + 0.6, 1.7, 3.6), neon, 900, radius: 3))
         await place("coat_rack", at: SIMD3(4.9, 0, -4.4), scale: 2.2)
         await place("extinguisher", at: SIMD3(5.6, 0, -3.6), fallback: WorldPrimitives.extinguisher)
 
@@ -247,108 +254,80 @@ enum WorldRoom {
         await place("trash_bags", at: SIMD3(5.4, 0, 0.6), yaw: 0.8)
         await place("cup", at: SIMD3(2.9, 0.02, 2.3), yaw: 0.2)
 
-        // -- outside: the city, below the roofline and far enough to be skyline --
-        let ground = WorldPrimitives.plane(160, 160, NSColor(white: 0.05, alpha: 1))
-        ground.position.y = -10
+        // -- outside: the room is on the ground in a yard. The yard's dressing
+        //    is placed by buildYard; this is the ground it stands on. --
+        let ground = WorldPrimitives.plane(160, 160, NSColor(red: 0.12, green: 0.12, blue: 0.13, alpha: 1), roughness: 1)
+        ground.position.y = -0.14
         root.addChild(ground)
-        var seed: UInt32 = 7
-        func rnd() -> Float { seed = seed &* 1664525 &+ 1013904223; return Float(seed >> 8) / Float(1 << 24) }
-        // neighbouring rooftops: low blocks with lit windows
-        for i in 0..<14 {
-            let angle = Float(i) / 14 * 2 * .pi + rnd() * 0.25
-            let r: Float = 16 + rnd() * 12
-            let w = 4 + rnd() * 5, h = 2 + rnd() * 5, d = 4 + rnd() * 5
-            let b = WorldPrimitives.box(SIMD3(w, h, d), NSColor(white: CGFloat(0.16 + rnd() * 0.08), alpha: 1), roughness: 1)
-            b.position = SIMD3(cos(angle) * r, -10 + h / 2, sin(angle) * r)
-            root.addChild(b)
-            for _ in 0..<(1 + Int(rnd() * 4)) {
-                let win = WorldPrimitives.emissive(SIMD3(0.5, 0.5, 0.02), rnd() > 0.65 ? warm : cityGlow, intensity: 2.5)
-                win.position = SIMD3((rnd() - 0.5) * w * 0.8, -h / 2 + 0.6 + rnd() * (h - 1.2), d / 2 + 0.01)
-                b.addChild(win)
-            }
-        }
-        // rooftop furniture on the nearest neighbours
-        await place("tv_tower", at: SIMD3(-15, -5.5, -9), scale: 2.2)
-        await place("antenna", at: SIMD3(-11, -6, -14), scale: 2)
-        await place("ac_stacked", at: SIMD3(-13, -5.5, 4), scale: 1.6)
-        await place("ac_unit", at: SIMD3(6, -5.5, -14), scale: 1.8)
-        // the skyline: tall towers well back, rising past the horizon
-        let towers = ["skyscraper_a", "skyscraper_b", "skyscraper_c", "skyscraper_d", "skyscraper_e", "building_low", "building_wide"]
-        for i in 0..<7 {
-            let angle = Float(i) / 7 * 2 * .pi + rnd() * 0.3
-            let r: Float = 48 + rnd() * 30
-            let t = await place(towers[i % towers.count], at: SIMD3(cos(angle) * r, -40 - rnd() * 8, sin(angle) * r),
-                                yaw: rnd() * 6.28, fallback: { WorldPrimitives.box(SIMD3(10, 40, 10), NSColor(white: 0.08, alpha: 1)) })
-            for _ in 0..<(3 + Int(rnd() * 4)) {
-                let win = WorldPrimitives.emissive(SIMD3(0.9, 1.2, 0.05), rnd() > 0.6 ? warm : cityGlow, intensity: 3)
-                win.position = SIMD3((rnd() - 0.5) * 8, 6 + rnd() * 36, 6.9)
-                win.orientation = simd_quatf(angle: rnd() * 6.28, axis: SIMD3(0, 1, 0))
-                t.addChild(win)
-            }
-        }
+        await buildYard(under: root, daylight: daylight, place: { name, p, yaw, scale, parent, fallback in
+            await place(name, at: p, yaw: yaw, scale: scale, under: parent, fallback: fallback)
+        })
 
         // -- the sky: the renderer has no skybox, so it is a dome around everything --
-        if let sky = await skyDome() { root.addChild(sky) }
-
-        // -- light --
-        let moon = DirectionalLight()
-        moon.light.color = NSColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1)
-        moon.light.intensity = 4200
-        moon.shadow = DirectionalLightComponent.Shadow(maximumDistance: 30, depthBias: 2)
-        moon.look(at: SIMD3(0, 0, 0), from: SIMD3(-8, 14, 6), relativeTo: nil)
-        root.addChild(moon)
-        // a soft fill from the camera's side so the walls and floor read as
-        // surfaces; the pools of warm light do the rest
-        let fill = DirectionalLight()
-        fill.light.color = NSColor(red: 0.6, green: 0.66, blue: 0.82, alpha: 1)
-        fill.light.intensity = 1100
-        fill.look(at: SIMD3(0, 0, 0), from: SIMD3(9, 9, 9), relativeTo: nil)
-        root.addChild(fill)
+        if let sky = await skyDome() {
+            root.addChild(sky)
+            daylight.sky = sky
+        }
 
         layout.focus = SIMD3(0, 0.6, -0.6)
         return layout
     }
 
+    /// The yard around the room: street lights outside each window and by the
+    /// door, on when it is dark. The rest of the dressing lands here as it is
+    /// designed.
+    static func buildYard(under root: Entity, daylight: WorldDaylight,
+                          place: (String, SIMD3<Float>, Float, Float, Entity?, (() -> Entity)?) async -> Entity) async {
+        let lampWarm = NSColor(red: 1.0, green: 0.86, blue: 0.62, alpha: 1)
+        let lampCold = NSColor(red: 0.75, green: 0.85, blue: 1.0, alpha: 1)
+        for (p, yaw, cold) in [(SIMD3<Float>(-8.4, 0, -2.2), Float.pi / 2, true),
+                               (SIMD3<Float>(-8.4, 0, 2.2), Float.pi / 2, true),
+                               (SIMD3<Float>(5.2, 0, -8.2), Float(0), false)] {
+            _ = await place("streetlight", p, yaw, 1, nil, {
+                let pole = WorldPrimitives.box(SIMD3(0.12, 4.2, 0.12), NSColor(white: 0.16, alpha: 1), metallic: true)
+                let arm = WorldPrimitives.box(SIMD3(0.1, 0.1, 1.0), NSColor(white: 0.16, alpha: 1), metallic: true)
+                arm.position = SIMD3(0, 4.1, 0.5)
+                let h = Entity(); h.addChild(pole); h.addChild(arm); return h
+            })
+            let color = cold ? lampCold : lampWarm
+            let head = WorldPrimitives.emissive(SIMD3(0.36, 0.12, 0.36), color, intensity: 5)
+            head.position = p + SIMD3(0, 2.75, 0)
+            root.addChild(head)
+            let l = PointLight()
+            l.light.color = color
+            l.light.intensity = 2600
+            l.light.attenuationRadius = 9
+            l.position = p + SIMD3(0, 2.6, 0)
+            root.addChild(l)
+            daylight.addStreetLight(l, face: head, faceColor: color, faceIntensity: 5)
+        }
+    }
+
     /// The gradient as a textured sphere seen from inside, at a distance the
-    /// camera never reaches; the same image the image-based light uses.
+    /// camera never reaches. WorldDaylight repaints it as the hour changes.
     static func skyDome() async -> ModelEntity? {
-        guard let img = skyImage(),
+        guard let img = skyImage(zenith: [0.06, 0.08, 0.16], horizon: [0.04, 0.05, 0.09], ground: [0.03, 0.03, 0.04]),
               let tex = try? await TextureResource(image: img, options: .init(semantic: .color)) else { return nil }
         var m = UnlitMaterial()
         m.color = .init(tint: .white, texture: .init(tex))
         m.faceCulling = .front
         let dome = ModelEntity(mesh: .generateSphere(radius: 160), materials: [m])
         dome.name = "sky"
-        // the sphere's texture seam and pole face the camera otherwise
         dome.orientation = simd_quatf(angle: .pi, axis: SIMD3(0, 1, 0))
         return dome
     }
 
-    private static func skyImage() -> CGImage? {
+    /// An equirectangular gradient: zenith at the top, horizon across the
+    /// middle, ground below. Used for both the dome and the image-based light.
+    static func skyImage(zenith: SIMD3<Float>, horizon: SIMD3<Float>, ground: SIMD3<Float>) -> CGImage? {
         let w = 512, h = 256
         guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
                                   space: CGColorSpaceCreateDeviceRGB(),
                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        let colors = [
-            CGColor(red: 0.20, green: 0.24, blue: 0.42, alpha: 1),   // zenith
-            CGColor(red: 0.09, green: 0.10, blue: 0.17, alpha: 1),   // horizon
-            CGColor(red: 0.05, green: 0.05, blue: 0.07, alpha: 1),   // ground
-        ] as CFArray
+        func cg(_ v: SIMD3<Float>) -> CGColor { CGColor(red: CGFloat(v.x), green: CGFloat(v.y), blue: CGFloat(v.z), alpha: 1) }
+        let colors = [cg(zenith), cg(horizon), cg(ground)] as CFArray
         guard let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.5, 1]) else { return nil }
         ctx.drawLinearGradient(grad, start: CGPoint(x: 0, y: CGFloat(h)), end: CGPoint(x: 0, y: 0), options: [])
         return ctx.makeImage()
-    }
-
-    /// A blue-grey gradient sky for image-based lighting and the backdrop:
-    /// enough fill that unlit surfaces read as surfaces, cool so the warm bulbs
-    /// and screens pop.
-    static func environment() async -> EnvironmentResource? {
-        guard let img = skyImage() else { return nil }
-        do {
-            return try await EnvironmentResource(equirectangular: img)
-        } catch {
-            NSLog("amux world: environment resource failed: \(error)")
-            return nil
-        }
     }
 }

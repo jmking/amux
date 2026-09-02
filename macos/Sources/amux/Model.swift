@@ -668,6 +668,11 @@ final class AppModel: ObservableObject {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".config/amux/state.json")
     }
+    /// The last good session, kept beside the live one and read if it will not.
+    static var stateBackupFile: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/amux/state.json.bak")
+    }
     static var legacyStateFile: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".config/gerdr/state.json")
@@ -1811,10 +1816,22 @@ final class AppModel: ObservableObject {
             })
         let dir = Self.stateFile.deletingLastPathComponent()
         let file = Self.stateFile
+        let backup = Self.stateBackupFile
+        // A session that failed to load is not ours to overwrite with nothing.
+        // Once the user has made a workspace there is something worth saving.
+        if restoreFailed && workspaces.isEmpty { return }
         guard let data = try? JSONEncoder().encode(dump) else { return }
+        let keepBackup = !workspaces.isEmpty
         DispatchQueue.global(qos: .utility).async {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            try? data.write(to: file)
+            // the last good file survives as the backup, and the write is
+            // atomic, so a quit or crash mid-save can no longer leave a
+            // truncated file that the next launch reads as an empty session
+            if keepBackup, FileManager.default.fileExists(atPath: file.path) {
+                try? FileManager.default.removeItem(at: backup)
+                try? FileManager.default.copyItem(at: file, to: backup)
+            }
+            try? data.write(to: file, options: .atomic)
         }
     }
 
@@ -1849,10 +1866,24 @@ final class AppModel: ObservableObject {
         return d
     }
 
+    /// Set when a session file existed but could not be read, so saveNow will
+    /// not replace it with an empty session.
+    private var restoreFailed = false
+
     private func restoreState() {
-        let data = (try? Data(contentsOf: Self.stateFile))
-            ?? (try? Data(contentsOf: Self.legacyStateFile))
-        guard let data, let dump = try? JSONDecoder().decode(Dump.self, from: data) else { return }
+        let candidates = [Self.stateFile, Self.stateBackupFile, Self.legacyStateFile]
+        var dump: Dump?
+        var sawFile = false
+        for url in candidates {
+            guard let data = try? Data(contentsOf: url) else { continue }
+            sawFile = true
+            if let d = try? JSONDecoder().decode(Dump.self, from: data) { dump = d; break }
+            NSLog("amux: session file \(url.lastPathComponent) could not be read (\(data.count) bytes); trying the next")
+        }
+        guard let dump else {
+            if sawFile { restoreFailed = true }
+            return
+        }
         nextWorkspaceNum = dump.nextWorkspaceNum ?? 1
         for dws in dump.workspaces {
             var isDir: ObjCBool = false

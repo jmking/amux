@@ -28,6 +28,7 @@ final class WorldScene {
     let renderer: RealityRenderer?
     let root = Entity()
     let camera = WorldCamera()
+    let daylight = WorldDaylight()
 
     private(set) var layout = WorldLayout()
     private(set) var ready = false
@@ -36,7 +37,6 @@ final class WorldScene {
     private var standingUse: [Int: String] = [:]
     private var pending: [WorldAgentState]?
     private var spawning: Set<String> = []
-    private var environment: EnvironmentResource?
     private var clock: Float = 0
     private var racks: [Entity] = []
     private var neon: Entity?
@@ -57,6 +57,8 @@ final class WorldScene {
         renderer?.cameraSettings.colorBackground = .color(CGColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
         renderer?.cameraSettings.antialiasing = .multisample4X
         root.addChild(camera.rig)
+        daylight.renderer = renderer
+        daylight.install(under: root)
         Task { await build() }
     }
 
@@ -65,12 +67,7 @@ final class WorldScene {
         // state can be seen; the real build is under a second on a warm cache
         let slow = UserDefaults.standard.integer(forKey: "worldSlowLoad")
         if slow > 0 { try? await Task.sleep(for: .seconds(slow)) }
-        environment = await WorldRoom.environment()
-        if let environment, let renderer {
-            renderer.lighting.resource = environment
-            renderer.lighting.intensityExponent = 1.25
-        }
-        layout = await WorldRoom.build(under: root)
+        layout = await WorldRoom.build(under: root, daylight: daylight)
         camera.focus = layout.focus
         racks = root.children.filter { $0.name.hasPrefix("rack") }
         if let n = root.findEntity(named: "neon"),
@@ -92,8 +89,9 @@ final class WorldScene {
     /// Advances the world by `dt` and draws it into `texture`. `onComplete`
     /// runs when the GPU has finished, off the main thread; present there.
     /// Does nothing until the room is built.
-    func render(into texture: MTLTexture, dt: Float, onComplete: @escaping @Sendable () -> Void) -> Bool {
+    func render(into texture: MTLTexture, dt: Float, hour: Float, onComplete: @escaping @Sendable () -> Void) -> Bool {
         guard anchored, let renderer else { return false }
+        daylight.apply(hour: hour)
         tick(dt: dt)
         do {
             let output = try RealityRenderer.CameraOutput(.singleProjection(colorTexture: texture))
@@ -205,7 +203,7 @@ final class WorldScene {
         }
         if let neon, var m = neonMaterial {
             let flicker: Float = clock.truncatingRemainder(dividingBy: 7) > 6.7 ? (sin(clock * 90) > 0.2 ? 5 : 1.2) : 5
-            m.emissiveIntensity = flicker
+            m.emissiveIntensity = max(0.15, flicker * daylight.neonLevel)
             (neon as? ModelEntity)?.model?.materials = [m]
         }
         if let door = layout.door {

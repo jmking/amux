@@ -84,6 +84,15 @@ final class WorldRuntime: ObservableObject {
     /// True once the room has been built and drawn; the pane shows a loading
     /// state until then rather than pieces popping in.
     @Published private(set) var isReady = false
+    /// The scene's hour when the user has taken the slider; nil follows the clock.
+    @Published var timeOverride: Double? { didSet { displayHour = sceneHour } }
+    /// The hour the toolbar shows, updated as the clock's minute turns.
+    @Published private(set) var displayHour: Double = WorldRuntime.realHour
+    var sceneHour: Double { timeOverride ?? Self.realHour }
+    static var realHour: Double {
+        let c = Calendar.current.dateComponents([.hour, .minute, .second], from: Date())
+        return Double(c.hour ?? 0) + Double(c.minute ?? 0) / 60 + Double(c.second ?? 0) / 3600
+    }
     private(set) var view: WorldMetalView?
     private weak var container: NSView?
     private var link: CADisplayLink?
@@ -105,8 +114,11 @@ final class WorldRuntime: ObservableObject {
         self.model = model
         scene = WorldScene()
         scene.onFirstFrame = { [weak self] in self?.revealView() }
-        // `amux -worldDemo 1` starts every world pane in demo mode, for testing
+        // `amux -worldDemo 1` starts every world pane in demo mode, for testing;
+        // `-worldHour 18.5` starts it at that time of day
         demoMode = UserDefaults.standard.bool(forKey: "worldDemo")
+        let h = UserDefaults.standard.double(forKey: "worldHour")
+        if h > 0 { timeOverride = h }
 
         // Only the roster and phases are pushed from here; all motion runs off
         // the frame loop, so this does not need to run anywhere near frame rate.
@@ -203,7 +215,7 @@ final class WorldRuntime: ObservableObject {
             let dt = lastFrame == 0 ? Float(1.0 / Self.frameRate) : Float(min(0.1, now - lastFrame))
             lastFrame = now
             guard let drawable = view.metalLayer.nextDrawable() else { return }
-            let presented = scene.render(into: drawable.texture, dt: dt) { drawable.present() }
+            let presented = scene.render(into: drawable.texture, dt: dt, hour: Float(sceneHour)) { drawable.present() }
             if !presented {
                 // nothing to draw yet (the room is still being built): the
                 // loading state is showing, and the drawable goes back unused
@@ -231,6 +243,7 @@ final class WorldRuntime: ObservableObject {
     ]
 
     func sync() {
+        if timeOverride == nil, Int(displayHour * 60) != Int(Self.realHour * 60) { displayHour = Self.realHour }
         if demoMode {
             demoTick += 1
             let cast = Self.demoCast
@@ -333,6 +346,7 @@ struct WorldPaneView: View {
 /// Thin header so a world pane reads like the other pane kinds.
 struct WorldToolbar: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var runtime: WorldRuntime
     let paneId: String
     @Environment(\.palette) private var pal
 
@@ -354,6 +368,28 @@ struct WorldToolbar: View {
             Image(systemName: "cube.transparent").font(.system(size: 11))
             Text("agent world").font(.system(size: 13)).foregroundStyle(pal.ink)
             Spacer(minLength: 4)
+            // the scene's clock: follows the Mac's time until the slider is
+            // taken, and the time shows in the colour of whichever it is
+            HStack(spacing: 6) {
+                Image(systemName: "clock")
+                    .font(.system(size: 10))
+                    .foregroundStyle(runtime.timeOverride == nil ? pal.faint2 : pal.spot)
+                Text(clockText)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(runtime.timeOverride == nil ? pal.faint : pal.spot)
+                    .frame(width: 38, alignment: .trailing)
+                Slider(value: Binding(get: { runtime.sceneHour }, set: { runtime.timeOverride = $0 }), in: 0...24)
+                    .controlSize(.mini)
+                    .frame(width: 110)
+                    .help("Time of day in the den; follows your clock until you move it")
+                if runtime.timeOverride != nil {
+                    Button("now") { runtime.timeOverride = nil }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(pal.spot)
+                        .help("Follow the clock again")
+                }
+            }
             Text(summary)
                 .font(.system(size: 11))
                 .foregroundStyle(pal.faint2)
@@ -377,6 +413,11 @@ struct WorldToolbar: View {
             Button("Close pane", role: .destructive) { model.requestClosePane(paneId) }
         }
         .help("Drag to move this pane · drop on another pane's edge to snap")
+    }
+
+    private var clockText: String {
+        let h = runtime.displayHour
+        return String(format: "%02d:%02d", Int(h) % 24, Int((h - Double(Int(h))) * 60))
     }
 
     private var summary: String {
