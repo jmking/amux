@@ -206,8 +206,34 @@ enum WorldRoom {
             let bulb = WorldPrimitives.emissive(SIMD3(0.14, 0.12, 0.14), warm, intensity: 6)
             bulb.position = SIMD3(x, ceiling - 0.6, z)
             root.addChild(bulb)
-            daylight.addLamp(light(SIMD3(x, ceiling - 0.6, z), warm, 14000, radius: 8), face: bulb, faceColor: warm, faceIntensity: 6)
+            daylight.addLamp(light(SIMD3(x, ceiling - 0.6, z), warm, 24000, radius: 8), face: bulb, faceColor: warm, faceIntensity: 6)
         }
+
+        // -- lamps for the corners the pendants miss, and a soft fill from
+        //    above standing in for the light they bounce off the walls --
+        let shadeGlow = NSColor(red: 1.0, green: 0.8, blue: 0.55, alpha: 1)
+        for (p, yaw) in [(SIMD3<Float>(5.15, 0, 3.95), Float(0.3)), (SIMD3(-3.35, 0, 4.35), Float(-0.4))] {
+            let (lamp, shade, bulbAt) = WorldPrimitives.floorLamp()
+            lamp.position = p
+            lamp.orientation = simd_quatf(angle: yaw, axis: SIMD3(0, 1, 0))
+            root.addChild(lamp)
+            daylight.addLamp(light(p + bulbAt, warm, 60000, radius: 7))
+            daylight.addLampFace(shade, color: shadeGlow, intensity: 1.6, dayColor: NSColor(red: 0.92, green: 0.86, blue: 0.72, alpha: 1))
+        }
+        let fill = SpotLight()
+        fill.light.color = warm
+        // from high up with a narrow cone, so the inverse-square falloff is
+        // nearly flat across the floor and the cone ends at the room's edge
+        fill.light.intensity = 4_200_000
+        // (the angles are the full cone, not the half-angle: 60 here reaches
+        // the room's corners from 14 m up)
+        fill.light.innerAngleInDegrees = 44
+        fill.light.outerAngleInDegrees = 60
+        fill.light.attenuationRadius = 40      // the window falloff is what shapes the pool; keep the floor well inside it
+        fill.position = SIMD3(0, 14, -0.5)
+        fill.look(at: SIMD3(0, 0, -0.5), from: fill.position, relativeTo: nil)
+        root.addChild(fill)
+        daylight.addLamp(fill)
 
         // -- infrastructure along the back-left --
         let rack0 = await place("server_rack", at: SIMD3(-4.7, 0, -4.55), fallback: WorldPrimitives.serverRack)
@@ -234,7 +260,7 @@ enum WorldRoom {
         await place("whiteboard", at: SIMD3(0.6, 0, -floorD / 2 + 0.07), fallback: WorldPrimitives.whiteboard)
         let sign = await place("neon", at: SIMD3(-2.4, 2.0, -floorD / 2 + 0.1), fallback: { WorldPrimitives.neonSign("amux", color: neon) })
         sign.name = "neon"
-        daylight.addNeon(light(SIMD3(-2.4, 2.0, -floorD / 2 + 0.7), neon, 4000, radius: 4.5))
+        daylight.addNeon(light(SIMD3(-2.4, 2.0, -floorD / 2 + 0.7), neon, 6000, radius: 4.5))
         await place("neon_sign", at: SIMD3(-floorW / 2 + 0.08, 1.6, 3.6), yaw: quarter)
         daylight.addNeon(light(SIMD3(-floorW / 2 + 0.6, 1.7, 3.6), neon, 900, radius: 3))
         await place("coat_rack", at: SIMD3(4.9, 0, -4.4), scale: 2.2)
@@ -257,7 +283,7 @@ enum WorldRoom {
         await place("shelf", at: SIMD3(-5.55, 0, -0.6), yaw: quarter)
         await place("boxes", at: SIMD3(-5.4, 0, 1.0), yaw: 0.4)
         await place("arcade", at: SIMD3(-5.3, 0, 1.9), yaw: quarter, fallback: WorldPrimitives.arcadeCabinet)
-        light(SIMD3(-4.6, 1.3, 1.9), NSColor(red: 1.0, green: 0.4, blue: 0.75, alpha: 1), 600, radius: 2.5)
+        light(SIMD3(-4.6, 1.3, 1.9), NSColor(red: 1.0, green: 0.4, blue: 0.75, alpha: 1), 2500, radius: 3)
         await place("fridge", at: SIMD3(5.3, 0, -1.6), yaw: -quarter)
         let crate = await place("crate", at: SIMD3(1.4, 0, 3.6), yaw: 0.2, fallback: { WorldPrimitives.cardboardBox(0.6) })
         await place("crt", at: SIMD3(0, 0.65, 0), yaw: -0.6, under: crate, fallback: WorldPrimitives.crt)

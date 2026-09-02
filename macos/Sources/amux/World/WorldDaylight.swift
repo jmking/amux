@@ -112,7 +112,7 @@ final class WorldDaylight {
     /// Registered lights as (full intensity, setter), so point and spot lights
     /// are driven alike; faces are the emissive bits that glow with them.
     private var lamps: [(Float, (Float) -> Void)] = []
-    private var lampFaces: [(ModelEntity, NSColor, Float)] = []
+    private var lampFaces: [(ModelEntity, NSColor, Float, NSColor)] = []   // face, glow colour, glow, day colour
     private var neonLights: [(Float, (Float) -> Void)] = []
     private var streetLights: [(Float, (Float) -> Void)] = []
     private var streetFaces: [(ModelEntity, NSColor, Float)] = []
@@ -141,9 +141,12 @@ final class WorldDaylight {
 
     func addLamp(_ light: PointLight, face: ModelEntity? = nil, faceColor: NSColor = .white, faceIntensity: Float = 6) {
         lamps.append((light.light.intensity, { light.light.intensity = $0 }))
-        if let face { lampFaces.append((face, faceColor, faceIntensity)) }
+        if let face { lampFaces.append((face, faceColor, faceIntensity, .black)) }
     }
-    func addLampFace(_ face: ModelEntity, color: NSColor, intensity: Float) { lampFaces.append((face, color, intensity)) }
+    func addLamp(_ light: SpotLight) { lamps.append((light.light.intensity, { light.light.intensity = $0 })) }
+    /// `dayColor` is what the face looks like unlit; a shade stays cream by day
+    /// rather than going black like a bulb.
+    func addLampFace(_ face: ModelEntity, color: NSColor, intensity: Float, dayColor: NSColor = .black) { lampFaces.append((face, color, intensity, dayColor)) }
     func addStreetFace(_ face: ModelEntity, color: NSColor, intensity: Float) { streetFaces.append((face, color, intensity)) }
     func addNeon(_ light: PointLight) { neonLights.append((light.light.intensity, { light.light.intensity = $0 })) }
     func addStreetLight(_ light: PointLight, face: ModelEntity? = nil, faceColor: NSColor = .white, faceIntensity: Float = 5) {
@@ -208,7 +211,7 @@ final class WorldDaylight {
         for (full, set) in streetLights { set(full * streetLevel) }
         if abs(lampLevel - appliedLampLevel) > 0.01 || appliedLampLevel.isNaN {
             appliedLampLevel = lampLevel
-            for (m, c, i) in lampFaces { setEmissive(m, c, i * (0.05 + 0.95 * lampLevel)) }
+            for (m, c, i, day) in lampFaces { setEmissive(m, c, i * (0.05 + 0.95 * lampLevel), base: day) }
         }
         if abs(streetLevel - appliedStreetLevel) > 0.01 || appliedStreetLevel.isNaN {
             appliedStreetLevel = streetLevel
@@ -254,9 +257,10 @@ final class WorldDaylight {
         }
     }
 
-    private func setEmissive(_ m: ModelEntity, _ color: NSColor, _ intensity: Float) {
+    private func setEmissive(_ m: ModelEntity, _ color: NSColor, _ intensity: Float, base: NSColor = .black) {
         var mat = PhysicallyBasedMaterial()
-        mat.baseColor = .init(tint: .black)
+        mat.baseColor = .init(tint: base)
+        mat.roughness = .init(floatLiteral: 1)
         mat.emissiveColor = .init(color: color)
         mat.emissiveIntensity = intensity
         m.model?.materials = [mat]

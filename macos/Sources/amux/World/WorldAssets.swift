@@ -304,6 +304,26 @@ enum WorldPrimitives {
         return root
     }
 
+    /// A floor lamp: weighted base, thin pole, a drum shade that the daylight
+    /// pass makes glow after dark, and a bulb where its light comes from.
+    static func floorLamp(height: Float = 1.55) -> (lamp: Entity, shade: ModelEntity, bulbAt: SIMD3<Float>) {
+        let root = Entity()
+        let metal = NSColor(white: 0.12, alpha: 1)
+        var mm = PhysicallyBasedMaterial()
+        mm.baseColor = .init(tint: metal); mm.roughness = .init(floatLiteral: 0.45); mm.metallic = .init(floatLiteral: 1)
+        let base = ModelEntity(mesh: .generateCylinder(height: 0.03, radius: 0.17), materials: [mm])
+        base.position.y = 0.015
+        root.addChild(base)
+        let pole = box(SIMD3(0.025, height, 0.025), metal, roughness: 0.45, metallic: true, corner: 0)
+        root.addChild(pole)
+        var sm = PhysicallyBasedMaterial()
+        sm.baseColor = .init(tint: NSColor(red: 0.92, green: 0.86, blue: 0.72, alpha: 1)); sm.roughness = .init(floatLiteral: 1)
+        let shade = ModelEntity(mesh: .generateCylinder(height: 0.32, radius: 0.21), materials: [sm])
+        shade.position.y = height + 0.08
+        root.addChild(shade)
+        return (root, shade, SIMD3(0, height + 0.02, 0))
+    }
+
     static func bareBulb() -> Entity {
         let root = Entity()
         let cord = box(SIMD3(0.01, 0.6, 0.01), NSColor(white: 0.1, alpha: 1))
