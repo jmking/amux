@@ -94,15 +94,19 @@ enum WorldGraffiti {
         }
 
         // drips off the bottoms of a few letters, under the paint
-        let dripCount = min(glyphs.count, max(2, glyphs.count / 3))
+        let letters = glyphs.indices.filter { !glyphs[$0].s.trimmingCharacters(in: .whitespaces).isEmpty }
+        let dripCount = min(letters.count, max(2, letters.count / 3))
         var dripAt = Set<Int>()
-        while dripAt.count < dripCount { dripAt.insert(Int(rng.unit() * Double(glyphs.count)) % glyphs.count) }
+        while dripAt.count < dripCount { dripAt.insert(letters[Int(rng.unit() * Double(letters.count)) % letters.count]) }
+        // draw(at:) puts the line box's bottom at the point; the letters sit a
+        // descender above it, and that is where paint runs from
+        let descent = abs(font.descender)
         for i in dripAt.sorted() {
             let g = glyphs[i]
             let dx = margin + g.x + g.w * (0.3 + CGFloat(rng.unit()) * 0.4)
             let w = 5 + CGFloat(rng.unit()) * 5
             let len = 28 + CGFloat(rng.unit()) * 70
-            let top = baseline + g.dy + 6
+            let top = baseline + g.dy + descent + 4
             ctx.setFillColor(shade(0.8).cgColor)
             ctx.fill(CGRect(x: dx - w / 2, y: top - len, width: w, height: len))
             ctx.fillEllipse(in: CGRect(x: dx - w / 2 - 1.5, y: top - len - w / 2 - 1.5, width: w + 3, height: w + 3))

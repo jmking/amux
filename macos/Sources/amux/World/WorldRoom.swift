@@ -108,8 +108,8 @@ enum WorldRoom {
                 root.addChild(course)
             } else {
                 let seg = WorldPrimitives.box(SIMD3(2, wallH, 0.2), brick, roughness: 1)
-                seg.position = SIMD3(Float(x), 0, -floorD / 2)
-                if x == 3 { seg.position.y = 2.1; seg.scale.y = 0.15 }
+                seg.position = SIMD3(Float(x), wallH / 2, -floorD / 2)
+                if x == 3 { seg.position.y = 2.1 + (wallH - 2.1) / 2; seg.scale.y = (wallH - 2.1) / wallH }   // the lintel
                 root.addChild(seg)
             }
         }
@@ -134,7 +134,7 @@ enum WorldRoom {
                 root.addChild(course)
             } else {
                 let seg = WorldPrimitives.box(SIMD3(0.2, wallH, 2), plaster, roughness: 1)
-                seg.position = SIMD3(-floorW / 2, 0, Float(z))
+                seg.position = SIMD3(-floorW / 2, wallH / 2, Float(z))
                 root.addChild(seg)
             }
             if window {
@@ -157,8 +157,11 @@ enum WorldRoom {
         }
         for corner in [SIMD3<Float>(-floorW / 2, 0, -floorD / 2), SIMD3(-floorW / 2, 0, floorD / 2), SIMD3(floorW / 2, 0, -floorD / 2)] {
             await place("column", at: corner)
-            let cap = WorldPrimitives.box(SIMD3(0.5, wallH - tileH, 0.5), concrete, roughness: 1, corner: 0)
-            cap.position = corner + SIMD3(0, tileH + (wallH - tileH) / 2, 0)
+            // a touch taller than the courses that run into it, so the two tops
+            // never share a plane and fight from above
+            let capH = wallH - tileH + 0.05
+            let cap = WorldPrimitives.box(SIMD3(0.5, capH, 0.5), concrete, roughness: 1, corner: 0)
+            cap.position = corner + SIMD3(0, tileH + capH / 2, 0)
             root.addChild(cap)
         }
 

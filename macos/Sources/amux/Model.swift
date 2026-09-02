@@ -664,11 +664,16 @@ final class AppModel: ObservableObject {
         gethostname(&buf, 255)
         return String(cString: buf).components(separatedBy: ".").first ?? "mac"
     }()
+    static var stateOverridePath: String? {
+        let p = UserDefaults.standard.string(forKey: "statePath") ?? ""
+        return p.isEmpty ? nil : p
+    }
     /// Where the session lives. `amux -statePath <file>` points a test instance
     /// at its own file so it never touches the real session.
     static var stateFile: URL {
-        if let p = UserDefaults.standard.string(forKey: "statePath"), !p.isEmpty {
-            return URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
+        if let p = stateOverridePath {
+            return URL(fileURLWithPath: (p as NSString).expandingTildeInPath,
+                       relativeTo: FileManager.default.homeDirectoryForCurrentUser).standardizedFileURL
         }
         return FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".config/amux/state.json")
@@ -1875,7 +1880,10 @@ final class AppModel: ObservableObject {
     private var restoreFailed = false
 
     private func restoreState() {
-        let candidates = [Self.stateFile, Self.stateBackupFile, Self.legacyStateFile]
+        // a test instance with its own file never inherits the real or the old session
+        let candidates = Self.stateOverridePath == nil
+            ? [Self.stateFile, Self.stateBackupFile, Self.legacyStateFile]
+            : [Self.stateFile, Self.stateBackupFile]
         var dump: Dump?
         var sawFile = false
         for url in candidates {

@@ -32,7 +32,11 @@ enum WorldYard {
         // lights are the only colour in it
         let place: Place = { name, p, yaw, scale, parent, fallback in
             let e = await placeRaw(name, p, yaw, scale, parent, fallback)
-            if name != "cone" { greyOut(e) }
+            switch name {
+            case "cone": break                                   // one accent of colour
+            case "yard_asphalt": greyOut(e, fixed: 0.30)          // a step darker than the slab
+            default: greyOut(e)
+            }
             return e
         }
         func deg(_ d: Float) -> Float { d * .pi / 180 }
@@ -129,12 +133,12 @@ enum WorldYard {
         _ = await place("ac_unit", SIMD3(-20, 2.9, -1.0), .pi / 2, 1, nil, nil)
         addFlood(root, daylight, at: SIMD3(-16.7, 2.75, -8), aim: SIMD3(-10.5, y, -9), lumens: 50000, inner: 30, outer: 65, radius: 20)
         if let tag = await WorldGraffiti.make("HELLO FRIEND", color: NSColor(red: 1.0, green: 0.25, blue: 0.55, alpha: 1), height: 2.4, seed: 7) {
-            tag.position = SIMD3(-16.9, 0.15, 0.0)
+            tag.position = SIMD3(-16.9, 0.15 + tag.position.y, -1.2)   // make() anchors the quad's bottom at the origin
             tag.orientation = simd_quatf(angle: .pi / 2, axis: SIMD3(0, 1, 0))
             root.addChild(tag)
         }
         if let tag = await WorldGraffiti.make("404", color: NSColor(red: 0.3, green: 0.9, blue: 0.95, alpha: 1), height: 2.2, seed: 3) {
-            tag.position = SIMD3(0.4, 1.1, -16.9)
+            tag.position = SIMD3(-1.6, 1.0 + tag.position.y, -16.9)
             root.addChild(tag)
         }
 
@@ -184,13 +188,13 @@ enum WorldYard {
         _ = await place("barrier_striped", SIMD3(-13.4, y, 6.8), deg(80), 1, nil, nil)
 
         // -- poles and wires in the strip --
-        _ = await place("elec_pole", SIMD3(-14.8, y, -4.1), .pi / 2, 1, nil, nil)
+        _ = await place("elec_pole", SIMD3(-14.8, y, -7.5), .pi / 2, 1, nil, nil)
         _ = await place("elec_wires", SIMD3(-14.8, 4.55, -9.5), .pi / 2, 1, nil, nil)
         _ = await place("elec_wires", SIMD3(-14.8, 4.55, -14.5), .pi / 2, 1, nil, nil)
         box(SIMD3(0.3, 0.4, 0.15), NSColor(white: 0.4, alpha: 1), at: SIMD3(-15, 5.0, -16.9))
 
         // -- the lane: lorry, pallets, the gas tank, barriers, the blinking bollard --
-        _ = await place("truck_box", SIMD3(-3.5, y, -15.2), .pi / 2, 1, nil, nil)
+        _ = await place("truck_box", SIMD3(-7.0, y, -15.2), .pi / 2, 1, nil, nil)   // parked at the closed bay
         for (i, yaw) in [Float(0), 5, -4, 8].enumerated() {
             _ = await place("pallet_yard", SIMD3(0.6, y + Float(i) * 0.18, -15.4), deg(yaw), 1, nil, nil)
         }
@@ -271,10 +275,10 @@ enum WorldYard {
 
     /// Replaces every lit material under `e` with a matte grey of roughly the
     /// original's brightness; emissive parts (lamp heads) are left alone.
-    private static func greyOut(_ e: Entity) {
+    private static func greyOut(_ e: Entity, fixed: Float? = nil) {
         if let me = e as? ModelEntity, var model = me.model {
             model.materials = model.materials.map { m in
-                var g: Float = 0.48
+                var g: Float = fixed ?? 0.48
                 if let pbr = m as? PhysicallyBasedMaterial {
                     // a lit part: emissive colour with some brightness (the
                     // intensity alone is 1 on every loaded material)
@@ -282,7 +286,7 @@ enum WorldYard {
                        Float(0.2126 * ec.redComponent + 0.7152 * ec.greenComponent + 0.0722 * ec.blueComponent) * pbr.emissiveIntensity > 0.05 {
                         return m
                     }
-                    if pbr.baseColor.texture == nil, let c = pbr.baseColor.tint.usingColorSpace(.sRGB) {
+                    if fixed == nil, pbr.baseColor.texture == nil, let c = pbr.baseColor.tint.usingColorSpace(.sRGB) {
                         let lum = Float(0.2126 * c.redComponent + 0.7152 * c.greenComponent + 0.0722 * c.blueComponent)
                         g = 0.34 + 0.26 * pow(max(0, lum), 0.6)
                     }
@@ -295,7 +299,7 @@ enum WorldYard {
             }
             me.model = model
         }
-        for c in e.children { greyOut(c) }
+        for c in e.children { greyOut(c, fixed: fixed) }
     }
 
     // MARK: pieces the packs do not have
