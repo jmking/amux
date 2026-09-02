@@ -217,9 +217,12 @@ enum WorldRoom {
         // pitched steeply, so the eave sits on the wall and the inner edge is
         // well above it: sightlines from the camera still reach the neon, the
         // clock and the top of the brick under it
-        let eave: Float = 0.5, roofDepth: Float = 2.4, pitch: Float = 0.55
+        let eave: Float = 0.5, roofDepth: Float = 2.4, pitch: Float = 0.55, roofT: Float = 0.18
         let rise = roofDepth * sin(pitch), run = roofDepth * cos(pitch)
-        let y0 = wallH + 0.1, y1 = y0 + rise
+        // the roof rests on the walls: its underside meets the wall top at
+        // the wall's inner face, so there is no daylight between them
+        let y0 = wallH - (eave + 0.1) * tan(pitch) + roofT / cos(pitch)
+        let y1 = y0 + rise
         // the two planes share the hip from the outer corner up to the inner
         // corner, so they meet instead of crossing
         let outerCorner = SIMD3<Float>(minX - eave, y0, minZ - eave)
@@ -227,17 +230,18 @@ enum WorldRoom {
         let backRoof = WorldPrimitives.prism([outerCorner,
                                               SIMD3(maxX + eave, y0, minZ - eave),
                                               SIMD3(maxX + eave, y1, minZ - eave + run),
-                                              innerCorner], thickness: 0.18, color: slate)
+                                              innerCorner], thickness: roofT, color: slate)
         root.addChild(backRoof)
         let leftRoof = WorldPrimitives.prism([outerCorner, innerCorner,
                                               SIMD3(minX - eave + run, y1, maxZ + eave),
-                                              SIMD3(minX - eave, y0, maxZ + eave)], thickness: 0.18, color: slate)
+                                              SIMD3(minX - eave, y0, maxZ + eave)], thickness: roofT, color: slate)
         root.addChild(leftRoof)
-        let backFascia = WorldPrimitives.box(SIMD3(floorW + eave * 2, 0.22, 0.06), fasciaColor, roughness: 0.9, corner: 0)
-        backFascia.position = SIMD3(center.x, wallH - 0.02, minZ - eave)
+        let fasciaH = roofT / cos(pitch) + 0.06
+        let backFascia = WorldPrimitives.box(SIMD3(floorW + eave * 2, fasciaH, 0.06), fasciaColor, roughness: 0.9, corner: 0)
+        backFascia.position = SIMD3(center.x, y0 - fasciaH / 2 + 0.03, minZ - eave)
         root.addChild(backFascia)
-        let leftFascia = WorldPrimitives.box(SIMD3(0.06, 0.22, floorD + eave * 2), fasciaColor, roughness: 0.9, corner: 0)
-        leftFascia.position = SIMD3(minX - eave, wallH - 0.02, center.z)
+        let leftFascia = WorldPrimitives.box(SIMD3(0.06, fasciaH, floorD + eave * 2), fasciaColor, roughness: 0.9, corner: 0)
+        leftFascia.position = SIMD3(minX - eave, y0 - fasciaH / 2 + 0.03, center.z)
         root.addChild(leftFascia)
 
         // -- workstations, in clusters --
@@ -320,7 +324,7 @@ enum WorldRoom {
         light(SIMD3(-4.2, 1.4, -3.9), screenGreen, 500, radius: 2.5)
         // cables down the wall from the racks, and across the floor to the desks
         for (i, x) in [Float(-3.9), -0.9, 1.9, 4.9].enumerated() {
-            await place("cable", at: SIMD3(x, tileH, minZ + 0.12), yaw: Float(i) * 0.7, fallback: {
+            await place("cable", at: SIMD3(x, wallH, minZ + 0.12), yaw: Float(i) * 0.7, scale: (wallH - 0.5) / 2.4, fallback: {
                 let c = WorldPrimitives.box(SIMD3(0.03, 2.4, 0.03), NSColor(white: 0.05, alpha: 1)); c.position.y = -1.2
                 let h = Entity(); h.addChild(c); return h
             })
