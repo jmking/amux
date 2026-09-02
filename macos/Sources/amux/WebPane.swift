@@ -16,6 +16,10 @@ final class WebPaneRuntime: NSObject, ObservableObject {
     @Published var canGoForward = false
     @Published var isLoading = false
     @Published var editingURL = true   // fresh tabs start in the URL field
+    /// Set when the page was stopped for navigating in a loop; shown in the
+    /// toolbar, cleared by reload or a new address.
+    @Published var stalled: String?
+    private var recentNavigations: [CFAbsoluteTime] = []
 
     init(id: String, url: URL?, model: AppModel) {
         self.id = id
@@ -65,10 +69,16 @@ final class WebPaneRuntime: NSObject, ObservableObject {
         editingURL = false
         url = target
         pendingLoad = nil
+        stalled = nil
+        recentNavigations.removeAll()
         view.load(URLRequest(url: target))
     }
 
-    func reload() { view.reload() }
+    func reload() {
+        stalled = nil
+        recentNavigations.removeAll()
+        view.reload()
+    }
     func goBack() { view.goBack() }
     func goForward() { view.goForward() }
 
@@ -87,6 +97,53 @@ final class WebPaneRuntime: NSObject, ObservableObject {
 }
 
 extension WebPaneRuntime: @MainActor WKNavigationDelegate {
+    /// The navigation storm breaker.
+    ///
+    /// A page can redirect itself in a loop: swift.org/documentation bounced
+    /// between www.swift.org and swift.org 40 times a second, in a bare
+    /// WKWebView, forever. Every hop is IPC and a layout pass in this process,
+    /// so a tab like that pinned a fifth of a core for as long as it existed,
+    /// hidden or not. Anything the user did not ask for (a link, a form, back,
+    /// reload) that arrives faster than a page could reasonably navigate is
+    /// stopped, and stays stopped until the user reloads or types an address.
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard action.targetFrame?.isMainFrame ?? true else { decisionHandler(.allow); return }
+        switch action.navigationType {
+        case .linkActivated, .formSubmitted, .formResubmitted, .backForward, .reload:
+            stalled = nil
+            recentNavigations.removeAll()
+            decisionHandler(.allow)
+            return
+        default:
+            break
+        }
+        // Same-document navigation (a scrollspy or slide deck writing to the
+        // hash) is also .other and arrives in bursts, but costs no load; it is
+        // neither the problem nor something to stop.
+        if let to = action.request.url, let from = webView.url, to.fragment != nil,
+           to.absoluteString.split(separator: "#", maxSplits: 1)[0] == from.absoluteString.split(separator: "#", maxSplits: 1)[0] {
+            decisionHandler(.allow)
+            return
+        }
+        if stalled != nil { decisionHandler(.cancel); return }
+        // 12 in 8 s: a page cannot honestly navigate itself faster than every
+        // ~650 ms for that long, and a redirect ping-pong on a slow link still
+        // trips it, where a tighter window would let it cycle forever
+        let now = CFAbsoluteTimeGetCurrent()
+        recentNavigations = recentNavigations.filter { now - $0 < 8 }
+        recentNavigations.append(now)
+        if recentNavigations.count > 12 {
+            decisionHandler(.cancel)
+            webView.stopLoading()
+            isLoading = false
+            stalled = "Stopped: \(action.request.url?.host ?? "page") kept redirecting"
+            NSLog("amux: navigation loop on \(id) stopped at \(action.request.url?.absoluteString ?? "?")")
+            return
+        }
+        decisionHandler(.allow)
+    }
+
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         url = webView.url
         isLoading = true
@@ -183,6 +240,15 @@ struct BrowserToolbar: View {
             navButton("chevron.left", enabled: runtime.canGoBack) { runtime.goBack() }
             navButton("chevron.right", enabled: runtime.canGoForward) { runtime.goForward() }
             navButton("arrow.clockwise", enabled: true) { runtime.reload() }
+            if let stalled = runtime.stalled {
+                Text(stalled)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .layoutPriority(-1)
+                    .help("The page navigated in a loop and was stopped. Reload to try again.")
+            }
 
             if runtime.editingURL {
                 TextField("Search or enter URL", text: $urlText)
