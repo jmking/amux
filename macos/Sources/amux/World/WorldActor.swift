@@ -6,18 +6,13 @@ import simd
 //
 // An actor is spawned outside the door when its agent appears, walks in and
 // takes a seat, animates from the agent's phase while it lives, and walks out
-// again when the agent goes. Its look comes from the rigged hoodie character
-// when the model is available and from a primitive figure otherwise; either way
-// the choreography (paths, seats, timing) is the same, which is what lets it be
-// tested without the art.
+// again when the agent goes.
 //
-// Animation, for the rigged model:
-//  - standing and walking play clips (idle, walk) cross-faded on the rig
-//  - reactions play one-shot clips (wave, hit)
-//  - sitting, typing, thinking and the rest are POSED: no CC0 clip exists for
-//    them, so the skeleton's joints are driven in code from a base pose, eased
-//    every frame so changes read as movement rather than snaps
-// The primitive figure has the same states, posed on its named parts.
+// The figure is a blocky, Minecraft-proportioned character built from boxes
+// (WorldPrimitives.figure): a hooded head, a torso in the agent's brand colour,
+// straight limbs that pivot at the shoulder and hip. Every state is posed in
+// code by rotating those parts towards a target pose and easing there each
+// frame, so a change of state reads as movement rather than a snap.
 
 enum WorldReaction { case message, done }
 
@@ -60,6 +55,7 @@ final class WorldActor {
 
     // presentation
     private let figure: Entity
+    private var joints: [String: Entity] = [:]
     private let tag = Entity()
     private var tagLabel: ModelEntity?
     private var tagSpec: WorldLabel.Spec?
@@ -67,54 +63,28 @@ final class WorldActor {
     private var markerLabel: ModelEntity?
     private var markerKind: String?
 
-    // rigged model
-    private let clips: [String: AnimationResource]
-    private var skins: [ModelEntity] = []
-    private var jointIndex: [String: Int] = [:]
-    private var basePose: [Transform]?
-    private var currentClip: String?
-    private var oneShotUntil: Float = 0
-    /// The model's origin sits on the floor; sitting drops it onto the chair.
-    private var figureDrop: Float = 0
-
-    // primitive figure
-    private var joints: [String: Entity] = [:]
-    private var isRigged: Bool { !skins.isEmpty }
-
     var isGone: Bool { mode == .gone }
     var position: SIMD3<Float> { entity.position }
 
-    init(paneId: String, label: String, kind: String, model: Entity?, clips: [String: AnimationResource] = [:]) {
+    /// Figure heights, in metres: the hip pivot standing, and on a chair.
+    private static let hipStanding = WorldPrimitives.figureHipHeight
+    private static let hipSeated: Float = 0.47
+
+    init(paneId: String, label: String, kind: String) {
         self.paneId = paneId
         self.label = label
         self.kind = kind
-        self.clips = clips
         let brand = AgentBrand.of(kind).color
         color = NSColor(red: CGFloat((brand >> 16) & 0xff) / 255,
                         green: CGFloat((brand >> 8) & 0xff) / 255,
                         blue: CGFloat(brand & 0xff) / 255, alpha: 1)
         entity.name = "actor:" + paneId
 
-        if let model {
-            figure = model
-            func walk(_ e: Entity) {
-                if let me = e as? ModelEntity, !me.jointNames.isEmpty { skins.append(me) }
-                for c in e.children { walk(c) }
-            }
-            walk(model)
-            if let first = skins.first {
-                for (i, name) in first.jointNames.enumerated() {
-                    // "Root/Body/Hips/Abdomen" -> "Abdomen"
-                    let leaf = name.split(separator: "/").last.map(String.init) ?? name
-                    jointIndex[leaf] = i
-                }
-            }
-            Self.recolour(model, hoodie: color)
-        } else {
-            figure = WorldPrimitives.figure(hoodie: color)
-            for name in ["hips", "legL", "legR", "armL", "armR", "neck", "torso", "head"] {
-                if let j = figure.findEntity(named: name) { joints[name] = j }
-            }
+        // the same agent keeps the same face across launches
+        let seed = paneId.utf8.reduce(5381) { ($0 &* 33) &+ Int($1) }
+        figure = WorldPrimitives.figure(hoodie: color, seed: seed)
+        for name in ["hips", "legL", "legR", "armL", "armR", "neck"] {
+            if let j = figure.findEntity(named: name) { joints[name] = j }
         }
         entity.addChild(figure)
         buildTag()
@@ -122,46 +92,11 @@ final class WorldActor {
         entity.isEnabled = false
     }
 
-    /// Tints whatever in a loaded model looks like the hoodie: the converter
-    /// names that material "Hoodie"; other packs are matched loosely, and a
-    /// model with no such name gets its largest single-material mesh tinted.
-    private static func recolour(_ model: Entity, hoodie: NSColor) {
-        var best: (ModelEntity, Int)?
-        var hitAny = false
-        func walk(_ e: Entity) {
-            if let me = e as? ModelEntity, var comp = me.model {
-                var hit = false
-                for (i, m) in comp.materials.enumerated() {
-                    let n = String(describing: (m as? PhysicallyBasedMaterial)?.name ?? "").lowercased()
-                    if n.contains("hood") || n.contains("torso") || n.contains("shirt") || n.contains("cloth") {
-                        var pbr = PhysicallyBasedMaterial()
-                        pbr.baseColor = .init(tint: hoodie)
-                        pbr.roughness = .init(floatLiteral: 0.95)
-                        comp.materials[i] = pbr
-                        hit = true
-                    }
-                }
-                if hit { me.model = comp; hitAny = true }
-                let v = comp.mesh.contents.models.reduce(0) { $0 + $1.parts.reduce(0) { $0 + $1.positions.count } }
-                if best == nil || v > best!.1 { best = (me, v) }
-            }
-            for c in e.children { walk(c) }
-        }
-        walk(model)
-        if !hitAny, var comp = best?.0.model, comp.materials.count == 1 {
-            var pbr = PhysicallyBasedMaterial()
-            pbr.baseColor = .init(tint: hoodie)
-            pbr.roughness = .init(floatLiteral: 0.95)
-            comp.materials = [pbr]
-            best?.0.model = comp
-        }
-    }
-
     // MARK: name tag and marker
 
     private func buildTag() {
         tag.name = "tag"
-        tag.position = SIMD3(0, 2.15, 0)
+        tag.position = SIMD3(0, WorldPrimitives.figureHeight + 0.22, 0)
         tag.components.set(BillboardComponent())
         entity.addChild(tag)
         refreshTag()
@@ -185,7 +120,7 @@ final class WorldActor {
 
     private func buildMarker() {
         marker.name = "marker"
-        marker.position = SIMD3(0, 2.55, 0)
+        marker.position = SIMD3(0, WorldPrimitives.figureHeight + 0.62, 0)
         marker.components.set(BillboardComponent())
         marker.isEnabled = false
         entity.addChild(marker)
@@ -271,8 +206,6 @@ final class WorldActor {
         path = waypoints
         onArrive = then
         mode = .walking
-        basePose = nil
-        play("walk")
     }
 
     func setPhase(_ p: AgentPhase) {
@@ -291,11 +224,6 @@ final class WorldActor {
 
     func react(_ kind: WorldReaction) {
         reaction = (kind, clock + (kind == .message ? 1.6 : 2.6))
-        // standing figures can act it out with a clip; seated ones are posed
-        if mode != .seated {
-            if kind == .message { play("hit", once: true) }
-            if kind == .done { play("wave", once: true) }
-        }
     }
 
     // MARK: per frame
@@ -303,7 +231,6 @@ final class WorldActor {
     func tick(dt: Float, cameraForward: SIMD3<Float>) {
         clock += dt
         if let r = reaction, clock > r.until { reaction = nil }
-        if oneShotUntil > 0, clock > oneShotUntil { oneShotUntil = 0; currentClip = nil; applyClipForMode() }
 
         switch mode {
         case .walking:
@@ -327,7 +254,7 @@ final class WorldActor {
         yaw += d * min(1, dt * 9)
         entity.orientation = simd_quatf(angle: yaw, axis: SIMD3(0, 1, 0))
 
-        if isRigged { poseRig(dt: dt) } else { posePrimitive(dt: dt) }
+        pose(dt: dt)
 
         // marker above the head
         switch (reaction?.kind, phase) {
@@ -337,7 +264,7 @@ final class WorldActor {
         }
         if marker.isEnabled {
             marker.scale = SIMD3(repeating: 1 + sin(clock * 6) * 0.08)
-            marker.position.y = 2.55 + sin(clock * 3) * 0.04
+            marker.position.y = WorldPrimitives.figureHeight + 0.62 + sin(clock * 3) * 0.04
         }
     }
 
@@ -354,7 +281,6 @@ final class WorldActor {
                 mode = .standing
                 onArrive?()
                 onArrive = nil
-                applyClipForMode()
             } else {
                 targetYaw = Self.yaw(from: next, to: path[0])
             }
@@ -370,198 +296,94 @@ final class WorldActor {
         return atan2(d.x, d.z)
     }
 
-    // MARK: clips (rigged model)
-
-    private func play(_ name: String, once: Bool = false) {
-        guard isRigged, let clip = clips[name] else { return }
-        if !once, currentClip == name { return }
-        currentClip = name
-        basePose = nil
-        let res = once ? clip : clip.repeat()
-        // the skeleton lives on the skinned entity; clips bind there
-        (skins.first ?? figure).playAnimation(res, transitionDuration: 0.3, startsPaused: false)
-        oneShotUntil = once ? clock + Float(clip.definition.duration) : 0
-    }
-
-    private func applyClipForMode() {
-        guard isRigged else { return }
-        switch mode {
-        case .walking: play("walk")
-        case .standing: play("idle")
-        case .seated, .gone: break   // posed, not played
-        }
-    }
-
-    // MARK: procedural posing (rigged model)
+    // MARK: posing
     //
-    // A seated figure is driven entirely from here. The base pose is whatever
-    // the rig was doing when it sat down (the tail of the idle clip), and each
-    // state is a set of joint rotations layered on it. Joint axes follow the
-    // model's bones: X bends forward, Z swings sideways, Y twists.
+    // Limbs are straight and pivot at their top, as they do on the reference
+    // figures: legs swing at the hip, arms at the shoulder, the head at the
+    // neck. Angles are radians about the figure's X (forward bend), with a
+    // little Z for arms held out to the side.
 
-    private func poseRig(dt: Float) {
-        // the model's origin drops onto the chair when seated
-        let dropTarget: Float = mode == .seated ? -0.45 : 0
-        figureDrop += (dropTarget - figureDrop) * min(1, dt * 8)
-        figure.position.y = figureDrop
-
-        guard mode == .seated, let host = skins.first else { return }
-        if basePose == nil {
-            basePose = host.jointTransforms
-            figure.stopAllAnimations(recursive: true)
-            currentClip = nil
-        }
-        guard let base = basePose else { return }
-        var target = base
-        let t = clock
-
-        func rot(_ joint: String, x: Float = 0, y: Float = 0, z: Float = 0) {
-            guard let i = jointIndex[joint], i < target.count else { return }
-            let q = simd_quatf(angle: x, axis: SIMD3(1, 0, 0))
-                * simd_quatf(angle: y, axis: SIMD3(0, 1, 0))
-                * simd_quatf(angle: z, axis: SIMD3(0, 0, 1))
-            target[i].rotation = base[i].rotation * q
-        }
-
-        // sitting: thighs forward, shins down
-        rot("UpperLeg_L", x: 1.45)
-        rot("UpperLeg_R", x: 1.45)
-        rot("LowerLeg_L", x: 1.5)
-        rot("LowerLeg_R", x: 1.5)
-        let breathe = sin(t * 1.4) * 0.02
-
-        switch phase {
-        case .tool, .network:
-            // hands on the keyboard, fingers going
-            rot("UpperArm_L", x: 0.55, z: 0.15)
-            rot("UpperArm_R", x: 0.55, z: -0.15)
-            rot("LowerArm_L", x: 1.0 + sin(t * 11) * 0.06)
-            rot("LowerArm_R", x: 1.0 + sin(t * 11 + 1.3) * 0.06)
-            rot("Abdomen", x: 0.12 + breathe)
-            rot("Head", x: 0.18)
-        case .thinking:
-            rot("Abdomen", x: -0.18 + breathe)
-            rot("UpperArm_L", x: 0.5, z: 0.1)
-            rot("LowerArm_L", x: 0.9)
-            rot("UpperArm_R", x: 0.9, z: -0.35)
-            rot("LowerArm_R", x: 2.35)
-            rot("Head", x: -0.1, y: sin(t * 0.7) * 0.2, z: 0.12)
-        case .waiting:
-            rot("UpperArm_L", x: 0.5)
-            rot("LowerArm_L", x: 0.9)
-            rot("UpperArm_R", x: -2.6, z: -0.3)
-            rot("LowerArm_R", x: 0.4 + sin(t * 7) * 0.25)
-            rot("Head", x: -0.12)
-        case .done:
-            rot("Abdomen", x: -0.28 + breathe)
-            rot("UpperArm_L", x: -2.5, z: 0.4)
-            rot("UpperArm_R", x: -2.5, z: -0.4)
-            rot("LowerArm_L", x: 0.3)
-            rot("LowerArm_R", x: 0.3)
-            rot("Head", x: -0.3)
-        case .idle:
-            rot("Abdomen", x: 0.22 + breathe)
-            rot("Chest", x: 0.1)
-            rot("UpperArm_L", x: 0.35, z: 0.1)
-            rot("UpperArm_R", x: 0.35, z: -0.1)
-            rot("LowerArm_L", x: 0.6)
-            rot("LowerArm_R", x: 0.6)
-            rot("Head", x: 0.08, y: sin(t * 0.45) * 0.4)
-        }
-        if reaction?.kind == .message {
-            rot("Head", x: sin(t * 12) * 0.22)
-        }
-        if reaction?.kind == .done {
-            rot("Abdomen", x: -0.28)
-            rot("UpperArm_L", x: -2.5, z: 0.4)
-            rot("UpperArm_R", x: -2.5, z: -0.4)
-        }
-
-        let ease = min(1, dt * 9)
-        var cur = host.jointTransforms
-        for i in cur.indices where i < target.count {
-            cur[i].rotation = simd_slerp(cur[i].rotation, target[i].rotation, ease)
-            cur[i].translation = target[i].translation
-        }
-        for s in skins { s.jointTransforms = cur }
-    }
-
-    // MARK: procedural posing (primitive figure)
-
-    private func posePrimitive(dt: Float) {
+    private func pose(dt: Float) {
         guard let hips = joints["hips"], let legL = joints["legL"], let legR = joints["legR"],
               let armL = joints["armL"], let armR = joints["armR"], let neck = joints["neck"] else { return }
         let t = clock
-        var hipsY: Float = 0.92
+        var hipsY = Self.hipStanding
         var hipsPitch: Float = 0
         var legs: (Float, Float) = (0, 0)
         var arms: (Float, Float) = (0, 0)
-        var armsRoll: (Float, Float) = (0, 0)
+        var armsOut: (Float, Float) = (0, 0)
         var neckPitch: Float = 0
         var neckYaw: Float = 0
+        let breathe = sin(t * 1.4) * 0.012
 
         switch mode {
         case .walking:
             let s = sin(t * 9)
-            legs = (s * 0.55, -s * 0.55)
-            arms = (-s * 0.45, s * 0.45)
-            hipsY = 0.92 + abs(cos(t * 9)) * 0.03
+            legs = (s * 0.7, -s * 0.7)
+            arms = (-s * 0.6, s * 0.6)
+            hipsY += abs(cos(t * 9)) * 0.035
+            neckPitch = 0.04
         case .seated:
-            hipsY = 0.5
-            legs = (-.pi / 2 + 0.1, -.pi / 2 + 0.1)
+            hipsY = Self.hipSeated
+            legs = (-.pi / 2 + 0.12, -.pi / 2 + 0.12)     // straight out, resting on the seat
             switch phase {
             case .tool, .network:
-                arms = (-1.15 + sin(t * 11) * 0.05, -1.15 + sin(t * 11 + 1.3) * 0.05)
-                neckPitch = 0.12
+                // hands on the keyboard, a little busy
+                arms = (-1.12 + sin(t * 11) * 0.06, -1.12 + sin(t * 11 + 1.3) * 0.06)
+                neckPitch = 0.16 + breathe
             case .thinking:
-                hipsPitch = -0.14
-                arms = (-0.95, -2.35)
-                armsRoll = (0, -0.35)
-                neckPitch = -0.08
-                neckYaw = sin(t * 0.7) * 0.15
-            case .waiting:
-                arms = (-0.6, .pi - 0.2 + sin(t * 7) * 0.12)
-                armsRoll = (0, -0.25)
+                // leaning back, one hand up to the face, head wandering
+                hipsPitch = -0.16
+                arms = (-0.9, -2.55)
+                armsOut = (0, -0.25)
                 neckPitch = -0.1
+                neckYaw = sin(t * 0.7) * 0.25
+            case .waiting:
+                // turned to the viewer, one arm up and waving
+                arms = (-0.6, .pi - 0.25 + sin(t * 7) * 0.15)
+                armsOut = (0, -0.35)
+                neckPitch = -0.08
             case .done:
+                // arms up
                 hipsPitch = -0.2
-                arms = (.pi - 0.35, .pi - 0.35)
-                armsRoll = (0.35, -0.35)
-                neckPitch = -0.25
+                arms = (.pi - 0.4, .pi - 0.4)
+                armsOut = (0.45, -0.45)
+                neckPitch = -0.2
             case .idle:
-                hipsPitch = 0.12
-                arms = (-0.25 + sin(t * 1.1) * 0.05, -0.25 + cos(t * 1.3) * 0.05)
-                armsRoll = (0.12, -0.12)
-                neckPitch = 0.05
-                neckYaw = sin(t * 0.45) * 0.4
+                // slouched, hands in the pocket, looking around
+                hipsPitch = 0.14 + breathe
+                arms = (-0.35 + sin(t * 1.1) * 0.04, -0.35 + cos(t * 1.3) * 0.04)
+                armsOut = (0.15, -0.15)
+                neckPitch = 0.06
+                neckYaw = sin(t * 0.45) * 0.5
             }
         case .standing, .gone:
             arms = (sin(t * 1.2) * 0.05, cos(t * 1.1) * 0.05)
-            armsRoll = (0.1, -0.1)
-            hipsY = 0.92 + sin(t * 1.5) * 0.005
-            if phase == .waiting { arms.1 = .pi - 0.2 + sin(t * 7) * 0.12; armsRoll.1 = -0.25 }
-            neckYaw = sin(t * 0.4) * 0.3
+            armsOut = (0.08, -0.08)
+            hipsY += sin(t * 1.5) * 0.004
+            if phase == .waiting { arms.1 = .pi - 0.25 + sin(t * 7) * 0.15; armsOut.1 = -0.35 }
+            neckYaw = sin(t * 0.4) * 0.35
         }
-        if reaction?.kind == .message { neckPitch += sin(t * 12) * 0.22 }
+        if reaction?.kind == .message { neckPitch += sin(t * 12) * 0.25 }   // a nod
         if reaction?.kind == .done, mode != .walking {
             hipsPitch = -0.22
-            arms = (.pi - 0.3, .pi - 0.3)
-            armsRoll = (0.4, -0.4)
+            arms = (.pi - 0.35, .pi - 0.35)
+            armsOut = (0.45, -0.45)
         }
 
         let ease = min(1, dt * 10)
-        func slerp(_ e: Entity, pitch: Float, roll: Float = 0, yawR: Float = 0) {
+        func turn(_ e: Entity, pitch: Float, out: Float = 0, yawR: Float = 0) {
             let q = simd_quatf(angle: yawR, axis: SIMD3(0, 1, 0))
                 * simd_quatf(angle: pitch, axis: SIMD3(1, 0, 0))
-                * simd_quatf(angle: roll, axis: SIMD3(0, 0, 1))
+                * simd_quatf(angle: out, axis: SIMD3(0, 0, 1))
             e.orientation = simd_slerp(e.orientation, q, ease)
         }
         hips.position.y += (hipsY - hips.position.y) * ease
-        slerp(hips, pitch: hipsPitch)
-        slerp(legL, pitch: legs.0)
-        slerp(legR, pitch: legs.1)
-        slerp(armL, pitch: arms.0, roll: armsRoll.0)
-        slerp(armR, pitch: arms.1, roll: armsRoll.1)
-        slerp(neck, pitch: neckPitch, yawR: neckYaw)
+        turn(hips, pitch: hipsPitch)
+        turn(legL, pitch: legs.0)
+        turn(legR, pitch: legs.1)
+        turn(armL, pitch: arms.0, out: armsOut.0)
+        turn(armR, pitch: arms.1, out: armsOut.1)
+        turn(neck, pitch: neckPitch, yawR: neckYaw)
     }
 }

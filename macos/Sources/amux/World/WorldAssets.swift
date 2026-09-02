@@ -70,31 +70,6 @@ final class WorldAssets {
         guard let p = await prototype(name) else { return nil }
         return p.clone(recursive: true)
     }
-
-    /// The single animation carried by a clip file. Blender's USD exporter
-    /// writes one clip per file, so a character's clips are separate USDZs
-    /// (character_walk, character_wave, ...) whose skeleton matches the model's;
-    /// RealityKit binds them by joint name when played on the model.
-    func clip(_ name: String) async -> AnimationResource? {
-        guard let p = await prototype(name) else { return nil }
-        var found: AnimationResource?
-        func walk(_ e: Entity) {
-            if found == nil, let a = e.availableAnimations.first { found = a }
-            for c in e.children where found == nil { walk(c) }
-        }
-        walk(p)
-        return found
-    }
-
-    /// Every clip the character has, keyed by our own names.
-    func characterClips() async -> [String: AnimationResource] {
-        var out: [String: AnimationResource] = [:]
-        for (key, file) in [("idle", "character"), ("walk", "character_walk"), ("wave", "character_wave"),
-                            ("hit", "character_hit"), ("idle2", "character_idle2"), ("interact", "character_interact")] {
-            if let c = await clip(file) { out[key] = c }
-        }
-        return out
-    }
 }
 
 // MARK: - Primitive stand-ins
@@ -340,57 +315,78 @@ enum WorldPrimitives {
         return root
     }
 
-    /// A hooded low-poly figure from primitives. Child names are what the
-    /// procedural animations drive, so a real rigged model must expose the same
-    /// names or its own clips.
-    static func figure(hoodie: NSColor) -> Entity {
-        let root = Entity()
-        let skin = NSColor(red: 0.85, green: 0.7, blue: 0.58, alpha: 1)
-        let dark = NSColor(white: 0.1, alpha: 1)
+    /// Minecraft proportions: 32 px tall, 1 px = this many metres.
+    static let px: Float = 1.8 / 32
+    static let figureHeight: Float = 32.6 * (1.8 / 32)
+    static let figureHipHeight: Float = 12 * (1.8 / 32)
 
-        let hips = Entity(); hips.name = "hips"; hips.position.y = 0.92
+    /// A blocky figure in Minecraft proportions with the hood up: an 8 px cube
+    /// head, an 8x12x4 torso, 4x12x4 limbs. The hoodie takes the agent's brand
+    /// colour; the face, jeans and shoes are its own. Parts are named so the
+    /// actor can pose them: `hips` carries everything and rises and falls,
+    /// `legL`/`legR` pivot at the hip, `armL`/`armR` at the shoulder, `neck`
+    /// turns the head. Every piece has its base at its parent pivot, so a
+    /// rotation swings it the way a limb swings.
+    static func figure(hoodie: NSColor, seed: Int = 0) -> Entity {
+        func P(_ n: Float) -> Float { n * px }
+        let skins = [
+            NSColor(red: 0.96, green: 0.80, blue: 0.69, alpha: 1),
+            NSColor(red: 0.87, green: 0.66, blue: 0.52, alpha: 1),
+            NSColor(red: 0.64, green: 0.44, blue: 0.31, alpha: 1),
+            NSColor(red: 0.42, green: 0.28, blue: 0.19, alpha: 1),
+        ]
+        let skin = skins[abs(seed) % skins.count]
+        let jeans = NSColor(red: 0.17, green: 0.21, blue: 0.33, alpha: 1)
+        let shoe = NSColor(white: 0.09, alpha: 1)
+        let hoodShade = hoodie.blended(withFraction: 0.28, of: .black) ?? hoodie
+        let string = NSColor(white: 0.92, alpha: 1)
+        let eye = NSColor(red: 0.09, green: 0.1, blue: 0.16, alpha: 1)
+
+        func block(_ w: Float, _ h: Float, _ d: Float, _ c: NSColor, x: Float = 0, base: Float = 0, z: Float = 0) -> ModelEntity {
+            let e = box(SIMD3(P(w), P(h), P(d)), c, roughness: 1, corner: 0)
+            e.position += SIMD3(P(x), P(base), P(z))
+            return e
+        }
+
+        let root = Entity()
+        let hips = Entity(); hips.name = "hips"; hips.position.y = P(12)
         root.addChild(hips)
 
-        for (name, x) in [("legL", Float(-0.11)), ("legR", Float(0.11))] {
-            let pivot = Entity(); pivot.name = name; pivot.position = SIMD3(x, 0, 0)
-            let leg = box(SIMD3(0.16, 0.86, 0.18), dark, corner: 0.03)
-            leg.position.y = -0.43
-            pivot.addChild(leg)
+        // legs hang from the hip; jeans with a dark shoe at the bottom
+        for (name, x) in [("legL", Float(-2)), ("legR", Float(2))] {
+            let pivot = Entity(); pivot.name = name; pivot.position = SIMD3(P(x), 0, 0)
+            pivot.addChild(block(4, 10, 4, jeans, base: -10))
+            pivot.addChild(block(4, 2, 4, shoe, base: -12))
             hips.addChild(pivot)
         }
 
-        let torso = box(SIMD3(0.46, 0.62, 0.3), hoodie, roughness: 1, corner: 0.05)
-        torso.name = "torso"
-        torso.position.y = 0.31
+        // torso, kangaroo pocket, drawstrings
+        let torso = block(8, 12, 4, hoodie); torso.name = "torso"
         hips.addChild(torso)
-        let pocket = box(SIMD3(0.3, 0.14, 0.02), hoodie.shadow(withLevel: 0.15) ?? hoodie, roughness: 1)
-        pocket.position = SIMD3(0, 0.18, 0.16)
-        hips.addChild(pocket)
+        hips.addChild(block(6, 3, 0.5, hoodShade, base: 2, z: 2.2))
+        hips.addChild(block(0.5, 3, 0.4, string, x: -1.2, base: 8.5, z: 2.2))
+        hips.addChild(block(0.5, 3, 0.4, string, x: 1.2, base: 8.5, z: 2.2))
 
-        for (name, x) in [("armL", Float(-0.3)), ("armR", Float(0.3))] {
-            let pivot = Entity(); pivot.name = name; pivot.position = SIMD3(x, 0.56, 0)
-            let arm = box(SIMD3(0.13, 0.6, 0.15), hoodie, roughness: 1, corner: 0.03)
-            arm.position.y = -0.3
-            pivot.addChild(arm)
-            let hand = sphere(0.06, skin)
-            hand.position.y = -0.62
-            pivot.addChild(hand)
+        // arms hang from the shoulder; sleeve then hand
+        for (name, x) in [("armL", Float(-6)), ("armR", Float(6))] {
+            let pivot = Entity(); pivot.name = name; pivot.position = SIMD3(P(x), P(11), 0)
+            pivot.addChild(block(4, 10, 4, hoodie, base: -10))
+            pivot.addChild(block(4, 2, 4, skin, base: -12))
             hips.addChild(pivot)
         }
 
-        let neck = Entity(); neck.name = "neck"; neck.position.y = 0.64
+        // head: the hood is the cube, a little larger than a bare head, with
+        // the face set into its front and the hood's rim shading it
+        let neck = Entity(); neck.name = "neck"; neck.position.y = P(12)
         hips.addChild(neck)
-        let head = sphere(0.17, skin)
-        head.name = "head"
-        head.position.y = 0.16
-        neck.addChild(head)
-        // hood: a hoodie-coloured shell open at the face
-        let hood = box(SIMD3(0.4, 0.42, 0.38), hoodie, roughness: 1, corner: 0.14)
-        hood.position = SIMD3(0, 0.17, -0.05)
+        let hood = block(8.6, 8.6, 8.6, hoodie); hood.name = "head"
         neck.addChild(hood)
-        let face = box(SIMD3(0.26, 0.24, 0.02), NSColor(white: 0.02, alpha: 1))
-        face.position = SIMD3(0, 0.16, 0.17)
-        neck.addChild(face)
+        neck.addChild(block(6.2, 6.6, 0.4, hoodShade, base: 1.0, z: 4.15))     // shadow inside the hood
+        neck.addChild(block(5.6, 6.0, 0.4, skin, base: 1.3, z: 4.35))          // face
+        neck.addChild(block(1.3, 1.3, 0.3, eye, x: -1.5, base: 4.4, z: 4.6))
+        neck.addChild(block(1.3, 1.3, 0.3, eye, x: 1.5, base: 4.4, z: 4.6))
+        neck.addChild(block(0.5, 0.5, 0.3, .white, x: -1.2, base: 5.0, z: 4.7)) // catchlights
+        neck.addChild(block(0.5, 0.5, 0.3, .white, x: 1.8, base: 5.0, z: 4.7))
         return root
     }
 }

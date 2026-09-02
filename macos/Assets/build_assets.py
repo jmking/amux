@@ -34,25 +34,6 @@ SCREEN_GREEN = "0.25,1.0,0.45"
 
 # name -> (source glob relative to Assets/src, [convert.py options])
 MANIFEST = {
-    # -- the crew --
-    # Blender exports one clip per file, so the character is exported once as
-    # the model (carrying its idle) and once more per clip; the app plays the
-    # clip files onto the model, whose skeleton they share. Not recentred: the
-    # rig's control bones inflate the bounding box and would shift the body off
-    # its authored origin, which is already at the feet.
-    "character": ("polypizza-hacker-props/hoodie-character_quaternius_*.glb",
-                  ["--strip-anim-prefix", "--rename", "Purple=Hoodie", "--action", "Idle_Neutral"]),
-    "character_walk": ("polypizza-hacker-props/hoodie-character_quaternius_*.glb",
-                       ["--strip-anim-prefix", "--rename", "Purple=Hoodie", "--action", "Walk"]),
-    "character_wave": ("polypizza-hacker-props/hoodie-character_quaternius_*.glb",
-                       ["--strip-anim-prefix", "--rename", "Purple=Hoodie", "--action", "Wave"]),
-    "character_hit": ("polypizza-hacker-props/hoodie-character_quaternius_*.glb",
-                      ["--strip-anim-prefix", "--rename", "Purple=Hoodie", "--action", "HitRecieve"]),
-    "character_idle2": ("polypizza-hacker-props/hoodie-character_quaternius_*.glb",
-                        ["--strip-anim-prefix", "--rename", "Purple=Hoodie", "--action", "Idle"]),
-    "character_interact": ("polypizza-hacker-props/hoodie-character_quaternius_*.glb",
-                           ["--strip-anim-prefix", "--rename", "Purple=Hoodie", "--action", "Interact"]),
-
     # -- room shell (Kenney Building Kit, one colormap: flatten to our palette) --
     "floor_tile": ("kenney-building-kit/Models/GLB format/floor.glb", ["--join", "--recenter", "--color", "colormap=" + CONCRETE]),
     "wall": ("kenney-building-kit/Models/GLB format/wall.glb", ["--join", "--recenter", "--color", "colormap=" + BRICK]),

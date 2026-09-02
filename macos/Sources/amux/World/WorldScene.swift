@@ -134,7 +134,7 @@ final class WorldScene {
                 actor.setLabel(a.label)
             } else if !spawning.contains(a.paneId) {
                 spawning.insert(a.paneId)
-                Task { await spawn(a) }
+                spawn(a)
             }
         }
         for (id, actor) in actors where !live.contains(id) {
@@ -142,11 +142,9 @@ final class WorldScene {
         }
     }
 
-    private func spawn(_ a: WorldAgentState) async {
-        let model = await WorldAssets.shared.instance("character")
-        let clips = model == nil ? [:] : await WorldAssets.shared.characterClips()
+    private func spawn(_ a: WorldAgentState) {
         spawning.remove(a.paneId)
-        let actor = WorldActor(paneId: a.paneId, label: a.label, kind: a.kind, model: model, clips: clips)
+        let actor = WorldActor(paneId: a.paneId, label: a.label, kind: a.kind)
         actor.onDoor = { [weak self] in self?.doorSwing = 1 }
         actor.setPhase(a.phase)
         root.addChild(actor.entity)
