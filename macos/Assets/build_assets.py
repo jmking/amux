@@ -39,7 +39,7 @@ MANIFEST = {
     "wall": ("kenney-building-kit/Models/GLB format/wall.glb", ["--join", "--recenter", "--color", "colormap=" + BRICK]),
     "wall_plaster": ("kenney-building-kit/Models/GLB format/wall.glb", ["--join", "--recenter", "--color", "colormap=" + PLASTER]),
     "wall_doorway": ("kenney-building-kit/Models/GLB format/wall-doorway-square.glb", ["--join", "--recenter", "--color", "colormap=" + BRICK]),
-    "wall_window": ("kenney-building-kit/Models/GLB format/wall-window-square.glb", ["--join", "--recenter", "--color", "colormap=" + PLASTER]),
+    "wall_window": ("kenney-building-kit/Models/GLB format/wall-window-square.glb", ["--drop", "ignore", "--join", "--recenter", "--color", "colormap=" + PLASTER]),
     "door": ("kenney-building-kit/Models/GLB format/door-rotate-square-a.glb", ["--color", "colormap=0.28,0.20,0.14"]),
     "column": ("kenney-building-kit/Models/GLB format/column.glb", ["--join", "--recenter", "--color", "colormap=" + CONCRETE]),
     "pipe_detail": ("kenney-building-kit/Models/GLB format/detail-pipe.glb", ["--join", "--recenter", "--color", "colormap=0.12,0.12,0.13"]),
@@ -82,6 +82,7 @@ MANIFEST = {
 
     # -- food --
     "pizza_box": ("kenney-food-kit/Models/GLB format/pizza-box.glb", ["--join", "--scale", "0.45", "--recenter"]),
+    "pizza_slice": ("kenney-food-kit/Models/GLB format/pizza.glb", ["--keep", "slice1", "--join", "--scale", "0.45", "--recenter"]),
     "pizza": ("kenney-food-kit/Models/GLB format/pizza.glb", ["--join", "--scale", "0.45", "--recenter"]),
     "can": ("kenney-food-kit/Models/GLB format/soda-can.glb", ["--join", "--scale", "0.35", "--recenter"]),
     "can_crushed": ("kenney-food-kit/Models/GLB format/soda-can-crushed.glb", ["--join", "--scale", "0.35", "--recenter"]),

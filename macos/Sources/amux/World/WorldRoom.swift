@@ -374,9 +374,14 @@ enum WorldRoom {
         table.orientation = simd_quatf(angle: Den.table.yaw, axis: SIMD3(0, 1, 0))
         root.addChild(table)
         await place("mug", at: SIMD3(Den.table.x - 0.3, 0.38, Den.table.z + 0.1), yaw: 0.4)
-        for (i, p) in [SIMD3<Float>(Den.table.x + 0.25, 0.38, Den.table.z), SIMD3(Den.table.x + 0.27, 0.44, Den.table.z + 0.02)].enumerated() {
-            await place("pizza_box", at: p, yaw: Float(i) * 0.3 + 0.2, fallback: WorldPrimitives.pizzaBox)
-        }
+        // a closed box under an open one with what is left of the pizza
+        await place("pizza_box", at: SIMD3(Den.table.x + 0.25, 0.38, Den.table.z), yaw: 0.2, fallback: WorldPrimitives.pizzaBox)
+        let openBox = WorldPrimitives.pizzaBoxOpen()
+        openBox.position = SIMD3(Den.table.x + 0.27, 0.425, Den.table.z + 0.02)
+        openBox.orientation = simd_quatf(angle: 0.55, axis: SIMD3(0, 1, 0))
+        root.addChild(openBox)
+        await place("pizza_slice", at: SIMD3(-0.08, 0.02, 0.06), yaw: 0.4, scale: 1.25, under: openBox)
+        await place("pizza_slice", at: SIMD3(0.09, 0.02, -0.02), yaw: 2.6, scale: 1.25, under: openBox)
 
         // -- the corner with the bed, the arcade and the shelf --
         let pallet = await place("pallet", at: SIMD3(Den.bed.x, 0, Den.bed.z), yaw: Den.bed.yaw, fallback: WorldPrimitives.mattress)

@@ -397,6 +397,31 @@ enum WorldPrimitives {
         return ModelEntity(mesh: mesh, materials: [m])
     }
 
+    /// A pizza box with the lid thrown back; slices go in at y 0.02.
+    static func pizzaBoxOpen() -> Entity {
+        let root = Entity()
+        let card = NSColor(red: 0.80, green: 0.64, blue: 0.44, alpha: 1)
+        let inner = NSColor(red: 0.86, green: 0.74, blue: 0.56, alpha: 1)
+        let base = box(SIMD3(0.42, 0.02, 0.42), inner, roughness: 1, corner: 0.004)
+        root.addChild(base)
+        for (size, pos) in [(SIMD3<Float>(0.42, 0.05, 0.015), SIMD3<Float>(0, 0, 0.2)),
+                            (SIMD3(0.015, 0.05, 0.42), SIMD3(-0.2, 0, 0)),
+                            (SIMD3(0.015, 0.05, 0.42), SIMD3(0.2, 0, 0)),
+                            (SIMD3(0.42, 0.05, 0.015), SIMD3(0, 0, -0.2))] {
+            let side = box(size, card, roughness: 1, corner: 0.003)
+            side.position += pos
+            root.addChild(side)
+        }
+        let hinge = Entity()
+        hinge.position = SIMD3(0, 0.05, -0.21)
+        hinge.orientation = simd_quatf(angle: -1.85, axis: SIMD3(1, 0, 0))
+        let lid = box(SIMD3(0.42, 0.015, 0.42), card, roughness: 1, corner: 0.004)
+        lid.position = SIMD3(0, 0, 0.21)
+        hinge.addChild(lid)
+        root.addChild(hinge)
+        return root
+    }
+
     /// A floor lamp: weighted base, thin pole, a drum shade that the daylight
     /// pass makes glow after dark, and a bulb where its light comes from.
     static func floorLamp(height: Float = 1.55) -> (lamp: Entity, shade: ModelEntity, bulbAt: SIMD3<Float>) {
