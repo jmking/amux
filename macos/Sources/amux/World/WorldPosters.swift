@@ -6,9 +6,10 @@ import simd
 //
 // Paper on the wall, drawn with CoreGraphics into textures: a mask poster,
 // a headless-suit poster and a small sticker, in the hacktivist idiom. The
-// designs are our own; nothing here reproduces a real group's emblem or the
-// film mask. They are lit like paper, not glowing, and hang slightly crooked
-// with tape at the corners drawn into the sheet.
+// drawings are our own: the mask is a plain shield with slot eyes (not the
+// film mask), and the suit-with-a-question-mark deliberately quotes the
+// Anonymous motif without its globe and laurels. Lit like paper, not glowing,
+// hung slightly crooked with tape at the corners drawn into the sheet.
 
 enum WorldPoster {
     case legion, expectUs, onlyRoot
@@ -52,7 +53,7 @@ enum WorldPoster {
         func text(_ s: String, _ f: NSFont, _ color: NSColor, at y: CGFloat, centredIn w: CGFloat = W, kern: CGFloat = 0) {
             let a = NSAttributedString(string: s, attributes: [.font: f, .foregroundColor: color, .kern: kern])
             let sz = a.size()
-            a.draw(at: CGPoint(x: (w - sz.width) / 2, y: y))
+            a.draw(at: CGPoint(x: (w - sz.width + kern) / 2, y: y))
         }
         func tape(_ rect: CGRect, angle: CGFloat) {
             ctx.saveGState()
@@ -65,8 +66,6 @@ enum WorldPoster {
         // a sheet of paper, a touch off-white, with a worn edge
         func paper(_ color: CGColor) {
             let inset: CGFloat = 4
-            ctx.setFillColor(CGColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 0.35))
-            ctx.fill(CGRect(x: inset + 3, y: inset - 3, width: W - inset * 2, height: H - inset * 2))
             ctx.setFillColor(color)
             ctx.fill(CGRect(x: inset, y: inset, width: W - inset * 2, height: H - inset * 2))
         }
@@ -98,8 +97,8 @@ enum WorldPoster {
             }
             // the mouth: thin and level
             ctx.fill(CGRect(x: cx - 48, y: cy - 118, width: 96, height: 9))
-            text("WE ARE", font(display, 92), NSColor(white: 0.95, alpha: 1), at: H * 0.17, kern: 6)
-            text("LEGION", font(display, 128), NSColor(red: 0.95, green: 0.2, blue: 0.22, alpha: 1), at: H * 0.04, kern: 8)
+            text("WE ARE", font(display, 92), NSColor(white: 0.95, alpha: 1), at: H * 0.215, kern: 6)
+            text("LEGION", font(display, 128), NSColor(red: 0.95, green: 0.2, blue: 0.22, alpha: 1), at: H * 0.03, kern: 8)
             text("we do not forget", font(mono, 22), NSColor(white: 0.6, alpha: 1), at: H * 0.90)
             tape(CGRect(x: 30, y: H - 50, width: 90, height: 28), angle: -0.5)
             tape(CGRect(x: W - 120, y: H - 50, width: 90, height: 28), angle: 0.6)
@@ -123,18 +122,18 @@ enum WorldPoster {
             // shirt and lapels
             ctx.setFillColor(CGColor(red: 0.90, green: 0.88, blue: 0.82, alpha: 1))
             let shirt = CGMutablePath()
-            shirt.move(to: CGPoint(x: cx - 60, y: base + 230))
-            shirt.addLine(to: CGPoint(x: cx, y: base + 40))
-            shirt.addLine(to: CGPoint(x: cx + 60, y: base + 230))
+            shirt.move(to: CGPoint(x: cx - 72, y: base + 230))
+            shirt.addLine(to: CGPoint(x: cx, y: base + 30))
+            shirt.addLine(to: CGPoint(x: cx + 72, y: base + 230))
             shirt.closeSubpath()
             ctx.addPath(shirt); ctx.fillPath()
             ctx.setFillColor(ink)
             let tie = CGMutablePath()
-            tie.move(to: CGPoint(x: cx - 16, y: base + 215))
-            tie.addLine(to: CGPoint(x: cx + 16, y: base + 215))
-            tie.addLine(to: CGPoint(x: cx + 22, y: base + 90))
-            tie.addLine(to: CGPoint(x: cx, y: base + 60))
-            tie.addLine(to: CGPoint(x: cx - 22, y: base + 90))
+            tie.move(to: CGPoint(x: cx - 12, y: base + 215))
+            tie.addLine(to: CGPoint(x: cx + 12, y: base + 215))
+            tie.addLine(to: CGPoint(x: cx + 17, y: base + 110))
+            tie.addLine(to: CGPoint(x: cx, y: base + 84))
+            tie.addLine(to: CGPoint(x: cx - 17, y: base + 110))
             tie.closeSubpath()
             ctx.addPath(tie); ctx.fillPath()
             text("?", font(display, 210), NSColor(red: 0.08, green: 0.08, blue: 0.1, alpha: 1), at: base + 240)
@@ -159,10 +158,10 @@ enum WorldPoster {
             ctx.setLineWidth(6)
             ctx.stroke(CGRect(x: 22, y: 22, width: W - 44, height: H - 44))
             let green = NSColor(red: 0.3, green: 0.9, blue: 0.5, alpha: 1)
-            text("NO GODS", font(mono, 46), green, at: H * 0.66)
-            text("NO KINGS", font(mono, 46), green, at: H * 0.50)
-            text("ONLY ROOT", font(mono, 46), NSColor(white: 0.95, alpha: 1), at: H * 0.30)
-            text("$ sudo -i", font(mono, 22), NSColor(white: 0.5, alpha: 1), at: H * 0.12)
+            text("NO GODS", font(mono, 46), green, at: H * 0.71)
+            text("NO KINGS", font(mono, 46), green, at: H * 0.55)
+            text("ONLY ROOT", font(mono, 46), NSColor(white: 0.95, alpha: 1), at: H * 0.35)
+            text("$ sudo -i", font(mono, 22), NSColor(white: 0.5, alpha: 1), at: H * 0.17)
         }
         guard let img = ctx.makeImage() else { return nil }
         return (img, Float(W / H))

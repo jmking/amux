@@ -327,7 +327,7 @@ enum WorldRoom {
         // posters thrown up on the brick where a whiteboard would be, crooked, taped
         for (kind, w, p, tilt) in [(WorldPoster.legion, Float(0.95), SIMD3<Float>(0.15, 1.85, minZ + 0.062), Float(-0.07)),
                                    (.expectUs, 0.9, SIMD3(1.2, 1.6, minZ + 0.058), 0.09),
-                                   (.onlyRoot, 0.34, SIMD3(1.95, 1.05, minZ + 0.06), 0.2)] {
+                                   (.onlyRoot, 0.34, SIMD3(1.52, 1.02, minZ + 0.072), 0.2)] {   // the sticker sits over the corner of the sheet below, clear of the door post
             if let sheet = await WorldPoster.make(kind, width: w) {
                 sheet.position = p
                 sheet.orientation = simd_quatf(angle: tilt, axis: SIMD3(0, 0, 1))
