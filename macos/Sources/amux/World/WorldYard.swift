@@ -26,7 +26,15 @@ enum WorldYard {
     static let bayWarm = NSColor(red: 1.0, green: 0.82, blue: 0.6, alpha: 1)
     static let officeWarm = NSColor(red: 1.0, green: 0.90, blue: 0.72, alpha: 1)
 
-    static func build(under root: Entity, daylight: WorldDaylight, layout: inout WorldLayout, place: Place) async {
+    static func build(under root: Entity, daylight: WorldDaylight, layout: inout WorldLayout, place placeRaw: @escaping Place) async {
+        // the yard is a backdrop: every kit piece goes a light grey, so by day
+        // it reads as a pale wash behind the room and by night the street
+        // lights are the only colour in it
+        let place: Place = { name, p, yaw, scale, parent, fallback in
+            let e = await placeRaw(name, p, yaw, scale, parent, fallback)
+            if name != "cone" { greyOut(e) }
+            return e
+        }
         func deg(_ d: Float) -> Float { d * .pi / 180 }
         func box(_ size: SIMD3<Float>, _ color: NSColor, at p: SIMD3<Float>, yaw: Float = 0, roughness: Float = 1) {
             let b = WorldPrimitives.box(size, color, roughness: roughness, corner: 0)
@@ -37,13 +45,13 @@ enum WorldYard {
 
         // -- ground: a yard slab a step below the plinth, a stoop at the door,
         //    lane paint, cracked asphalt, puddles --
-        let slab = WorldPrimitives.plane(44, 34, NSColor(red: 0.17, green: 0.17, blue: 0.175, alpha: 1))
+        let slab = WorldPrimitives.plane(44, 34, NSColor(red: 0.37, green: 0.37, blue: 0.38, alpha: 1))
         slab.position = SIMD3(-2, -0.135, -1.5)
         root.addChild(slab)
-        box(SIMD3(2.4, 0.12, 1.7), NSColor(white: 0.24, alpha: 1), at: SIMD3(3, -0.12, -6.05))
-        let paint = NSColor(red: 0.55, green: 0.48, blue: 0.2, alpha: 1)
+        box(SIMD3(2.4, 0.12, 1.7), NSColor(white: 0.46, alpha: 1), at: SIMD3(3, -0.12, -6.05))
+        let paint = NSColor(red: 0.62, green: 0.58, blue: 0.42, alpha: 1)
         for x: Float in [0.4, 5.6] { box(SIMD3(0.12, 0.004, 8), paint, at: SIMD3(x, -0.128, -13)) }
-        let white = NSColor(red: 0.5, green: 0.5, blue: 0.48, alpha: 1)
+        let white = NSColor(red: 0.6, green: 0.6, blue: 0.58, alpha: 1)
         for x: Float in [7.5, 10.5, 13.5] { box(SIMD3(0.12, 0.004, 4), white, at: SIMD3(x, -0.128, -14.8)) }
         for (p, yaw) in [(SIMD3<Float>(-7.6, y, -6.2), Float(25)), (SIMD3(-3, y, -9.5), 110), (SIMD3(-13.5, y, 3.5), -40),
                          (SIMD3(8.5, y, -9), 150), (SIMD3(-9, y, 7.5), 65), (SIMD3(8.5, y, 5.5), 50)] {
@@ -75,8 +83,8 @@ enum WorldYard {
             }
             _ = await place(upper, SIMD3(Float(x), 2.87, facadeZ), .pi, 1, nil, nil)
         }
-        box(SIMD3(36.3, 0.35, 0.4), NSColor(white: 0.2, alpha: 1), at: SIMD3(-1.5, 5.7, -17.1))
-        box(SIMD3(36, 0.3, 12), NSColor(white: 0.10, alpha: 1), at: SIMD3(-1.5, 5.45, -23.1))
+        box(SIMD3(36.3, 0.35, 0.4), NSColor(white: 0.44, alpha: 1), at: SIMD3(-1.5, 5.7, -17.1))
+        box(SIMD3(36, 0.3, 12), NSColor(white: 0.34, alpha: 1), at: SIMD3(-1.5, 5.45, -23.1))
         _ = await place("roof_metal", SIMD3(3, 2.87, -15.5), .pi / 2, 1, nil, nil)
         _ = await place("ac_stacked", SIMD3(0.5, 5.9, -20.5), deg(20), 1, nil, nil)
         _ = await place("ac_unit", SIMD3(-9.5, 5.9, -19.5), 0, 1, nil, nil)
@@ -87,7 +95,7 @@ enum WorldYard {
         bay.position = SIMD3(3, 0, -16.83)
         root.addChild(bay)
         let bayLight = PointLight()
-        bayLight.light.color = bayWarm; bayLight.light.intensity = 3000; bayLight.light.attenuationRadius = 7
+        bayLight.light.color = bayWarm; bayLight.light.intensity = 25000; bayLight.light.attenuationRadius = 10
         bayLight.position = SIMD3(3, 1.6, -16.0)
         root.addChild(bayLight)
         daylight.addLamp(bayLight, face: bay, faceColor: bayWarm, faceIntensity: 1.1)
@@ -97,7 +105,7 @@ enum WorldYard {
             root.addChild(w)
             daylight.addLampFace(w, color: officeWarm, intensity: 0.9)
         }
-        box(SIMD3(3.2, 0.7, 0.15), NSColor(white: 0.12, alpha: 1), at: SIMD3(3, 5.9, -17.0))
+        box(SIMD3(3.2, 0.7, 0.15), NSColor(white: 0.36, alpha: 1), at: SIMD3(3, 5.9, -17.0))
         let sign = WorldPrimitives.emissive(SIMD3(2.9, 0.45, 0.02), NSColor(red: 0.9, green: 0.9, blue: 0.85, alpha: 1), intensity: 0.7)
         sign.position = SIMD3(3, 6.02, -16.92)
         root.addChild(sign)
@@ -107,7 +115,7 @@ enum WorldYard {
             root.addChild(tag)
         }
         // floodlight over the bay, aimed down the lane
-        addFlood(root, daylight, at: SIMD3(3, 5.3, -16.7), aim: SIMD3(3, y, -11.5), lumens: 14000, inner: 25, outer: 60, radius: 22)
+        addFlood(root, daylight, at: SIMD3(3, 5.3, -16.7), aim: SIMD3(3, y, -11.5), lumens: 80000, inner: 25, outer: 60, radius: 26)
 
         // -- the wing: a corrugated shed beyond the window wall, its own bay,
         //    parapet and roof, a floodlight on the eave, the yard's tag --
@@ -116,19 +124,17 @@ enum WorldYard {
             let name = z == -6 ? "facade_garage_metal" : "facade_metal"
             _ = await place(name, SIMD3(wingX, y, Float(z) - 0.5), -.pi / 2, 1, nil, nil)
         }
-        box(SIMD3(0.4, 0.35, 24.2), NSColor(white: 0.2, alpha: 1), at: SIMD3(-17.1, 2.7, -5))
-        box(SIMD3(12, 0.3, 24), NSColor(white: 0.10, alpha: 1), at: SIMD3(-23.1, 2.45, -5))
+        box(SIMD3(0.4, 0.35, 24.2), NSColor(white: 0.44, alpha: 1), at: SIMD3(-17.1, 2.7, -5))
+        box(SIMD3(12, 0.3, 24), NSColor(white: 0.34, alpha: 1), at: SIMD3(-23.1, 2.45, -5))
         _ = await place("ac_unit", SIMD3(-20, 2.9, -1.0), .pi / 2, 1, nil, nil)
-        addFlood(root, daylight, at: SIMD3(-16.7, 2.75, -8), aim: SIMD3(-10.5, y, -9), lumens: 8000, inner: 30, outer: 65, radius: 16)
-        if let tag = await WorldLabel.make(.init(text: "HELLO FRIEND ", textColor: NSColor(red: 1.0, green: 0.25, blue: 0.55, alpha: 1), background: nil, fontSize: 34, weight: .black)) {
-            tag.position = SIMD3(-16.9, 1.0, -3.5)
-            tag.scale = SIMD3(repeating: 1.6)
+        addFlood(root, daylight, at: SIMD3(-16.7, 2.75, -8), aim: SIMD3(-10.5, y, -9), lumens: 50000, inner: 30, outer: 65, radius: 20)
+        if let tag = await WorldGraffiti.make("HELLO FRIEND", color: NSColor(red: 1.0, green: 0.25, blue: 0.55, alpha: 1), height: 2.4, seed: 7) {
+            tag.position = SIMD3(-16.9, 0.15, 0.0)
             tag.orientation = simd_quatf(angle: .pi / 2, axis: SIMD3(0, 1, 0))
             root.addChild(tag)
         }
-        if let tag = await WorldLabel.make(.init(text: "404", textColor: NSColor(red: 0.3, green: 0.9, blue: 0.95, alpha: 1), background: nil, fontSize: 40, weight: .black)) {
-            tag.position = SIMD3(0.4, 0.9, -16.9)
-            tag.scale = SIMD3(repeating: 2.5)
+        if let tag = await WorldGraffiti.make("404", color: NSColor(red: 0.3, green: 0.9, blue: 0.95, alpha: 1), height: 2.2, seed: 3) {
+            tag.position = SIMD3(0.4, 1.1, -16.9)
             root.addChild(tag)
         }
 
@@ -149,9 +155,9 @@ enum WorldYard {
         let plain = await place("container", SIMD3(-11.0, y, -7.0), 0, 1, nil, nil)
         plain.scale = SIMD3(0.85, 1, 1.5)
         // doors on the end seen through the window
-        box(SIMD3(1.15, 2.5, 0.04), NSColor(white: 0.16, alpha: 1), at: SIMD3(-11.6, y, -3.92))
-        box(SIMD3(1.15, 2.5, 0.04), NSColor(white: 0.16, alpha: 1), at: SIMD3(-10.4, y, -3.92))
-        for x: Float in [-11.9, -11.3, -10.7, -10.1] { box(SIMD3(0.04, 2.3, 0.04), NSColor(white: 0.3, alpha: 1), at: SIMD3(x, y + 0.1, -3.88)) }
+        box(SIMD3(1.15, 2.5, 0.04), NSColor(white: 0.5, alpha: 1), at: SIMD3(-11.6, y, -3.92))
+        box(SIMD3(1.15, 2.5, 0.04), NSColor(white: 0.5, alpha: 1), at: SIMD3(-10.4, y, -3.92))
+        for x: Float in [-11.9, -11.3, -10.7, -10.1] { box(SIMD3(0.04, 2.3, 0.04), NSColor(white: 0.56, alpha: 1), at: SIMD3(x, y + 0.1, -3.88)) }
         let ladder = await place("ladder", SIMD3(-6.5, y, -9.4), .pi / 2, 1, nil, nil)
         ladder.orientation = simd_quatf(angle: .pi / 2, axis: SIMD3(0, 1, 0)) * simd_quatf(angle: deg(-20), axis: SIMD3(1, 0, 0))
         _ = await place("skip_open", SIMD3(-8.6, y, -8.6), .pi, 1, nil, nil)
@@ -181,7 +187,7 @@ enum WorldYard {
         _ = await place("elec_pole", SIMD3(-14.8, y, -4.1), .pi / 2, 1, nil, nil)
         _ = await place("elec_wires", SIMD3(-14.8, 4.55, -9.5), .pi / 2, 1, nil, nil)
         _ = await place("elec_wires", SIMD3(-14.8, 4.55, -14.5), .pi / 2, 1, nil, nil)
-        box(SIMD3(0.3, 0.4, 0.15), NSColor(white: 0.1, alpha: 1), at: SIMD3(-15, 5.0, -16.9))
+        box(SIMD3(0.3, 0.4, 0.15), NSColor(white: 0.4, alpha: 1), at: SIMD3(-15, 5.0, -16.9))
 
         // -- the lane: lorry, pallets, the gas tank, barriers, the blinking bollard --
         _ = await place("truck_box", SIMD3(-3.5, y, -15.2), .pi / 2, 1, nil, nil)
@@ -205,7 +211,7 @@ enum WorldYard {
         blinkFace.position = SIMD3(0.6, 0.95, -12.6)
         root.addChild(blinkFace)
         let blink = PointLight()
-        blink.light.color = amber; blink.light.intensity = 220; blink.light.attenuationRadius = 2.2
+        blink.light.color = amber; blink.light.intensity = 1500; blink.light.attenuationRadius = 4
         blink.position = SIMD3(0.6, 1.05, -12.6)
         root.addChild(blink)
         layout.blinker = (blink, blinkFace)
@@ -236,7 +242,7 @@ enum WorldYard {
             head.position = p + SIMD3(0, 2.75, 0)
             root.addChild(head)
             let l = PointLight()
-            l.light.color = color; l.light.intensity = 2600; l.light.attenuationRadius = 9
+            l.light.color = color; l.light.intensity = 80000; l.light.attenuationRadius = 15
             l.position = p + SIMD3(0, 2.6, 0)
             root.addChild(l)
             daylight.addStreetLight(l, face: head, faceColor: color, faceIntensity: 5)
@@ -249,7 +255,7 @@ enum WorldYard {
             face.position = head
             root.addChild(face)
             let l = PointLight()
-            l.light.color = sodium; l.light.intensity = 3200; l.light.attenuationRadius = 14
+            l.light.color = sodium; l.light.intensity = 120000; l.light.attenuationRadius = 20
             l.position = head
             root.addChild(l)
             daylight.addStreetLight(l, face: face, faceColor: sodium, faceIntensity: 5)
@@ -261,11 +267,42 @@ enum WorldYard {
         _ = await place("building_low", SIMD3(24, y, -32), 0, 1, nil, nil)
     }
 
+    // MARK: the grey wash
+
+    /// Replaces every lit material under `e` with a matte grey of roughly the
+    /// original's brightness; emissive parts (lamp heads) are left alone.
+    private static func greyOut(_ e: Entity) {
+        if let me = e as? ModelEntity, var model = me.model {
+            model.materials = model.materials.map { m in
+                var g: Float = 0.48
+                if let pbr = m as? PhysicallyBasedMaterial {
+                    // a lit part: emissive colour with some brightness (the
+                    // intensity alone is 1 on every loaded material)
+                    if let ec = pbr.emissiveColor.color.usingColorSpace(.sRGB),
+                       Float(0.2126 * ec.redComponent + 0.7152 * ec.greenComponent + 0.0722 * ec.blueComponent) * pbr.emissiveIntensity > 0.05 {
+                        return m
+                    }
+                    if pbr.baseColor.texture == nil, let c = pbr.baseColor.tint.usingColorSpace(.sRGB) {
+                        let lum = Float(0.2126 * c.redComponent + 0.7152 * c.greenComponent + 0.0722 * c.blueComponent)
+                        g = 0.34 + 0.26 * pow(max(0, lum), 0.6)
+                    }
+                }
+                var out = PhysicallyBasedMaterial()
+                out.baseColor = .init(tint: NSColor(white: CGFloat(g), alpha: 1))
+                out.roughness = .init(floatLiteral: 0.9)
+                out.metallic = .init(floatLiteral: 0)
+                return out
+            }
+            me.model = model
+        }
+        for c in e.children { greyOut(c) }
+    }
+
     // MARK: pieces the packs do not have
 
     private static func addFlood(_ root: Entity, _ daylight: WorldDaylight, at p: SIMD3<Float>, aim: SIMD3<Float>,
                                  lumens: Float, inner: Float, outer: Float, radius: Float) {
-        let housing = WorldPrimitives.box(SIMD3(0.3, 0.2, 0.25), NSColor(white: 0.12, alpha: 1), roughness: 0.6, metallic: true, corner: 0)
+        let housing = WorldPrimitives.box(SIMD3(0.3, 0.2, 0.25), NSColor(white: 0.42, alpha: 1), roughness: 0.8, corner: 0)
         housing.position = p - SIMD3(0, 0.1, 0)
         root.addChild(housing)
         let face = WorldPrimitives.emissive(SIMD3(0.26, 0.16, 0.02), flood, intensity: 6)
@@ -290,8 +327,8 @@ enum WorldYard {
     /// lamps by night.
     private static func puddle(_ w: Float, _ d: Float, at p: SIMD3<Float>, yaw: Float) -> Entity {
         var m = PhysicallyBasedMaterial()
-        m.baseColor = .init(tint: NSColor(red: 0.05, green: 0.06, blue: 0.09, alpha: 1))
-        m.roughness = .init(floatLiteral: 0.05)
+        m.baseColor = .init(tint: NSColor(red: 0.24, green: 0.25, blue: 0.28, alpha: 1))
+        m.roughness = .init(floatLiteral: 0.12)
         m.metallic = .init(floatLiteral: 0)
         let e = ModelEntity(mesh: .generatePlane(width: w, depth: d, cornerRadius: min(w, d) * 0.45), materials: [m])
         e.position = p
@@ -302,11 +339,11 @@ enum WorldYard {
     private static func tyre(at p: SIMD3<Float>) -> Entity {
         let root = Entity()
         var black = PhysicallyBasedMaterial()
-        black.baseColor = .init(tint: NSColor(white: 0.06, alpha: 1)); black.roughness = .init(floatLiteral: 0.9)
+        black.baseColor = .init(tint: NSColor(white: 0.3, alpha: 1)); black.roughness = .init(floatLiteral: 0.9)
         let t = ModelEntity(mesh: .generateCylinder(height: 0.22, radius: 0.35), materials: [black])
         t.position.y = 0.11
         var grey = PhysicallyBasedMaterial()
-        grey.baseColor = .init(tint: NSColor(white: 0.3, alpha: 1)); grey.roughness = .init(floatLiteral: 0.5); grey.metallic = .init(floatLiteral: 0.6)
+        grey.baseColor = .init(tint: NSColor(white: 0.52, alpha: 1)); grey.roughness = .init(floatLiteral: 0.7); grey.metallic = .init(floatLiteral: 0)
         let rim = ModelEntity(mesh: .generateCylinder(height: 0.24, radius: 0.2), materials: [grey])
         rim.position.y = 0.11
         root.addChild(t); root.addChild(rim)
@@ -316,13 +353,13 @@ enum WorldYard {
 
     /// A diamond mesh drawn once and tiled across every panel.
     private static func fenceMaterial() async -> UnlitMaterial {
-        var m = UnlitMaterial(color: NSColor(white: 0.55, alpha: 0.5))
+        var m = UnlitMaterial(color: NSColor(white: 0.6, alpha: 0.5))
         m.blending = .transparent(opacity: 0.55)
         let n = 64
         if let ctx = CGContext(data: nil, width: n, height: n, bitsPerComponent: 8, bytesPerRow: 0,
                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
             ctx.clear(CGRect(x: 0, y: 0, width: n, height: n))
-            ctx.setStrokeColor(CGColor(red: 0.62, green: 0.64, blue: 0.66, alpha: 1))
+            ctx.setStrokeColor(CGColor(red: 0.66, green: 0.67, blue: 0.69, alpha: 1))
             ctx.setLineWidth(3)
             let s = CGFloat(n)
             for k in [-1, 0, 1] {
@@ -342,14 +379,14 @@ enum WorldYard {
     /// One panel of chain-link: two posts, a top rail, the mesh, a barbed line.
     private static func fencePanel(_ width: Float, _ mesh: UnlitMaterial, at p: SIMD3<Float>, yaw: Float, gate: Bool = false) -> Entity {
         let root = Entity()
-        let steel = NSColor(white: 0.22, alpha: 1)
+        let steel = NSColor(white: 0.5, alpha: 1)
         let h: Float = 2.4
         for x in [-width / 2, width / 2] {
-            let post = WorldPrimitives.box(SIMD3(0.06, h, 0.06), steel, roughness: 0.5, metallic: true, corner: 0)
+            let post = WorldPrimitives.box(SIMD3(0.06, h, 0.06), steel, roughness: 0.8, corner: 0)
             post.position += SIMD3(x, 0, 0)
             root.addChild(post)
         }
-        let rail = WorldPrimitives.box(SIMD3(width, 0.05, 0.05), steel, roughness: 0.5, metallic: true, corner: 0)
+        let rail = WorldPrimitives.box(SIMD3(width, 0.05, 0.05), steel, roughness: 0.8, corner: 0)
         rail.position += SIMD3(0, h - 0.05, 0)
         root.addChild(rail)
         let panel = ModelEntity(mesh: .generatePlane(width: width, height: h - 0.1), materials: [mesh])
@@ -358,11 +395,11 @@ enum WorldYard {
         panel.model?.materials = [pm]
         panel.position = SIMD3(0, (h - 0.1) / 2 + 0.05, 0)
         root.addChild(panel)
-        let barb = WorldPrimitives.box(SIMD3(width, 0.02, 0.02), NSColor(white: 0.3, alpha: 1), roughness: 0.4, metallic: true, corner: 0)
+        let barb = WorldPrimitives.box(SIMD3(width, 0.02, 0.02), NSColor(white: 0.55, alpha: 1), roughness: 0.6, corner: 0)
         barb.position += SIMD3(0, h + 0.12, 0)
         root.addChild(barb)
         if gate {
-            let brace = WorldPrimitives.box(SIMD3(width * 1.1, 0.04, 0.04), steel, roughness: 0.5, metallic: true, corner: 0)
+            let brace = WorldPrimitives.box(SIMD3(width * 1.1, 0.04, 0.04), steel, roughness: 0.8, corner: 0)
             brace.position += SIMD3(0, h / 2, 0)
             brace.orientation = simd_quatf(angle: atan2(h, width), axis: SIMD3(0, 0, 1))
             root.addChild(brace)

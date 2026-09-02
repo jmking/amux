@@ -47,7 +47,11 @@ struct WorldLayout {
 enum WorldRoom {
     static let floorW: Float = 12
     static let floorD: Float = 10
-    static let wallH: Float = 2.4
+    /// The kit's wall tiles are 2.4 m; the walls carry on above them with a
+    /// plain course in the same colour so the room reads as a proper room from
+    /// the camera's height.
+    static let tileH: Float = 2.4
+    static let wallH: Float = 3.1
     static let ceiling: Float = 2.9
 
     static let concrete = NSColor(red: 0.2, green: 0.2, blue: 0.21, alpha: 1)
@@ -99,6 +103,9 @@ enum WorldRoom {
         for x in stride(from: -5, through: 5, by: 2) {
             if hasWalls {
                 await place(x == 3 ? "wall_doorway" : "wall", at: SIMD3(Float(x), 0, -floorD / 2), yaw: quarter)
+                let course = WorldPrimitives.box(SIMD3(2, wallH - tileH, x == 3 ? 0.2 : 0.1), brick, roughness: 1, corner: 0)
+                course.position = SIMD3(Float(x), tileH + (wallH - tileH) / 2, -floorD / 2)
+                root.addChild(course)
             } else {
                 let seg = WorldPrimitives.box(SIMD3(2, wallH, 0.2), brick, roughness: 1)
                 seg.position = SIMD3(Float(x), 0, -floorD / 2)
@@ -115,13 +122,16 @@ enum WorldRoom {
         let leaf = door.findEntity(named: "door") ?? door
         leaf.orientation = simd_quatf(angle: 1.7, axis: SIMD3(0, 1, 0))
         layout.door = leaf
-        daylight.addLamp(light(SIMD3(3.0, 2.0, -6.2), warm, 2200, radius: 4.5))
+        daylight.addLamp(light(SIMD3(3.0, 2.0, -6.2), warm, 8000, radius: 5))
 
         // -- left wall along z at x = -6: plaster, two windows onto the city --
         for z in stride(from: -4, through: 4, by: 2) {
             let window = (z == -2 || z == 2)
             if hasWalls {
                 await place(window ? "wall_window" : "wall_plaster", at: SIMD3(-floorW / 2, 0, Float(z)))
+                let course = WorldPrimitives.box(SIMD3(window ? 0.2 : 0.1, wallH - tileH, 2), plaster, roughness: 1, corner: 0)
+                course.position = SIMD3(-floorW / 2, tileH + (wallH - tileH) / 2, Float(z))
+                root.addChild(course)
             } else {
                 let seg = WorldPrimitives.box(SIMD3(0.2, wallH, 2), plaster, roughness: 1)
                 seg.position = SIMD3(-floorW / 2, 0, Float(z))
@@ -135,7 +145,7 @@ enum WorldRoom {
                 daylight.addWindow(glass)
                 let spill = SpotLight()
                 spill.light.color = cityGlow
-                spill.light.intensity = 5000
+                spill.light.intensity = 15000
                 spill.light.innerAngleInDegrees = 35
                 spill.light.outerAngleInDegrees = 70
                 spill.light.attenuationRadius = 7
@@ -145,9 +155,12 @@ enum WorldRoom {
                 daylight.addStreetLight(spill)
             }
         }
-        await place("column", at: SIMD3(-floorW / 2, 0, -floorD / 2))
-        await place("column", at: SIMD3(-floorW / 2, 0, floorD / 2))
-        await place("column", at: SIMD3(floorW / 2, 0, -floorD / 2))
+        for corner in [SIMD3<Float>(-floorW / 2, 0, -floorD / 2), SIMD3(-floorW / 2, 0, floorD / 2), SIMD3(floorW / 2, 0, -floorD / 2)] {
+            await place("column", at: corner)
+            let cap = WorldPrimitives.box(SIMD3(0.5, wallH - tileH, 0.5), concrete, roughness: 1, corner: 0)
+            cap.position = corner + SIMD3(0, tileH + (wallH - tileH) / 2, 0)
+            root.addChild(cap)
+        }
 
         // -- workstations: two rows of four, facing the back wall --
         let xs: [Float] = [-4.2, -1.9, 0.4, 2.7]
@@ -190,7 +203,7 @@ enum WorldRoom {
             let bulb = WorldPrimitives.emissive(SIMD3(0.14, 0.12, 0.14), warm, intensity: 6)
             bulb.position = SIMD3(x, ceiling - 0.6, z)
             root.addChild(bulb)
-            daylight.addLamp(light(SIMD3(x, ceiling - 0.6, z), warm, 6500, radius: 8), face: bulb, faceColor: warm, faceIntensity: 6)
+            daylight.addLamp(light(SIMD3(x, ceiling - 0.6, z), warm, 14000, radius: 8), face: bulb, faceColor: warm, faceIntensity: 6)
         }
 
         // -- infrastructure along the back-left --
@@ -202,7 +215,7 @@ enum WorldRoom {
         light(SIMD3(-4.2, 1.4, -3.9), screenGreen, 500, radius: 2.5)
         // cables down the wall from the racks, and across the floor to the desks
         for (i, x) in [Float(-2.1), -0.6, 1.9, 4.6].enumerated() {
-            await place("cable", at: SIMD3(x, wallH, -floorD / 2 + 0.12), yaw: Float(i) * 0.7, fallback: {
+            await place("cable", at: SIMD3(x, tileH, -floorD / 2 + 0.12), yaw: Float(i) * 0.7, fallback: {
                 let c = WorldPrimitives.box(SIMD3(0.03, 2.4, 0.03), NSColor(white: 0.05, alpha: 1)); c.position.y = -1.2
                 let h = Entity(); h.addChild(c); return h
             })
@@ -218,7 +231,7 @@ enum WorldRoom {
         await place("whiteboard", at: SIMD3(0.6, 0, -floorD / 2 + 0.07), fallback: WorldPrimitives.whiteboard)
         let sign = await place("neon", at: SIMD3(-2.4, 2.0, -floorD / 2 + 0.1), fallback: { WorldPrimitives.neonSign("amux", color: neon) })
         sign.name = "neon"
-        daylight.addNeon(light(SIMD3(-2.4, 2.0, -floorD / 2 + 0.7), neon, 2400, radius: 4.5))
+        daylight.addNeon(light(SIMD3(-2.4, 2.0, -floorD / 2 + 0.7), neon, 4000, radius: 4.5))
         await place("neon_sign", at: SIMD3(-floorW / 2 + 0.08, 1.6, 3.6), yaw: quarter)
         daylight.addNeon(light(SIMD3(-floorW / 2 + 0.6, 1.7, 3.6), neon, 900, radius: 3))
         await place("coat_rack", at: SIMD3(4.9, 0, -4.4), scale: 2.2)
@@ -257,7 +270,7 @@ enum WorldRoom {
         await place("cup", at: SIMD3(2.9, 0.02, 2.3), yaw: 0.2)
 
         // -- outside: the room is on the ground in a warehouse yard; see WorldYard --
-        let ground = WorldPrimitives.plane(160, 160, NSColor(red: 0.12, green: 0.12, blue: 0.13, alpha: 1), roughness: 1)
+        let ground = WorldPrimitives.plane(160, 160, NSColor(red: 0.36, green: 0.36, blue: 0.37, alpha: 1), roughness: 1)
         ground.position.y = -0.14
         root.addChild(ground)
         await WorldYard.build(under: root, daylight: daylight, layout: &layout) { name, p, yaw, scale, parent, fallback in

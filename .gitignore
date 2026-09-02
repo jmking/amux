@@ -30,3 +30,4 @@ macos/Assets/work/*
 
 # ad-hoc signature written by local dev builds
 macos/dist/Amux.app/Contents/_CodeSignature/
+macos/dist-test/

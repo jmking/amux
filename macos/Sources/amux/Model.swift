@@ -664,14 +664,18 @@ final class AppModel: ObservableObject {
         gethostname(&buf, 255)
         return String(cString: buf).components(separatedBy: ".").first ?? "mac"
     }()
+    /// Where the session lives. `amux -statePath <file>` points a test instance
+    /// at its own file so it never touches the real session.
     static var stateFile: URL {
-        FileManager.default.homeDirectoryForCurrentUser
+        if let p = UserDefaults.standard.string(forKey: "statePath"), !p.isEmpty {
+            return URL(fileURLWithPath: (p as NSString).expandingTildeInPath)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".config/amux/state.json")
     }
     /// The last good session, kept beside the live one and read if it will not.
     static var stateBackupFile: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/amux/state.json.bak")
+        stateFile.appendingPathExtension("bak")
     }
     static var legacyStateFile: URL {
         FileManager.default.homeDirectoryForCurrentUser

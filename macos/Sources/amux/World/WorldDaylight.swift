@@ -38,12 +38,12 @@ final class WorldDaylight {
     /// looks at are lit, and sets on the far side (+x) with long light raking
     /// across the floor. Night is flat from 22:00 to 04:30 so nothing drifts.
     static let keys: [Key] = [
-        Key(hour: 0, sunElevation: -45, sunAzimuth: 200, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4200,
-            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
-        Key(hour: 4.5, sunElevation: -20, sunAzimuth: 250, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4000,
-            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
-        Key(hour: 5.5, sunElevation: -6, sunAzimuth: 262, sunColor: [1, 0.55, 0.35], sunLux: 0, moonLux: 2200,
-            zenith: [0.12, 0.15, 0.3], horizon: [0.55, 0.34, 0.3], ground: [0.08, 0.07, 0.08], ibl: 1.35, fillLux: 1000),
+        Key(hour: 0, sunElevation: -45, sunAzimuth: 200, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.6, fillLux: 110),
+        Key(hour: 4.5, sunElevation: -20, sunAzimuth: 250, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.6, fillLux: 110),
+        Key(hour: 5.5, sunElevation: -6, sunAzimuth: 262, sunColor: [1, 0.55, 0.35], sunLux: 0, moonLux: 350,
+            zenith: [0.12, 0.15, 0.3], horizon: [0.55, 0.34, 0.3], ground: [0.08, 0.07, 0.08], ibl: 1.4, fillLux: 500),
         Key(hour: 6.25, sunElevation: 2.5, sunAzimuth: 264, sunColor: [1, 0.52, 0.28], sunLux: 1800, moonLux: 0,
             zenith: [0.22, 0.32, 0.62], horizon: [1, 0.68, 0.42], ground: [0.14, 0.12, 0.11], ibl: 1.5, fillLux: 1200),
         Key(hour: 6.75, sunElevation: 8, sunAzimuth: 270, sunColor: [1, 0.7, 0.45], sunLux: 4500, moonLux: 0,
@@ -64,12 +64,12 @@ final class WorldDaylight {
             zenith: [0.18, 0.22, 0.5], horizon: [1, 0.42, 0.22], ground: [0.1, 0.08, 0.09], ibl: 1.45, fillLux: 1200),
         Key(hour: 19.75, sunElevation: 1.5, sunAzimuth: 90, sunColor: [0.95, 0.38, 0.2], sunLux: 450, moonLux: 0,
             zenith: [0.12, 0.14, 0.36], horizon: [0.85, 0.32, 0.2], ground: [0.07, 0.06, 0.07], ibl: 1.4, fillLux: 1100),
-        Key(hour: 20.5, sunElevation: -6, sunAzimuth: 95, sunColor: [0.95, 0.38, 0.2], sunLux: 0, moonLux: 1400,
-            zenith: [0.07, 0.09, 0.26], horizon: [0.32, 0.22, 0.34], ground: [0.05, 0.04, 0.06], ibl: 1.32, fillLux: 1000),
-        Key(hour: 22, sunElevation: -25, sunAzimuth: 120, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4200,
-            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
-        Key(hour: 24, sunElevation: -45, sunAzimuth: 200, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 4200,
-            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.45, fillLux: 1100),
+        Key(hour: 20.5, sunElevation: -6, sunAzimuth: 95, sunColor: [0.95, 0.38, 0.2], sunLux: 0, moonLux: 300,
+            zenith: [0.07, 0.09, 0.26], horizon: [0.32, 0.22, 0.34], ground: [0.05, 0.04, 0.06], ibl: 1.4, fillLux: 450),
+        Key(hour: 22, sunElevation: -25, sunAzimuth: 120, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.6, fillLux: 110),
+        Key(hour: 24, sunElevation: -45, sunAzimuth: 200, sunColor: [0.55, 0.65, 0.95], sunLux: 0, moonLux: 200,
+            zenith: [0.05, 0.06, 0.13], horizon: [0.1, 0.1, 0.16], ground: [0.03, 0.03, 0.04], ibl: 1.6, fillLux: 110),
     ]
 
     static func sample(_ hour: Float) -> Key {
