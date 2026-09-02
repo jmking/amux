@@ -98,7 +98,19 @@ enum WorldYard {
             _ = await place("facade_wall", SIMD3(10.5, 2.87, z), -.pi / 2, 1, nil, nil)
         }
         box(SIMD3(0.4, 0.35, 12.2), NSColor(white: 0.44, alpha: 1), at: SIMD3(10.6, 5.7, -23.1))
-        _ = await place("roof_metal", SIMD3(3, 2.87, -15.5), .pi / 2, 1, nil, nil)
+        // a plain awning over the working bay, on two brackets
+        do {
+            let awning = WorldPrimitives.box(SIMD3(3.4, 0.06, 1.6), NSColor(white: 0.36, alpha: 1), roughness: 0.9, corner: 0)
+            awning.position = SIMD3(3, 3.12, -16.05)
+            awning.orientation = simd_quatf(angle: 0.14, axis: SIMD3(1, 0, 0))   // drops toward the lane
+            root.addChild(awning)
+            for x: Float in [1.7, 4.3] {
+                let bracket = WorldPrimitives.box(SIMD3(0.06, 0.06, 1.4), NSColor(white: 0.3, alpha: 1), roughness: 0.8, corner: 0)
+                bracket.position = SIMD3(x, 2.8, -16.25)
+                bracket.orientation = simd_quatf(angle: -0.33, axis: SIMD3(1, 0, 0))   // up from the wall to the plate's underside
+                root.addChild(bracket)
+            }
+        }
         _ = await place("ac_stacked", SIMD3(0.5, 5.9, -20.5), deg(20), 1, nil, nil)
         _ = await place("ac_unit", SIMD3(-9.5, 5.9, -19.5), 0, 1, nil, nil)
         _ = await place("antenna", SIMD3(8.5, 5.9, -19.5), 0, 1, nil, nil)
@@ -111,12 +123,13 @@ enum WorldYard {
         bayLight.light.color = bayWarm; bayLight.light.intensity = 25000; bayLight.light.attenuationRadius = 10
         bayLight.position = SIMD3(3, 1.6, -16.0)
         root.addChild(bayLight)
-        daylight.addLamp(bayLight, face: bay, faceColor: bayWarm, faceIntensity: 1.1)
+        daylight.addLamp(bayLight)
+        daylight.addLampFace(bay, color: bayWarm, intensity: 1.1, dayColor: NSColor(white: 0.16, alpha: 1))
         for p in [SIMD3<Float>(-6, 3.9, -16.9), SIMD3(3, 3.9, -16.9), SIMD3(9, 3.9, -16.9), SIMD3(9, 0.9, -16.9)] {
             let w = WorldPrimitives.emissive(SIMD3(1.3, 1.3, 0.02), officeWarm, intensity: 0.9)
             w.position = p
             root.addChild(w)
-            daylight.addLampFace(w, color: officeWarm, intensity: 0.9)
+            daylight.addLampFace(w, color: officeWarm, intensity: 0.9, dayColor: NSColor(red: 0.22, green: 0.25, blue: 0.30, alpha: 1))
         }
         box(SIMD3(3.2, 0.7, 0.15), NSColor(white: 0.36, alpha: 1), at: SIMD3(3, 5.9, -17.0))
         let sign = WorldPrimitives.emissive(SIMD3(2.9, 0.45, 0.02), NSColor(red: 0.9, green: 0.9, blue: 0.85, alpha: 1), intensity: 0.7)
