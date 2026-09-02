@@ -1,0 +1,216 @@
+{
+  "style_decision": "Anchor on the Quaternius flat-shaded family (poly.pizza Quaternius singles + Quaternius Cyberpunk Game Kit) at real human scale, with the Kenney Building Kit as the room shell. Reasons, verified on disk: (1) the only CC0 hooded humanoid with baked clips is Quaternius' 'Hoodie Character' (1.87 m tall, 24 clips, flat untextured materials, hoodie is a single 'Purple' material - a one-line per-agent recolour); (2) Quaternius desk (1.82x0.92 m), office chair (1.13 m), damaged couch, shelf, boxes, cables, computers and neon signs are all untextured named-colour materials with the same chunky proportions and the same author, so they sit next to that character without a scale or shading mismatch; (3) the Kenney Building Kit is human-scaled (2.4 m walls, 2x2 m floor tiles, 2.1 m hinged doors with open/close clips) and uses one flat colormap, so a dark-concrete override is one texture swap. Rejected as anchors: Kenney Mini Characters are 0.67 m chibi and would force every prop to mini scale (only the arcade cabinet exists at that scale); KayKit Adventurers Rogue_Hooded is a fantasy cape+mask on a gradient-atlas texture with no sit clip and clips in separate rig files; KayKit furniture/dungeon are palette-atlas textured and toy-proportioned; the Kenney Furniture Kit is authored at ~0.5 scale (desk 0.38 m tall, wall 1.29 m) and is used only for a few flat-coloured fillers scaled x2. NOTE: kenney-city-kit-industrial listed by the environment lane is NOT on disk (the hacker-props lane deleted it); kenney-city-kit-commercial + kenney-modular-buildings + Cyberpunk rooftop pieces cover the exterior instead.",
+  "character": {
+    "pack": "polypizza-hacker-props (Quaternius 'Hoodie Character', poly.pizza CC0; license re-verified live at https://poly.pizza/m/gKLBoRsyKe -> 'Public Domain (CC0)')",
+    "file": "/Users/justinking/dev/amux/macos/Assets/src/polypizza-hacker-props/hoodie-character_quaternius_gKLBoRsyKe.glb",
+    "hoodie_material": "Purple (baseColorFactor [0.050,0.031,0.084]; applied to the 'Casual_Body' skinned mesh - set base colour per agent brand. Secondary: 'White' = shoes/drawstrings, 'LightBlue' = jeans, 'Skin','Face'-less head uses Skin/Eye/Eyebrows/Hair)",
+    "clips": {
+      "idle": "CharacterArmature|Idle_Neutral",
+      "walk": "CharacterArmature|Walk",
+      "sit": "PROCEDURAL",
+      "type": "PROCEDURAL",
+      "think": "PROCEDURAL",
+      "wait": "CharacterArmature|Idle",
+      "done": "CharacterArmature|Wave",
+      "react": "CharacterArmature|HitRecieve",
+      "stretch": "PROCEDURAL",
+      "drink": "PROCEDURAL"
+    },
+    "clip_notes": "All 24 clips verified from the GLB JSON; names carry the 'CharacterArmature|' prefix. Loops: Idle/Idle_Neutral 1.67 s, Walk 1.33 s, Run 0.79 s, Wave 1.67 s, Interact 1.25 s, HitRecieve 0.54 s. No sit/typing/stretch/drink clip exists, so seated states are posed in code on the 62-joint rig (Hips, UpperLeg.L/R, LowerLeg.L/R, Foot.L/R for the sit; LowerArm.L/R + Wrist.L/R oscillation for typing; Head/Neck tilt for think; Shoulder/UpperArm raise for stretch; LowerArm.R + Wrist.R arc with the soda prop for drink). Optional upgrade: retarget SitDown/StandUp from quaternius-ultimate-animated-character/glTF/Casual_Male.gltf in Blender - same bone naming family (Body/Hips/Abdomen/Torso/Neck/Head/Shoulder/UpperArm/LowerArm/UpperLeg/LowerLeg/Foot) but the hoodie rig adds Chest/Wrist/fingers/PT and its rest-pose quaternions differ (FBX2glTF export), so it needs rest-pose alignment, not a plain name copy."
+  },
+  "selection": [
+    {
+      "need": "floor",
+      "pack": "kenney-building-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-building-kit/Models/GLB format/floor.glb",
+      "notes": "2x2x0.1 m tile; also floor-half.glb / floor-quarter.glb. Override 'colormap' with a dark concrete grey."
+    },
+    {
+      "need": "wall segments",
+      "pack": "kenney-building-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-building-kit/Models/GLB format/wall.glb",
+      "notes": "2.0 wide x 2.4 tall x 0.1; plus wall-half.glb (1 m), wall-low.glb (1.2 m tall, good for the roof-cut-away look), wall-corner.glb, column.glb, plating-detailed.glb and detail-pipe.glb for industrial trim. Exposed brick: kenney-retro-urban-kit/Models/GLB format/detail-bricks-type-a.glb scaled ~x2.4 as wall patches."
+    },
+    {
+      "need": "door (posable)",
+      "pack": "kenney-building-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-building-kit/Models/GLB format/door-rotate-square-a.glb",
+      "notes": "2.1 m hinged door, child nodes 'door' and 'handle', clips open/close/open-and-close (1 s / 1 s / 2 s). Fits wall-doorway-square.glb."
+    },
+    {
+      "need": "window",
+      "pack": "kenney-building-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-building-kit/Models/GLB format/wall-window-square.glb",
+      "notes": "2x2.4 wall with square opening; wall-window-wide-square-detailed.glb for the big warehouse window. Rain streaks: procedural translucent quad in the opening."
+    },
+    {
+      "need": "desk (x8)",
+      "pack": "poly-pizza-workstations (Quaternius)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/poly-pizza-workstations/desk_quaternius_V86Go2rlnq.glb",
+      "notes": "1.82 x 0.92 x 0.85 m, materials DarkWood/Wood, 4 separate drawer nodes. Scale 0.85 so the top lands at ~0.78 m for the 1.87 m character. Alternate for variety: kenney-furniture-kit/Models/GLTF format/deskCorner.glb at x2."
+    },
+    {
+      "need": "chair (x8)",
+      "pack": "poly-pizza-workstations (Quaternius)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/poly-pizza-workstations/office_chair_quaternius_UfKvrZBK6C.glb",
+      "notes": "0.72 x 1.13 x 0.81 m, materials Grey/Black/Chair (seat colour, can echo agent brand). Seat height matches the procedural sit pose."
+    },
+    {
+      "need": "monitor (x8, flat)",
+      "pack": "kenney-furniture-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-furniture-kit/Models/GLTF format/computerScreen.glb",
+      "notes": "0.39 x 0.29 m at x1 (authored half scale); use x1.6 -> 0.63 x 0.47 m. Flat materials metalDark/metal; give the screen face an emissive material. Second option: polypizza-hacker-props/monitor_creativetrio_PvSjEbz11k.glb (0.47 x 0.29 m, palette-textured)."
+    },
+    {
+      "need": "keyboard (x8)",
+      "pack": "kenney-furniture-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-furniture-kit/Models/GLTF format/computerKeyboard.glb",
+      "notes": "0.28 x 0.12 m at x1; use x1.6 (0.45 m). Same GLB is duplicated at polypizza-hacker-props/computer-keyboard_kenney_vsqTUPFSw6.glb. Add computerMouse.glb x1.6."
+    },
+    {
+      "need": "server rack (x2)",
+      "pack": "quaternius-cyberpunk-game-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/quaternius-cyberpunk-game-kit/Computer Large.glb",
+      "notes": "1.29 x 2.38 x 0.69 m floor console; materials Orange/Grey/LightGrey/Screen/MetalLight/DarkGrey. Recolour Orange -> near-black, Screen -> emissive green for a rack look. Second rack: poly-pizza-workstations/scifi_computer_quaternius_U0xmt6tUlL.glb (0.58 x 2.08 m) recoloured the same way. Identical file also at polypizza-hacker-props/computer-large_quaternius_or4LLmesjq.glb."
+    },
+    {
+      "need": "cable runs",
+      "pack": "quaternius-cyberpunk-game-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/quaternius-cyberpunk-game-kit/Cable Long.glb",
+      "notes": "2.5 m hanging cable authored in -Y from its anchor (min y -2.5); Cable.glb is the 0.95 m version. Hang from wall tops/racks; rotate flat and scatter for floor runs. Extra droop silhouettes: kenney-retro-urban-kit/Models/GLB format/detail-cables-type-a.glb."
+    },
+    {
+      "need": "couch",
+      "pack": "poly-pizza-workstations (Quaternius)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/poly-pizza-workstations/damaged_couch_quaternius_ik7UZdELJE.glb",
+      "notes": "3.0 x 1.24 x 1.21 m, single atlas material 'Atlas.045' (small palette texture, still flat). Scale 0.85."
+    },
+    {
+      "need": "mattress",
+      "pack": "polypizza-hacker-props (Quaternius pallet) + procedural slab",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/polypizza-hacker-props/pallet_quaternius_cUAsYHDqfD.glb",
+      "notes": "Pallet 1.70 x 0.19 x 1.46 m as the base; the mattress itself is a procedural box (1.9 x 0.2 x 0.9 m, off-white) plus kenney-furniture-kit/Models/GLTF format/pillow.glb x2. Alternative: polypizza-hacker-props/bedroll_kenney_efwd5fjuMU.glb scaled x3 (sleeping bag)."
+    },
+    {
+      "need": "whiteboard",
+      "pack": "poly-pizza-workstations (CreativeTrio)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/poly-pizza-workstations/wall_corkboard_creativetrio_U8yQZ9l0HZ.glb",
+      "notes": "0.76 x 0.53 m corkboard with post-its; scale x1.8, override 'Material' to flat white and add a thin dark frame. If the palette texture fights the look, replace with a procedural white quad + frame (trivial)."
+    },
+    {
+      "need": "neon sign",
+      "pack": "quaternius-cyberpunk-game-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/quaternius-cyberpunk-game-kit/Cyberpunk Signs.glb",
+      "notes": "13 sign meshes in one file: Sign_1..4 (large), Sign_Corner_1..3, Sign_Corner_Small1/2, Sign_Small_1..3, Sign_Corner_Hazard; materials Grey/DarkGrey + 'Texture_Signs' (baked sign face). Pull one Sign_N node, set Texture_Signs emissive; reuse others outside the windows."
+    },
+    {
+      "need": "arcade cabinet",
+      "pack": "kenney-mini-arcade",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-mini-arcade/Models/GLB format/arcade-machine.glb",
+      "notes": "0.40 x 0.73 x 0.54 m mini-scale; scale x2.4 -> 0.96 x 1.74 x 1.29 m. Flat colormap palette texture (Textures/colormap.png). Only CC0 cabinet found; add emissive screen quad."
+    },
+    {
+      "need": "CRT monitor",
+      "pack": "quaternius-cyberpunk-game-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/quaternius-cyberpunk-game-kit/TV.glb",
+      "notes": "Boxy CRT 0.81 x 1.21 m authored with a stand (min y -0.23); scale 0.45. Materials Grey/LightGrey/MetalLight/Texture_Signs (screen -> emissive). Alt CRT: kenney-furniture-kit/Models/GLTF format/televisionVintage.glb x2."
+    },
+    {
+      "need": "pizza box",
+      "pack": "kenney-food-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-food-kit/Models/GLB format/pizza-box.glb",
+      "notes": "0.94 m oversized; scale 0.45. pizza.glb for an open box, styrofoam.glb/chinese.glb for takeout clutter. Colormap palette texture."
+    },
+    {
+      "need": "drink can",
+      "pack": "kenney-food-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-food-kit/Models/GLB format/soda-can.glb",
+      "notes": "0.35 m tall; scale 0.35 -> 0.12 m. soda-can-crushed.glb for trash. Recolour via colormap or material override for 'energy drink' colours. Quaternius alternative: polypizza-hacker-props/soda_quaternius_IqXSdKUMnY.glb (1.92 m tall, scale 0.065)."
+    },
+    {
+      "need": "coffee cup",
+      "pack": "kenney-food-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-food-kit/Models/GLB format/mug.glb",
+      "notes": "0.34 m; scale 0.3. cup-coffee.glb for a takeaway cup (scale 0.35)."
+    },
+    {
+      "need": "shelves",
+      "pack": "poly-pizza-workstations (Quaternius)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/poly-pizza-workstations/shelf_tall_quaternius_TDgvIuorcX.glb",
+      "notes": "2.06 x 3.11 x 0.81 m; scale 0.65 -> 2 m tall. Dress with cardboard boxes and cans."
+    },
+    {
+      "need": "lamp / bare bulb",
+      "pack": "polypizza-hacker-props (Quaternius)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/polypizza-hacker-props/light-ceiling-single_quaternius_JT44JUXU2d.glb",
+      "notes": "0.26 x 0.48 m pendant, hangs in -Y from anchor. Bare bulb variant: light-bulb_reelpersen_kDo0SbQW9Y.glb (9.9 m tall, normalise to 0.15 m). Desk lamp: poly-pizza-workstations/light_desk_quaternius_uJDWrSJGVH.glb (0.57 m). Floor lamp: light_floor_quaternius_eBQtooeh43.glb (1.6 m)."
+    },
+    {
+      "need": "fire extinguisher",
+      "pack": "GAP - procedural",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/polypizza-hacker-props/propane-tank_quaternius_3revwBHxDC.glb",
+      "notes": "No CC0 extinguisher exists (poly.pizza results LtrzDvRya9 and 71rR7PaeXNN are CC-BY 3.0). Placeholder: propane tank (2.9 m, scale 0.2) recoloured red; plan is a 40-tri procedural cylinder+handle+hose in Blender."
+    },
+    {
+      "need": "cardboard boxes",
+      "pack": "poly-pizza-workstations (Quaternius)",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/poly-pizza-workstations/cardboard_boxes_quaternius_bs6ikOeTrR.glb",
+      "notes": "0.98 x 0.51 x 0.73 m stack; more variants at polypizza-hacker-props/cardboard-boxes_quaternius_rdKKO0DvMG.glb, V9KbWC8Vd6.glb, crate_quaternius_SfJtdV8GDr.glb (1.38 m, scale 0.5), package_quaternius_mWkgWyrCfM.glb."
+    },
+    {
+      "need": "city outside (skyline)",
+      "pack": "kenney-city-kit-commercial",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-city-kit-commercial/Models/GLB format/building-skyscraper-a.glb",
+      "notes": "1.36 x 2.88 m toy-scale; scale x8-12 for distant silhouettes, with skyscraper-b..e and low-detail-building-a/wide-a as cheap fillers. Override colormap to near-black with a few emissive window quads. Textures/variation-a.png / variation-b.png."
+    },
+    {
+      "need": "rooftop pieces outside",
+      "pack": "quaternius-cyberpunk-game-kit",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/quaternius-cyberpunk-game-kit/TV Tower.glb",
+      "notes": "2.4 m tower plus Antenna.glb (1.66 m), Air Conditioner.glb, Ac Stacked.glb, Pipe.glb, Rail.glb, Support.glb, Streetlight.glb and spare Cyberpunk Signs for the neighbouring rooftop seen through the window. Facades behind: kenney-modular-buildings/Models/GLB format/building-window.glb stacked (1 x 0.625 m, scale x3.2)."
+    },
+    {
+      "need": "street below (optional)",
+      "pack": "kenney-city-kit-roads",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/kenney-city-kit-roads/Models/GLB format/electricity-pole.glb",
+      "notes": "electricity-pole.glb + electricity-wires.glb for sagging wire silhouettes, light-square.glb street lights, dumpster.glb. Drop first if the exterior budget is tight."
+    },
+    {
+      "need": "den clutter (extra)",
+      "pack": "polypizza-hacker-props",
+      "file": "/Users/justinking/dev/amux/macos/Assets/src/polypizza-hacker-props/trash-bags_quaternius_eitNk4I4R1.glb",
+      "notes": "Also debris-papers_quaternius_MujITy1NRR.glb, paper_quaternius_4qDtAbPYnT.glb, headphones_creativetrio_PSsWSIAYIL.glb, wireless-machine_kenney_OJffxxkMtZ.glb (router, off-centre origin), coat-rack-standing_kenney_8jXUm32dKW.glb + jacket_polygonal-mind_eeKk3ObCbf.glb (jacket authored at y=2.44, re-origin), skateboard_kenney_TyiZbm5TNL.glb, can-fridge_quaternius_8OHbykvREu.glb (4.4 m, off-centre x=4.19: recentre and scale 0.42)."
+    }
+  ],
+  "gaps": [
+    {
+      "need": "sitting / typing / thinking / stretching / drinking clips for the hoodie character",
+      "plan": "Pose joints in code (RealityKit joint transforms on Hips, UpperLeg/LowerLeg/Foot for sit; LowerArm/Wrist oscillation for typing; Head/Neck for think; Shoulder/UpperArm for stretch; LowerArm.R/Wrist.R arc + soda prop for drink). Optional Blender step: retarget SitDown/StandUp from quaternius-ultimate-animated-character Casual_Male.gltf with rest-pose alignment (shared bone names, different rest quaternions, Fist->Wrist, PoleTarget->PT, Bone->Root)."
+    },
+    {
+      "need": "fire extinguisher",
+      "plan": "Model a ~40-tri red cylinder + black handle + hose procedurally in the Blender conversion script; propane-tank recoloured red is the interim stand-in. Both poly.pizza extinguishers are CC-BY 3.0 and were not downloaded."
+    },
+    {
+      "need": "true 19-inch server rack",
+      "plan": "Use Computer Large / Scifi Computer recoloured near-black with emissive Screen strips; if a real rack is wanted, build a box with 8 emissive LED quads procedurally (racks are geometrically trivial)."
+    },
+    {
+      "need": "mattress mesh",
+      "plan": "Procedural box slab on the Quaternius pallet with Kenney pillow.glb; no CC0 bare mattress found (Kenney bedSingle has a frame, Quaternius bed_single is a full bed)."
+    },
+    {
+      "need": "purpose-built neon text (e.g. 'fsociety'-style lettering)",
+      "plan": "Cyberpunk Signs gives neon-styled sign boards; for custom lettering generate an extruded text mesh in Blender with an emissive material (needs no external asset)."
+    },
+    {
+      "need": "guy-fawkes/hacker mask, bicycle, rain-streaked glass",
+      "plan": "Mask: not found CC0, skip (hoods carry the look). Bicycle: skip, skateboard stands in. Rain: procedural translucent quad with animated streak texture in the window openings."
+    },
+    {
+      "need": "kenney-city-kit-industrial (catalogued but absent on disk)",
+      "plan": "Not needed: commercial skyscrapers + modular-buildings facades + Cyberpunk rooftop dressing cover the exterior. Re-fetch https://kenney.nl/assets/city-kit-industrial (CC0, ~11 MB) only if chimneys/water tower are wanted."
+    }
+  ],
+  "conversion_notes": "All chosen files are glTF 2.0 (GLB or .gltf+bin), Y-up, metres, so no axis flip is needed for RealityKit; export USDZ from Blender per asset. (1) Every poly.pizza/Quaternius GLB (hoodie character, Cyberpunk kit, workstations singles) came through FBX2glTF: mesh/armature nodes carry scale [100,100,100] and rotation -90 deg about X - apply transforms in Blender (Ctrl+A) and bake so the skin stays 1.87 m; keep the armature's 'CharacterArmature' node as root, and strip the 'CharacterArmature|' clip prefix when naming RealityKit AnimationResources. The hoodie has 4 skins (Feet/Legs/Head/Body) sharing one 62-joint skeleton; keep them as separate meshes so 'Purple' on Casual_Body can be a per-agent material. (2) Scale normalisation table: Kenney Furniture Kit x1.6-2.0 (authored ~half scale), Kenney Food Kit x0.3-0.45, Kenney Mini Arcade x2.4, Kenney City Kit Commercial x8-12, Modular Buildings x3.2, Quaternius desk 0.85, couch 0.85, shelf 0.65, TV 0.45, Computer Large 1.0; poly.pizza singles with odd scales/origins (can_fridge, mug_milkandbanana, light-bulb, propane-tank, jacket, wireless-machine, cpu, monitor_armory) must be recentred to origin and rescaled by bounding box, not trusted at x1. (3) Cables and pendant light are authored hanging in -Y from their anchor; keep the anchor at the ceiling/wall top. (4) Textures: Quaternius materials are untextured baseColorFactor - override by material name (Purple, Screen, Orange, Texture_Signs, Chair). Kenney GLBs reference external PNGs by relative uri (Building Kit: Models/GLB format/Textures/colormap.png and Models/Textures/variation-a.png; Mini Arcade / Food Kit: Textures/colormap.png) - import with the pack folder intact so Blender resolves them, then pack/embed. Damaged couch and CreativeTrio items embed a small atlas (bufferView) - fine as is. (5) Animation: hoodie clips are baked per-joint (Idle_Neutral touches 21 channels, Walk 37) at 1.67 s / 1.33 s loops; Building Kit door clips (open/close/open-and-close) target the 'door' node - keep node names so they can also be posed directly. (6) Emissive: add emissiveFactor to Screen/Texture_Signs/monitor faces at conversion so RealityKit picks up the glow without runtime material edits. (7) Dedupe: Cyberpunk kit files, polypizza-hacker-props and poly-pizza-workstations contain identical GLBs (same poly.pizza ids: Computer Large or4LLmesjq, TV tdXTODKZlx, Cable aoNcGMnNiG, Cable Long WNfAG8VSD5, damaged couch ik7UZdELJE, shelf TDgvIuorcX) - convert once from the path listed here. Total on-disk source set is 213 MB; only ~30 MB of it is referenced by this selection."
+}

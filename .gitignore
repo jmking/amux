@@ -23,6 +23,10 @@ NOTES.md
 tools/
 macos/Assets/src/
 macos/Assets/work/
+# ...except the catalogue with each pack's licence evidence
+!macos/Assets/work/
+macos/Assets/work/*
+!macos/Assets/work/catalog/
 
 # ad-hoc signature written by local dev builds
 macos/dist/Amux.app/Contents/_CodeSignature/
