@@ -142,6 +142,11 @@ MANIFEST = {
     "unit_c": ('kenney-city-kit-commercial/Models/GLB format/building-c.glb', ['--scale', '7', '--recenter']),
     "lowdetail_wide_a": ('kenney-city-kit-commercial/Models/GLB format/low-detail-building-wide-a.glb', ['--scale', '7', '--recenter']),
     "lowdetail_wide_b": ('kenney-city-kit-commercial/Models/GLB format/low-detail-building-wide-b.glb', ['--scale', '7', '--recenter']),
+    "electricity_pole_wide": ("kenney-city-kit-roads/Models/GLB format/electricity-pole-wide.glb", ["--scale", "8", "--recenter"]),
+    "road_sign_empty": ("kenney-city-kit-roads/Models/GLB format/road-sign-empty.glb", ["--scale", "8", "--recenter"]),
+    "trashcan": ("polypizza-hacker-props/trashcan_kenney_*.glb", ["--join", "--recenter"]),
+    "elec_pole_single": ("kenney-city-kit-roads/Models/GLB format/electricity-pole-single.glb", ["--scale", "12", "--recenter"]),
+    "elec_wires_wide": ("kenney-city-kit-roads/Models/GLB format/electricity-wires-wide.glb", ["--scale", "12", "--recenter"]),
     "fridge": ("polypizza-hacker-props/can-fridge_*.glb", ["--join", "--scale", "0.42", "--recenter"]),
     "router": ("polypizza-hacker-props/wireless-machine_*.glb", ["--join", "--recenter"]),
 

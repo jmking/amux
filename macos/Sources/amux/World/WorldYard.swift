@@ -35,6 +35,11 @@ enum WorldYard {
             switch name {
             case "cone": break                                   // one accent of colour
             case "yard_asphalt": greyOut(e, fixed: 0.30)          // a step darker than the slab
+            case "asphalt_center": greyOut(e, fixed: 0.27)                                  // carriageway
+            case "asphalt_pavement": greyOut(e, fixed: 0.42)                                // footpath slab
+            case let n where n.hasPrefix("asphalt_"): greyOut(e, fixed: 0.31)               // kerb tiles: asphalt with the raised kerb
+            case let n where n.hasPrefix("road_"): break                                    // city-kit tiles keep their lane lines
+            case let n where n.hasPrefix("tree_") || n.hasPrefix("grass"): greyOut(e, fixed: 0.30, tint: NSColor(red: 0.30, green: 0.35, blue: 0.28, alpha: 1))
             default: greyOut(e)
             }
             return e
@@ -55,21 +60,19 @@ enum WorldYard {
         box(SIMD3(2.4, 0.12, 1.7), NSColor(white: 0.46, alpha: 1), at: SIMD3(3, -0.12, -6.05))
         let paint = NSColor(red: 0.62, green: 0.58, blue: 0.42, alpha: 1)
         for x: Float in [0.4, 5.6] { box(SIMD3(0.12, 0.004, 8), paint, at: SIMD3(x, -0.128, -13)) }
-        let white = NSColor(red: 0.6, green: 0.6, blue: 0.58, alpha: 1)
-        for x: Float in [7.5, 10.5, 13.5] { box(SIMD3(0.12, 0.004, 4), white, at: SIMD3(x, -0.128, -14.8)) }
         for (p, yaw) in [(SIMD3<Float>(-7.6, y, -6.2), Float(25)), (SIMD3(-3, y, -9.5), 110), (SIMD3(-13.5, y, 3.5), -40),
-                         (SIMD3(8.5, y, -9), 150), (SIMD3(-9, y, 7.5), 65), (SIMD3(10.2, y, 6.8), 50)] {
+                         (SIMD3(8.5, y, -9), 150), (SIMD3(-9, y, 6.9), 65)] {
             _ = await place("yard_asphalt", p, deg(yaw), 1, nil, nil)
         }
         for (x, z, w, d, yaw) in [(Float(-8.2), Float(0.2), Float(2.4), Float(1.6), Float(30)), (-8.6, -5.2, 1.8, 1.2, -20),
-                                  (0.6, -7.8, 2.0, 1.3, 60), (-6.2, -14.0, 3.0, 1.8, 10), (9.8, 2.2, 2.0, 1.2, 45), (-11.5, 5.5, 2.6, 1.5, -35)] {
+                                  (0.6, -7.8, 2.0, 1.3, 60), (-6.2, -14.0, 3.0, 1.8, 10), (-11.5, 5.5, 2.6, 1.5, -35)] {
             root.addChild(puddle(w, d, at: SIMD3(x, -0.129, z), yaw: deg(yaw)))
         }
 
         // -- the warehouse: two rows of facade tiles 12 m behind the back wall,
         //    a parapet, a roof, a canopy over the working bay, roof plant --
         let facadeZ: Float = -17
-        for x in stride(from: -18, through: 15, by: 3) {
+        for x in stride(from: -18, through: 9, by: 3) {
             let ground: String
             switch x {
             case -9: ground = "facade_garage"          // the closed second bay
@@ -87,12 +90,18 @@ enum WorldYard {
             }
             _ = await place(upper, SIMD3(Float(x), 2.87, facadeZ), .pi, 1, nil, nil)
         }
-        box(SIMD3(36.3, 0.35, 0.4), NSColor(white: 0.44, alpha: 1), at: SIMD3(-1.5, 5.7, -17.1))
-        box(SIMD3(36, 0.3, 12), NSColor(white: 0.34, alpha: 1), at: SIMD3(-1.5, 5.45, -23.1))
+        box(SIMD3(30.3, 0.35, 0.4), NSColor(white: 0.44, alpha: 1), at: SIMD3(-4.5, 5.7, -17.1))
+        box(SIMD3(30, 0.3, 12), NSColor(white: 0.34, alpha: 1), at: SIMD3(-4.5, 5.45, -23.1))
+        // the east gable on the property line, seen from the side street
+        for z in [Float(-18.5), -21.5, -24.5, -27.5] {
+            _ = await place("facade_wall", SIMD3(10.5, y, z), -.pi / 2, 1, nil, nil)
+            _ = await place("facade_wall", SIMD3(10.5, 2.87, z), -.pi / 2, 1, nil, nil)
+        }
+        box(SIMD3(0.4, 0.35, 12.2), NSColor(white: 0.44, alpha: 1), at: SIMD3(10.6, 5.7, -23.1))
         _ = await place("roof_metal", SIMD3(3, 2.87, -15.5), .pi / 2, 1, nil, nil)
         _ = await place("ac_stacked", SIMD3(0.5, 5.9, -20.5), deg(20), 1, nil, nil)
         _ = await place("ac_unit", SIMD3(-9.5, 5.9, -19.5), 0, 1, nil, nil)
-        _ = await place("antenna", SIMD3(12.5, 5.9, -19.0), 0, 1, nil, nil)
+        _ = await place("antenna", SIMD3(8.5, 5.9, -19.5), 0, 1, nil, nil)
         _ = await place("tv_tower", SIMD3(-22, 5.9, -22), 0, 1, nil, nil)
         // the bay glows warm after dusk; office windows and the sign with the lamps
         let bay = WorldPrimitives.emissive(SIMD3(2.4, 2.2, 0.02), bayWarm, intensity: 1.1)
@@ -141,17 +150,6 @@ enum WorldYard {
             tag.position = SIMD3(-1.6, 1.0 + tag.position.y, -16.9)
             root.addChild(tag)
         }
-
-        // -- chain-link: along x behind the back wall, along z beyond the
-        //    windows, and the gate swung open into the yard --
-        let mesh = await fenceMaterial()
-        for x in stride(from: -11, through: -2, by: 3) {
-            root.addChild(fencePanel(3, mesh, at: SIMD3(Float(x), y, -13), yaw: 0))
-        }
-        for z in stride(from: -11.5, through: 9.5, by: 3) {
-            root.addChild(fencePanel(3, mesh, at: SIMD3(-12.5, y, Float(z)), yaw: .pi / 2))
-        }
-        root.addChild(fencePanel(3.5, mesh, at: SIMD3(-0.5, y, -11.25), yaw: .pi / 2, gate: true))
 
         // -- containers, skip, drums and the scrap along the fence --
         let tagged = await place("container_tagged", SIMD3(-8.5, y, -11.5), .pi / 2, 1, nil, nil)
@@ -204,11 +202,7 @@ enum WorldYard {
         for (p, yaw) in [(SIMD3<Float>(5.6, y, -16.1), Float(0)), (SIMD3(6.15, y, -16.45), 70), (SIMD3(5.85, y, -15.5), 150)] {
             _ = await place("drum", p, deg(yaw), 1, nil, nil)
         }
-        _ = await place("scaffold", SIMD3(12, y, -15.85), 0, 1, nil, nil)
-        _ = await place("scaffold", SIMD3(12, 1.87, -15.85), 0, 1, nil, nil)
         _ = await place("barrier_striped", SIMD3(6.8, y, -12.4), deg(10), 1, nil, nil)
-        _ = await place("barrier_concrete", SIMD3(10, y, -12.8), 0, 1, nil, nil)
-        _ = await place("barrier_concrete", SIMD3(12, y, -12.8), 0, 1, nil, nil)
         _ = await place("warning_light", SIMD3(0.6, y, -12.6), 0, 1, nil, nil)
         let amber = NSColor(red: 1.0, green: 0.6, blue: 0.12, alpha: 1)
         let blinkFace = WorldPrimitives.emissive(SIMD3(0.16, 0.12, 0.16), amber, intensity: 4)
@@ -230,10 +224,8 @@ enum WorldYard {
         _ = await place("boxes", SIMD3(6.3, y, -9.3), deg(60), 1, nil, nil)
 
         // -- in front of the room, kept low so it never crosses the floor on screen --
-        _ = await place("drum", SIMD3(9.5, y, 2.4), 0, 1, nil, nil)
-        _ = await place("drum", SIMD3(10.0, y, 2.9), deg(60), 1, nil, nil)
-        _ = await place("cone", SIMD3(2.5, y, 8.4), 0, 1, nil, nil)
-        _ = await place("trash_bags", SIMD3(9.3, y, -1.5), deg(80), 1, nil, nil)
+        _ = await place("cone", SIMD3(4.4, y, 11.35), 0, 1, nil, nil)     // in the gutter by the drain
+        _ = await place("trash_bags", SIMD3(8.9, y, -8.7), deg(80), 1, nil, nil)
 
         // -- lights outside: the LED lights at the windows and door, sodium posts --
         let lampCold = NSColor(red: 0.75, green: 0.85, blue: 1.0, alpha: 1)
@@ -252,8 +244,8 @@ enum WorldYard {
             daylight.addStreetLight(l, face: head, faceColor: color, faceIntensity: 5)
         }
         for (p, yaw, head) in [(SIMD3<Float>(-13.4, y, -13.6), Float(-135), SIMD3<Float>(-12.7, 4.55, -12.9)),
-                               (SIMD3(-11.8, y, 9.4), -45, SIMD3(-11.1, 4.55, 8.7)),
-                               (SIMD3(11.5, y, -10.8), 90, SIMD3(10.55, 4.55, -10.8))] {
+                               (SIMD3(-12.6, y, 7.4), -45, SIMD3(-11.9, 4.55, 6.7)),
+                               (SIMD3(9.6, y, -7.2), 90, SIMD3(8.65, 4.55, -7.2))] {
             _ = await place("lamp_post", p, deg(yaw), 1, nil, nil)
             let face = WorldPrimitives.emissive(SIMD3(0.5, 0.15, 0.3), sodium, intensity: 5)
             face.position = head
@@ -263,6 +255,14 @@ enum WorldYard {
             l.position = head
             root.addChild(l)
             daylight.addStreetLight(l, face: face, faceColor: sodium, faceIntensity: 5)
+        }
+
+        // -- the street and the block around the lot, from the site plan --
+        await WorldSite.build(under: root, daylight: daylight, layout: &layout, place: place)
+
+        // -- wires between the front street's poles --
+        for x: Float in [-13, -3, 7, 17] {
+            _ = await place("elec_wires_wide", SIMD3(x, 4.2, 19.3), 0, 1, nil, nil)
         }
 
         // -- the estate beyond --
@@ -275,7 +275,7 @@ enum WorldYard {
 
     /// Replaces every lit material under `e` with a matte grey of roughly the
     /// original's brightness; emissive parts (lamp heads) are left alone.
-    private static func greyOut(_ e: Entity, fixed: Float? = nil) {
+    private static func greyOut(_ e: Entity, fixed: Float? = nil, tint: NSColor? = nil) {
         if let me = e as? ModelEntity, var model = me.model {
             model.materials = model.materials.map { m in
                 var g: Float = fixed ?? 0.48
@@ -292,7 +292,7 @@ enum WorldYard {
                     }
                 }
                 var out = PhysicallyBasedMaterial()
-                out.baseColor = .init(tint: NSColor(white: CGFloat(g), alpha: 1))
+                out.baseColor = .init(tint: tint ?? NSColor(white: CGFloat(fixed ?? g), alpha: 1))
                 out.roughness = .init(floatLiteral: 0.9)
                 out.metallic = .init(floatLiteral: 0)
                 return out
@@ -329,7 +329,7 @@ enum WorldYard {
 
     /// Wet concrete: dark, nearly a mirror, so it takes the sky by day and the
     /// lamps by night.
-    private static func puddle(_ w: Float, _ d: Float, at p: SIMD3<Float>, yaw: Float) -> Entity {
+    static func puddle(_ w: Float, _ d: Float, at p: SIMD3<Float>, yaw: Float) -> Entity {
         var m = PhysicallyBasedMaterial()
         m.baseColor = .init(tint: NSColor(red: 0.24, green: 0.25, blue: 0.28, alpha: 1))
         m.roughness = .init(floatLiteral: 0.12)
@@ -340,7 +340,7 @@ enum WorldYard {
         return e
     }
 
-    private static func tyre(at p: SIMD3<Float>) -> Entity {
+    static func tyre(at p: SIMD3<Float>) -> Entity {
         let root = Entity()
         var black = PhysicallyBasedMaterial()
         black.baseColor = .init(tint: NSColor(white: 0.3, alpha: 1)); black.roughness = .init(floatLiteral: 0.9)
@@ -356,7 +356,7 @@ enum WorldYard {
     }
 
     /// A diamond mesh drawn once and tiled across every panel.
-    private static func fenceMaterial() async -> UnlitMaterial {
+    static func fenceMaterial() async -> UnlitMaterial {
         var m = UnlitMaterial(color: NSColor(white: 0.6, alpha: 0.5))
         m.blending = .transparent(opacity: 0.55)
         let n = 64
@@ -381,7 +381,7 @@ enum WorldYard {
     }
 
     /// One panel of chain-link: two posts, a top rail, the mesh, a barbed line.
-    private static func fencePanel(_ width: Float, _ mesh: UnlitMaterial, at p: SIMD3<Float>, yaw: Float, gate: Bool = false) -> Entity {
+    static func fencePanel(_ width: Float, _ mesh: UnlitMaterial, at p: SIMD3<Float>, yaw: Float, gate: Bool = false) -> Entity {
         let root = Entity()
         let steel = NSColor(white: 0.5, alpha: 1)
         let h: Float = 2.4
