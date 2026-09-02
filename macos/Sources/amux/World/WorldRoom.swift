@@ -213,7 +213,6 @@ enum WorldRoom {
         // -- the roof: the room is cut away for the camera, but a slice of it
         //    stays over the two built walls, pitched up toward the room --
         let slate = NSColor(red: 0.20, green: 0.21, blue: 0.24, alpha: 1)
-        let fasciaColor = NSColor(red: 0.82, green: 0.79, blue: 0.72, alpha: 1)
         // pitched steeply, so the eave sits on the wall and the inner edge is
         // well above it: sightlines from the camera still reach the neon, the
         // clock and the top of the brick under it
@@ -236,13 +235,6 @@ enum WorldRoom {
                                               SIMD3(minX - eave + run, y1, maxZ + eave),
                                               SIMD3(minX - eave, y0, maxZ + eave)], thickness: roofT, color: slate)
         root.addChild(leftRoof)
-        let fasciaH = roofT / cos(pitch) + 0.06
-        let backFascia = WorldPrimitives.box(SIMD3(floorW + eave * 2, fasciaH, 0.06), fasciaColor, roughness: 0.9, corner: 0)
-        backFascia.position = SIMD3(center.x, y0 - fasciaH / 2 + 0.03, minZ - eave)
-        root.addChild(backFascia)
-        let leftFascia = WorldPrimitives.box(SIMD3(0.06, fasciaH, floorD + eave * 2), fasciaColor, roughness: 0.9, corner: 0)
-        leftFascia.position = SIMD3(minX - eave, y0 - fasciaH / 2 + 0.03, center.z)
-        root.addChild(leftFascia)
 
         // -- workstations, in clusters --
         func workstation(at p: SIMD3<Float>, yaw: Float, variant: Int) async {
