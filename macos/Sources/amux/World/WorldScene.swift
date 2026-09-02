@@ -102,6 +102,10 @@ final class WorldScene {
     }
 
     private func build() async {
+        // `amux -worldSlowLoad <seconds>` holds the room back so the loading
+        // state can be seen; the real build is under a second on a warm cache
+        let slow = UserDefaults.standard.integer(forKey: "worldSlowLoad")
+        if slow > 0 { try? await Task.sleep(for: .seconds(slow)) }
         environment = await WorldRoom.environment()
         if let view { applyEnvironment(to: view) }
         layout = await WorldRoom.build(under: root)
