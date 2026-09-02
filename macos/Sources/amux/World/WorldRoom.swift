@@ -324,7 +324,16 @@ enum WorldRoom {
         await place("pipe_detail", at: SIMD3(5.6, 0, -4.6), scale: 1.5)
 
         // -- walls' dressing --
-        await place("whiteboard", at: SIMD3(0.6, 0, minZ + 0.07), fallback: WorldPrimitives.whiteboard)
+        // posters thrown up on the brick where a whiteboard would be, crooked, taped
+        for (kind, w, p, tilt) in [(WorldPoster.legion, Float(0.95), SIMD3<Float>(0.15, 1.85, minZ + 0.062), Float(-0.07)),
+                                   (.expectUs, 0.9, SIMD3(1.2, 1.6, minZ + 0.058), 0.09),
+                                   (.onlyRoot, 0.34, SIMD3(1.95, 1.05, minZ + 0.06), 0.2)] {
+            if let sheet = await WorldPoster.make(kind, width: w) {
+                sheet.position = p
+                sheet.orientation = simd_quatf(angle: tilt, axis: SIMD3(0, 0, 1))
+                root.addChild(sheet)
+            }
+        }
         let sign = await place("neon", at: SIMD3(-2.4, 2.0, minZ + 0.1), fallback: { WorldPrimitives.neonSign("amux", color: neon) })
         sign.name = "neon"
         daylight.addNeon(light(SIMD3(-2.4, 2.0, minZ + 0.7), neon, 6000, radius: 4.5))
