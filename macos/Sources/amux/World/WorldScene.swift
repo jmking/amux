@@ -1,20 +1,20 @@
 import RealityKit
 import AppKit
-import Combine
+import Metal
 import simd
 
 // MARK: - The scene
 //
 // Owns the room, the camera and the actors, and reconciles the roster of live
 // agents against the actors in the room: a new agent walks in, a missing one
-// walks out, an existing one changes what it is doing. Everything time-based
-// runs off the render loop's update event so it stays in step with the frame.
+// walks out, an existing one changes what it is doing.
 //
-// The scene outlives any view. RealityKit runs a view's render loop at the
-// display's full rate for as long as the view exists, whether or not it is on
-// screen, and a view that has once left its window never renders again. So the
-// runtime gives the scene a fresh ARView when the pane is shown and takes it
-// away when the pane is hidden; the room, the crew and their state stay here.
+// Rendering is a RealityRenderer driven by the runtime, one frame at a time,
+// into whatever texture it is handed. That is the whole reason it is not an
+// ARView: an ARView renders at the display's full rate for as long as it
+// exists, and the runtime could neither slow it down nor bring it back once it
+// had left its window. Here nothing renders unless render(into:) is called, so
+// the runtime chooses the rate, and zero is a rate.
 
 struct WorldAgentState: Equatable {
     let paneId: String
@@ -25,8 +25,8 @@ struct WorldAgentState: Equatable {
 
 @MainActor
 final class WorldScene {
-    private(set) var view: ARView?
-    let root = AnchorEntity(world: .zero)
+    let renderer: RealityRenderer?
+    let root = Entity()
     let camera = WorldCamera()
 
     private(set) var layout = WorldLayout()
@@ -36,69 +36,28 @@ final class WorldScene {
     private var standingUse: [Int: String] = [:]
     private var pending: [WorldAgentState]?
     private var spawning: Set<String> = []
-    private var updateSub: (any Cancellable)?
     private var environment: EnvironmentResource?
     private var clock: Float = 0
     private var racks: [Entity] = []
     private var neon: Entity?
     private var neonMaterial: PhysicallyBasedMaterial?
     private var doorSwing: Float = 0
+    private var anchored = false
+    private var framesRendered = 0
 
     /// Smoothed frames per second, for verification rather than display.
     private(set) var fps: Double = 0
-    /// Fires once the attached view has drawn the complete room a couple of
-    /// times, so the runtime can fade it in over the loading state instead of
-    /// letting the pieces pop in as they load.
+    /// Fires once the complete room has been drawn a couple of times, so the
+    /// runtime can fade the pane up over the loading state.
     var onFirstFrame: (() -> Void)?
-    private var anchored = false
-    private var framesSinceAnchor = 0
 
     init() {
+        renderer = try? RealityRenderer()
+        if renderer == nil { NSLog("amux world: RealityRenderer unavailable; the pane will stay on its loading state") }
+        renderer?.cameraSettings.colorBackground = .color(CGColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
+        renderer?.cameraSettings.antialiasing = .multisample4X
         root.addChild(camera.rig)
         Task { await build() }
-    }
-
-    // MARK: the view
-
-    /// Puts the room into a view and starts ticking from its render loop.
-    func attach(to view: ARView) {
-        guard self.view !== view else { return }
-        detach()
-        self.view = view
-        applyEnvironment(to: view)
-        // `amux -worldStats 1` overlays RealityKit's frame and mesh statistics
-        if UserDefaults.standard.bool(forKey: "worldStats") { view.debugOptions = [.showStatistics] }
-        updateSub = view.scene.subscribe(to: SceneEvents.Update.self) { [weak self] e in
-            MainActor.assumeIsolated { self?.tick(dt: Float(e.deltaTime)) }
-        }
-        // the room goes in whole, once built, never piece by piece
-        if ready { anchor() }
-    }
-
-    /// Takes the room out of its view. The view is the runtime's to discard.
-    func detach() {
-        updateSub?.cancel()
-        updateSub = nil
-        if let view, anchored { view.scene.removeAnchor(root) }
-        anchored = false
-        view = nil
-    }
-
-    private func anchor() {
-        guard let view, !anchored else { return }
-        view.scene.addAnchor(root)
-        anchored = true
-        framesSinceAnchor = 0
-    }
-
-    private func applyEnvironment(to view: ARView) {
-        if let environment {
-            view.environment.lighting.resource = environment
-            view.environment.lighting.intensityExponent = 1.25
-            view.environment.background = .skybox(environment)
-        } else {
-            view.environment.background = .color(NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
-        }
     }
 
     private func build() async {
@@ -107,7 +66,10 @@ final class WorldScene {
         let slow = UserDefaults.standard.integer(forKey: "worldSlowLoad")
         if slow > 0 { try? await Task.sleep(for: .seconds(slow)) }
         environment = await WorldRoom.environment()
-        if let view { applyEnvironment(to: view) }
+        if let environment, let renderer {
+            renderer.lighting.resource = environment
+            renderer.lighting.intensityExponent = 1.25
+        }
         layout = await WorldRoom.build(under: root)
         camera.focus = layout.focus
         racks = root.children.filter { $0.name.hasPrefix("rack") }
@@ -117,10 +79,35 @@ final class WorldScene {
             neon = me
             neonMaterial = m
         }
+        // the room goes in whole, once built, never piece by piece
+        renderer?.entities.append(root)
+        renderer?.activeCamera = camera.cameraEntity
+        anchored = true
         ready = true
-        anchor()
         if let p = pending { pending = nil; apply(roster: p) }
     }
+
+    // MARK: rendering
+
+    /// Advances the world by `dt` and draws it into `texture`. `onComplete`
+    /// runs when the GPU has finished, off the main thread; present there.
+    /// Does nothing until the room is built.
+    func render(into texture: MTLTexture, dt: Float, onComplete: @escaping @Sendable () -> Void) -> Bool {
+        guard anchored, let renderer else { return false }
+        tick(dt: dt)
+        do {
+            let output = try RealityRenderer.CameraOutput(.singleProjection(colorTexture: texture))
+            try renderer.updateAndRender(deltaTime: Double(dt), cameraOutput: output, onComplete: { _ in onComplete() })
+        } catch {
+            NSLog("amux world: render failed: \(error)")
+            return false
+        }
+        framesRendered += 1
+        if framesRendered == 3 { onFirstFrame?() }
+        return true
+    }
+
+    func viewResized(to size: CGSize) { camera.viewResized(to: size) }
 
     // MARK: roster
 
@@ -183,11 +170,8 @@ final class WorldScene {
     // MARK: per frame
 
     private func tick(dt: Float) {
-        guard anchored else { return }
         let dt = min(dt, 0.1)
         clock += dt
-        framesSinceAnchor += 1
-        if framesSinceAnchor == 3 { onFirstFrame?() }
         if dt > 0 { fps = fps == 0 ? Double(1 / dt) : fps * 0.95 + Double(1 / dt) * 0.05 }
         camera.tick(dt: dt)
         let forward = camera.forward

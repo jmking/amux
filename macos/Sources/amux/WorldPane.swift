@@ -1,6 +1,8 @@
 import SwiftUI
 import RealityKit
 import AppKit
+import Metal
+import QuartzCore
 
 // MARK: - The agent world
 //
@@ -9,46 +11,71 @@ import AppKit
 // the fallback behaviour, and the normalised event stream (AgentSources)
 // sharpens it into thinking / tool / network when the agent is one we can read.
 //
-// Rendering is RealityKit. The scene lives in WorldScene; this file is the
-// runtime around it: the view, when it is allowed to render, and the bridge
-// from the app model's roster to the scene.
+// The scene lives in WorldScene and renders through a RealityRenderer into a
+// Metal layer that this file owns. Frames are asked for from a display link
+// at a rate the runtime chooses: 30 a second while the pane is on screen and
+// none while hidden. An ambient scene needs no more; the walk cycle and the
+// camera drift read the same at 30 as at 120, and the difference is most of a
+// core in this process and as much again in WindowServer.
 
-/// The RealityKit view. Reports window changes for the run policy and turns
-/// drags and scrolls into camera moves.
-final class WorldARView: ARView {
-    var onWindowChange: (() -> Void)?
+/// The Metal surface the world draws into. Turns drags and scrolls into camera
+/// moves and reports size and window changes to the runtime.
+final class WorldMetalView: NSView {
     var onOrbit: ((Float) -> Void)?
     var onZoom: ((Float) -> Void)?
     var onResize: ((CGSize) -> Void)?
+    var onWindowChange: (() -> Void)?
+
+    var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layerContentsRedrawPolicy = .never
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func makeBackingLayer() -> CALayer {
+        let l = CAMetalLayer()
+        l.device = MTLCreateSystemDefaultDevice()
+        l.pixelFormat = .bgra8Unorm_srgb
+        l.framebufferOnly = true
+        l.isOpaque = true
+        l.backgroundColor = CGColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1)
+        return l
+    }
+
+    override var isFlipped: Bool { false }
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func layout() {
         super.layout()
-        onResize?(bounds.size)
+        syncDrawableSize()
     }
 
-    @MainActor required dynamic init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-    }
-
-    @MainActor required dynamic init?(coder decoder: NSCoder) {
-        super.init(coder: decoder)
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        syncDrawableSize()
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        syncDrawableSize()
         onWindowChange?()
     }
 
-    override var acceptsFirstResponder: Bool { true }
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-
-    override func mouseDragged(with event: NSEvent) {
-        onOrbit?(Float(event.deltaX))
+    private func syncDrawableSize() {
+        let scale = window?.backingScaleFactor ?? 2
+        metalLayer.contentsScale = scale
+        let size = CGSize(width: max(1, bounds.width * scale), height: max(1, bounds.height * scale))
+        if metalLayer.drawableSize != size { metalLayer.drawableSize = size }
+        onResize?(bounds.size)
     }
 
-    override func scrollWheel(with event: NSEvent) {
-        onZoom?(Float(event.scrollingDeltaY))
-    }
+    override func mouseDragged(with event: NSEvent) { onOrbit?(Float(event.deltaX)) }
+    override func scrollWheel(with event: NSEvent) { onZoom?(Float(event.scrollingDeltaY)) }
 }
 
 @MainActor
@@ -57,18 +84,12 @@ final class WorldRuntime: ObservableObject {
     /// True once the room has been built and drawn; the pane shows a loading
     /// state until then rather than pieces popping in.
     @Published private(set) var isReady = false
-    /// Exists only while the pane is on screen. RealityKit renders a view at
-    /// the display's full rate for as long as it exists, on screen or not, and
-    /// a view that has once left its window never renders again; so the view
-    /// is made when the pane is shown and thrown away when it is hidden. The
-    /// scene, with the room and the crew, persists in between.
-    private(set) var view: WorldARView?
+    private(set) var view: WorldMetalView?
     private weak var container: NSView?
-    private var teardown: Task<Void, Never>?
-    private var lastDiscard: CFAbsoluteTime = 0
-    private var rebuildPending = false
+    private var link: CADisplayLink?
+    private var lastFrame: CFTimeInterval = 0
     private var timer: Timer?
-    private var occlusionObserver: NSObjectProtocol?
+    private var observers: [NSObjectProtocol] = []
     private var demoTick = 0
     private var demoAway: Int?
     /// Cycles fake agents through every phase, so the behaviours can be seen
@@ -88,125 +109,109 @@ final class WorldRuntime: ObservableObject {
         demoMode = UserDefaults.standard.bool(forKey: "worldDemo")
 
         // Only the roster and phases are pushed from here; all motion runs off
-        // the render loop, so this does not need to run anywhere near frame rate.
+        // the frame loop, so this does not need to run anywhere near frame rate.
         let t = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.sync() }
         }
         RunLoop.main.add(t, forMode: .common)
         timer = t
+
     }
 
     deinit {
         timer?.invalidate()
-        if let occlusionObserver { NotificationCenter.default.removeObserver(occlusionObserver) }
+        link?.invalidate()
+        for o in observers { NotificationCenter.default.removeObserver(o) }
+        if let windowObserver { NotificationCenter.default.removeObserver(windowObserver) }
     }
 
     /// The host gives the runtime its container; the run policy decides whether
-    /// there is a view in it.
+    /// frames are drawn into it, and how often.
     func attach(to container: NSView) {
         if container !== self.container {
-            // When a pane moves, SwiftUI builds the new host and dismantles the
-            // old one, and the old container reports leaving its window last
-            // of all. Taking that as the current container hid the fresh view
-            // and tore it down: a container with no window that is not ours
-            // is a host on its way out.
+            // a host being dismantled reports leaving its window after the new
+            // host has attached; a container with no window that is not ours
+            // is on its way out
             guard container.window != nil || self.container == nil else { return }
             self.container = container
+            watchOcclusion(of: container.window)
         }
-        watchOcclusion(of: container.window)
+        let v = view ?? makeView()
+        view = v
+        if v.superview !== container {
+            v.frame = container.bounds
+            v.autoresizingMask = [.width, .height]
+            container.addSubview(v)
+        }
         applyRunPolicy()
     }
 
+    private var windowObserver: NSObjectProtocol?
     private func watchOcclusion(of window: NSWindow?) {
-        if let occlusionObserver { NotificationCenter.default.removeObserver(occlusionObserver) }
-        occlusionObserver = window.map { w in
+        if let windowObserver { NotificationCenter.default.removeObserver(windowObserver) }
+        windowObserver = window.map { w in
             NotificationCenter.default.addObserver(
                 forName: NSWindow.didChangeOcclusionStateNotification, object: w, queue: .main
             ) { [weak self] _ in MainActor.assumeIsolated { self?.applyRunPolicy() } }
         }
     }
 
-    private func makeView() -> WorldARView {
-        let v = WorldARView(frame: .zero)
-        v.environment.background = .color(NSColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1))
-        // invisible until the room has drawn; revealView fades it up
-        v.alphaValue = 0
-        v.onWindowChange = { [weak self, weak v] in
-            guard let self, let v else { return }
-            if v.window == nil {
-                // The pane was moved (or its window closed). A RealityKit view
-                // that has left its window never renders again, so this one is
-                // finished; the run policy makes a fresh one if the pane is
-                // still on screen.
-                if self.view === v { self.discardView() }
-            } else {
-                self.watchOcclusion(of: v.window)
-            }
-        }
+    private func makeView() -> WorldMetalView {
+        let v = WorldMetalView(frame: .zero)
+        v.alphaValue = 0   // fades up once the room has drawn
         v.onOrbit = { [weak self] dx in self?.scene.camera.orbit(byPixels: dx) }
         v.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
-        v.onResize = { [weak self] size in self?.scene.camera.viewResized(to: size) }
+        v.onResize = { [weak self] size in self?.scene.viewResized(to: size) }
+        v.onWindowChange = { [weak self, weak v] in
+            guard let self, let v else { return }
+            if let w = v.window { self.watchOcclusion(of: w) }
+            self.applyRunPolicy()
+        }
+        let l = v.displayLink(target: self, selector: #selector(frame(_:)))
+        l.isPaused = true
+        l.add(to: .main, forMode: .common)
+        link = l
         return v
     }
 
-    /// One place decides whether the scene renders: the pane's tab is the
-    /// visible one, in a window that is actually on screen.
+    /// Frames per second while the pane is on screen. The display link is
+    /// asked for this rate, but on a ProMotion panel that is advisory, so
+    /// frame() paces itself to it as well.
+    static let frameRate: Double = 30
+
+    /// One place decides whether frames are drawn: on screen and the tab in
+    /// front; hidden, none at all.
     private func applyRunPolicy() {
-        guard let container else { return }
+        guard let container, let link else { return }
         let windowVisible = container.window.map {
             $0.occlusionState.contains(.visible) && $0.isVisible
         } ?? false
         let shouldRun = windowVisible && tabActive
-        if shouldRun {
-            teardown?.cancel()
-            teardown = nil
-            // a view that is not in this container has been through a move
-            if let v = view, v.superview !== container { discardView() ; _ = v }
-            // A view created in the same turn as another was destroyed never
-            // renders (RealityKit tears its renderer down asynchronously); the
-            // fresh one waits a beat.
-            if view == nil, CFAbsoluteTimeGetCurrent() - lastDiscard < 0.25 {
-                guard !rebuildPending else { return }
-                rebuildPending = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                    self?.rebuildPending = false
-                    self?.applyRunPolicy()
-                }
-                return
-            }
-            let v = view ?? makeView()
-            view = v
-            if v.superview !== container {
-                v.frame = container.bounds
-                v.autoresizingMask = [.width, .height]
-                container.addSubview(v)
-            }
-            v.isHidden = false
-            scene.attach(to: v)
-        } else if let v = view {
-            v.isHidden = true
-            // a quick flip between tabs should not pay to rebuild the view
-            guard teardown == nil else { return }
-            teardown = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(1.5))
-                guard let self, !Task.isCancelled else { return }
-                self.discardView()
-                self.teardown = nil
+        view?.isHidden = !shouldRun
+        guard shouldRun else { link.isPaused = true; return }
+        let rate = Float(Self.frameRate)
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: rate, maximum: rate, preferred: rate)
+        if link.isPaused { lastFrame = 0; link.isPaused = false }
+    }
+
+    @objc private func frame(_ link: CADisplayLink) {
+        MainActor.assumeIsolated {
+            guard let view, view.window != nil, !view.isHidden else { return }
+            let now = link.targetTimestamp
+            // hold to the rate even if the link calls more often
+            if lastFrame != 0, now - lastFrame < (1.0 / Self.frameRate) * 0.9 { return }
+            let dt = lastFrame == 0 ? Float(1.0 / Self.frameRate) : Float(min(0.1, now - lastFrame))
+            lastFrame = now
+            guard let drawable = view.metalLayer.nextDrawable() else { return }
+            let presented = scene.render(into: drawable.texture, dt: dt) { drawable.present() }
+            if !presented {
+                // nothing to draw yet (the room is still being built): the
+                // loading state is showing, and the drawable goes back unused
             }
         }
     }
 
-    private func discardView() {
-        // clear first: removing the view fires its window-change callback,
-        // which must not find it current and discard it again
-        let v = view
-        view = nil
-        lastDiscard = CFAbsoluteTimeGetCurrent()
-        scene.detach()
-        v?.removeFromSuperview()
-    }
-
-    /// The room has drawn: fade the view up and drop the loading state.
+    /// The room has drawn: fade the surface up and drop the loading state.
     private func revealView() {
         guard let v = view else { return }
         NSAnimationContext.runAnimationGroup { ctx in
@@ -275,7 +280,7 @@ final class WorldContainerView: NSView {
 struct WorldHost: NSViewRepresentable {
     let runtime: WorldRuntime
     /// Background tabs stay mounted, so without this every world pane ever
-    /// opened would keep rendering at the display's full rate.
+    /// opened would keep drawing.
     var isActive: Bool = true
 
     func makeNSView(context: Context) -> WorldContainerView {
@@ -296,7 +301,7 @@ struct WorldHost: NSViewRepresentable {
     }
 }
 
-/// The pane's content: the RealityKit host, with a quiet loading state over it
+/// The pane's content: the Metal surface, with a quiet loading state over it
 /// until the room has been built and drawn.
 struct WorldPaneView: View {
     @ObservedObject var runtime: WorldRuntime

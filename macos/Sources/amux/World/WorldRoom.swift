@@ -287,6 +287,9 @@ enum WorldRoom {
             }
         }
 
+        // -- the sky: the renderer has no skybox, so it is a dome around everything --
+        if let sky = await skyDome() { root.addChild(sky) }
+
         // -- light --
         let moon = DirectionalLight()
         moon.light.color = NSColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1)
@@ -306,10 +309,22 @@ enum WorldRoom {
         return layout
     }
 
-    /// A blue-grey gradient sky for image-based lighting and the backdrop:
-    /// enough fill that unlit surfaces read as surfaces, cool so the warm bulbs
-    /// and screens pop.
-    static func environment() async -> EnvironmentResource? {
+    /// The gradient as a textured sphere seen from inside, at a distance the
+    /// camera never reaches; the same image the image-based light uses.
+    static func skyDome() async -> ModelEntity? {
+        guard let img = skyImage(),
+              let tex = try? await TextureResource(image: img, options: .init(semantic: .color)) else { return nil }
+        var m = UnlitMaterial()
+        m.color = .init(tint: .white, texture: .init(tex))
+        m.faceCulling = .front
+        let dome = ModelEntity(mesh: .generateSphere(radius: 160), materials: [m])
+        dome.name = "sky"
+        // the sphere's texture seam and pole face the camera otherwise
+        dome.orientation = simd_quatf(angle: .pi, axis: SIMD3(0, 1, 0))
+        return dome
+    }
+
+    private static func skyImage() -> CGImage? {
         let w = 512, h = 256
         guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
                                   space: CGColorSpaceCreateDeviceRGB(),
@@ -321,7 +336,14 @@ enum WorldRoom {
         ] as CFArray
         guard let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.5, 1]) else { return nil }
         ctx.drawLinearGradient(grad, start: CGPoint(x: 0, y: CGFloat(h)), end: CGPoint(x: 0, y: 0), options: [])
-        guard let img = ctx.makeImage() else { return nil }
+        return ctx.makeImage()
+    }
+
+    /// A blue-grey gradient sky for image-based lighting and the backdrop:
+    /// enough fill that unlit surfaces read as surfaces, cool so the warm bulbs
+    /// and screens pop.
+    static func environment() async -> EnvironmentResource? {
+        guard let img = skyImage() else { return nil }
         do {
             return try await EnvironmentResource(equirectangular: img)
         } catch {

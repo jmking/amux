@@ -86,6 +86,8 @@ final class WorldCamera {
     }
 
     var worldPosition: SIMD3<Float> { camera.position(relativeTo: nil) }
+    /// The entity carrying the camera component, for the renderer.
+    var cameraEntity: Entity { camera }
 
     /// The camera's forward direction in world space, for anything that should
     /// face the viewer (a waiting agent turns to the camera).
