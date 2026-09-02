@@ -23,7 +23,7 @@ final class WorldCamera {
     private var aspect: Float = 1
     private let distance: Float = 90
     /// Radius of the sphere the room has to fit in, at the focus.
-    private let roomRadius: Float = 8.2
+    private let roomRadius: Float = 9.6
     /// Visible height in metres at the focus: fit the room's sphere in the
     /// narrower of the two view dimensions, then apply the user's zoom.
     private var visibleHeight: Float {
@@ -67,8 +67,13 @@ final class WorldCamera {
         apply()
     }
 
+    /// `dy` positive zooms in. Clamped so the room never leaves the frame
+    /// and a figure never fills it.
     func zoom(byScrollDelta dy: Float) {
-        zoom = max(0.7, min(2.6, zoom * (1 + dy * 0.02)))
+        zoom(byFactor: 1 + dy * 0.02)
+    }
+    func zoom(byFactor f: Float) {
+        zoom = max(0.8, min(2.4, zoom * f))
         camera.camera.fieldOfViewInDegrees = fov
     }
 

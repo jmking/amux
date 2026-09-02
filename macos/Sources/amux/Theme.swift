@@ -201,7 +201,7 @@ struct AgentChip: View {
         return nil
     }
 
-    private static func icon(for kind: String) -> NSImage? {
+    static func icon(for kind: String) -> NSImage? {
         if let cached = iconCache[kind] { return cached }
         let image = iconURL(kind).flatMap { NSImage(contentsOf: $0) }
         iconCache[kind] = image     // nil is cached too: fall back to the glyph chip

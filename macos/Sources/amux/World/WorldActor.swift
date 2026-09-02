@@ -103,8 +103,9 @@ final class WorldActor {
     }
 
     private func refreshTag() {
+        // the product's own mark when we have it, its glyph otherwise
         let spec = WorldLabel.Spec(text: label, glyph: AgentBrand.of(kind).glyph, glyphColor: color,
-                                   dot: WorldPhaseStyle.color(phase))
+                                   icon: AgentChip.icon(for: kind), dot: WorldPhaseStyle.color(phase))
         guard spec != tagSpec else { return }
         tagSpec = spec
         Task { [weak self] in

@@ -23,6 +23,7 @@ import QuartzCore
 final class WorldMetalView: NSView {
     var onOrbit: ((Float) -> Void)?
     var onZoom: ((Float) -> Void)?
+    var onMagnify: ((Float) -> Void)?
     var onResize: ((CGSize) -> Void)?
     var onWindowChange: (() -> Void)?
 
@@ -75,7 +76,15 @@ final class WorldMetalView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) { onOrbit?(Float(event.deltaX)) }
-    override func scrollWheel(with event: NSEvent) { onZoom?(Float(event.scrollingDeltaY)) }
+    /// Scrolling up (fingers up, wheel away) brings the room closer, whether
+    /// or not the trackpad is set to natural scrolling; pinching does too.
+    override func scrollWheel(with event: NSEvent) {
+        var dy = Float(event.scrollingDeltaY)
+        if event.isDirectionInvertedFromDevice { dy = -dy }
+        if !event.hasPreciseScrollingDeltas { dy *= 4 }
+        onZoom?(dy)
+    }
+    override func magnify(with event: NSEvent) { onMagnify?(Float(event.magnification)) }
 }
 
 @MainActor
@@ -173,6 +182,7 @@ final class WorldRuntime: ObservableObject {
         v.alphaValue = 0   // fades up once the room has drawn
         v.onOrbit = { [weak self] dx in self?.scene.camera.orbit(byPixels: dx) }
         v.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
+        v.onMagnify = { [weak self] m in self?.scene.camera.zoom(byFactor: 1 + m) }
         v.onResize = { [weak self] size in self?.scene.viewResized(to: size) }
         v.onWindowChange = { [weak self, weak v] in
             guard let self, let v else { return }
@@ -322,8 +332,13 @@ struct WorldPaneView: View {
     @Environment(\.palette) private var pal
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
             WorldHost(runtime: runtime, isActive: isActive)
+            if runtime.isReady {
+                WorldTimeControl(runtime: runtime)
+                    .padding(10)
+                    .transition(.opacity)
+            }
             if !runtime.isReady {
                 VStack(spacing: 10) {
                     Image(systemName: "cube.transparent")
@@ -343,93 +358,52 @@ struct WorldPaneView: View {
     }
 }
 
-/// Thin header so a world pane reads like the other pane kinds.
-struct WorldToolbar: View {
-    @ObservedObject var model: AppModel
+/// The scene's clock, tucked into the corner: a small capsule showing the
+/// time, which opens into a slider for scrubbing the day and a way back to
+/// the Mac's clock.
+struct WorldTimeControl: View {
     @ObservedObject var runtime: WorldRuntime
-    let paneId: String
     @Environment(\.palette) private var pal
+    @State private var open = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 10))
-                .foregroundStyle(pal.faint2)
-                .frame(width: 16, height: 24)
-                .contentShape(Rectangle())
-                .onDrag {
-                    model.beginDrag("pane:\(paneId)")
-                    return PaneDrag.provider("pane:\(paneId)")
-                } preview: {
-                    DragChip(icon: "cube.transparent", label: "agent world")
-                        .environment(\.palette, pal)
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(.easeOut(duration: 0.18)) { open.toggle() }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 10))
+                    Text(clockText)
+                        .font(.system(size: 11, design: .monospaced))
                 }
-                .help("Drag to move this pane")
-            Image(systemName: "cube.transparent").font(.system(size: 11))
-            Text("agent world").font(.system(size: 13)).foregroundStyle(pal.ink)
-            Spacer(minLength: 4)
-            // the scene's clock: follows the Mac's time until the slider is
-            // taken, and the time shows in the colour of whichever it is
-            HStack(spacing: 6) {
-                Image(systemName: "clock")
-                    .font(.system(size: 10))
-                    .foregroundStyle(runtime.timeOverride == nil ? pal.faint2 : pal.spot)
-                Text(clockText)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(runtime.timeOverride == nil ? pal.faint : pal.spot)
-                    .frame(width: 38, alignment: .trailing)
+                .foregroundStyle(runtime.timeOverride == nil ? pal.faint : pal.spot)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(open ? "Hide the time controls" : "Set the time of day in the den")
+            if open {
                 Slider(value: Binding(get: { runtime.sceneHour }, set: { runtime.timeOverride = $0 }), in: 0...24)
                     .controlSize(.mini)
-                    .frame(width: 110)
+                    .frame(width: 120)
                     .help("Time of day in the den; follows your clock until you move it")
-                if runtime.timeOverride != nil {
-                    Button("now") { runtime.timeOverride = nil }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(pal.spot)
-                        .help("Follow the clock again")
-                }
+                Button("now") { runtime.timeOverride = nil }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(runtime.timeOverride == nil ? pal.faint2 : pal.spot)
+                    .disabled(runtime.timeOverride == nil)
+                    .help("Follow the clock again")
             }
-            Text(summary)
-                .font(.system(size: 11))
-                .foregroundStyle(pal.faint2)
         }
-        .padding(.horizontal, 8)
-        .frame(height: 34)
-        .background(pal.panel)
-        .contentShape(Rectangle())
-        .onDrag {
-            model.beginDrag("pane:\(paneId)")
-            return PaneDrag.provider("pane:\(paneId)")
-        } preview: {
-            DragChip(icon: "cube.transparent", label: "agent world")
-                .environment(\.palette, pal)
-        }
-        .contextMenu {
-            Button("Split right") { model.splitPane(paneId, direction: "right") }
-            Button("Split down") { model.splitPane(paneId, direction: "down") }
-            Button("Zoom") { model.zoomPane(paneId) }
-            Divider()
-            Button("Close pane", role: .destructive) { model.requestClosePane(paneId) }
-        }
-        .help("Drag to move this pane · drop on another pane's edge to snap")
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(pal.panel.opacity(0.88), in: Capsule())
+        .overlay(Capsule().strokeBorder(pal.faint2.opacity(0.35), lineWidth: 0.5))
     }
 
     private var clockText: String {
         let h = runtime.displayHour
         return String(format: "%02d:%02d", Int(h) % 24, Int((h - Double(Int(h))) * 60))
     }
-
-    private var summary: String {
-        let agents = model.state?.agents ?? []
-        if agents.isEmpty { return "no live agents" }
-        var counts: [String: Int] = [:]
-        for a in agents {
-            let p = model.eventLog.latestPhase(paneId: a.paneId, within: 8)?.phase
-                ?? AgentPhase.fromState(a.state)
-            counts[p.rawValue, default: 0] += 1
-        }
-        return counts.sorted { $0.key < $1.key }.map { "\($0.value) \($0.key)" }
-            .joined(separator: " · ")
-    }
 }
+

@@ -58,11 +58,11 @@ enum WorldYard {
         let white = NSColor(red: 0.6, green: 0.6, blue: 0.58, alpha: 1)
         for x: Float in [7.5, 10.5, 13.5] { box(SIMD3(0.12, 0.004, 4), white, at: SIMD3(x, -0.128, -14.8)) }
         for (p, yaw) in [(SIMD3<Float>(-7.6, y, -6.2), Float(25)), (SIMD3(-3, y, -9.5), 110), (SIMD3(-13.5, y, 3.5), -40),
-                         (SIMD3(8.5, y, -9), 150), (SIMD3(-9, y, 7.5), 65), (SIMD3(8.5, y, 5.5), 50)] {
+                         (SIMD3(8.5, y, -9), 150), (SIMD3(-9, y, 7.5), 65), (SIMD3(10.2, y, 6.8), 50)] {
             _ = await place("yard_asphalt", p, deg(yaw), 1, nil, nil)
         }
         for (x, z, w, d, yaw) in [(Float(-8.2), Float(0.2), Float(2.4), Float(1.6), Float(30)), (-8.6, -5.2, 1.8, 1.2, -20),
-                                  (0.6, -7.8, 2.0, 1.3, 60), (-6.2, -14.0, 3.0, 1.8, 10), (7.5, 2.0, 2.0, 1.2, 45), (-11.5, 5.5, 2.6, 1.5, -35)] {
+                                  (0.6, -7.8, 2.0, 1.3, 60), (-6.2, -14.0, 3.0, 1.8, 10), (9.8, 2.2, 2.0, 1.2, 45), (-11.5, 5.5, 2.6, 1.5, -35)] {
             root.addChild(puddle(w, d, at: SIMD3(x, -0.129, z), yaw: deg(yaw)))
         }
 
@@ -230,10 +230,10 @@ enum WorldYard {
         _ = await place("boxes", SIMD3(6.3, y, -9.3), deg(60), 1, nil, nil)
 
         // -- in front of the room, kept low so it never crosses the floor on screen --
-        _ = await place("drum", SIMD3(7.6, y, 2.4), 0, 1, nil, nil)
-        _ = await place("drum", SIMD3(8.1, y, 2.9), deg(60), 1, nil, nil)
-        _ = await place("cone", SIMD3(2.5, y, 7.0), 0, 1, nil, nil)
-        _ = await place("trash_bags", SIMD3(8.4, y, -1.5), deg(80), 1, nil, nil)
+        _ = await place("drum", SIMD3(9.5, y, 2.4), 0, 1, nil, nil)
+        _ = await place("drum", SIMD3(10.0, y, 2.9), deg(60), 1, nil, nil)
+        _ = await place("cone", SIMD3(2.5, y, 8.4), 0, 1, nil, nil)
+        _ = await place("trash_bags", SIMD3(9.3, y, -1.5), deg(80), 1, nil, nil)
 
         // -- lights outside: the LED lights at the windows and door, sodium posts --
         let lampCold = NSColor(red: 0.75, green: 0.85, blue: 1.0, alpha: 1)

@@ -621,7 +621,6 @@ struct PaneView: View {
     var body: some View {
         VStack(spacing: 0) {
             if leaf.kind == "world" {
-                WorldToolbar(model: model, runtime: model.worldRuntime(for: leaf.paneId), paneId: leaf.paneId)
                 WorldPaneView(runtime: model.worldRuntime(for: leaf.paneId), isActive: isActive)
             } else if leaf.kind == "web" {
                 BrowserToolbar(runtime: model.webRuntime(for: leaf.paneId),

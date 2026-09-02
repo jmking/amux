@@ -31,6 +31,7 @@ final class WorldScene {
     let daylight = WorldDaylight()
 
     private(set) var layout = WorldLayout()
+    private var wallClock: WorldClock?
     private(set) var ready = false
     private var actors: [String: WorldActor] = [:]
     private var occupancy: [Int: String] = [:]
@@ -68,6 +69,7 @@ final class WorldScene {
         let slow = UserDefaults.standard.integer(forKey: "worldSlowLoad")
         if slow > 0 { try? await Task.sleep(for: .seconds(slow)) }
         layout = await WorldRoom.build(under: root, daylight: daylight)
+        wallClock = layout.clock
         camera.focus = layout.focus
         racks = root.children.filter { $0.name.hasPrefix("rack") }
         if let n = root.findEntity(named: "neon"),
@@ -92,6 +94,7 @@ final class WorldScene {
     func render(into texture: MTLTexture, dt: Float, hour: Float, onComplete: @escaping @Sendable () -> Void) -> Bool {
         guard anchored, let renderer else { return false }
         daylight.apply(hour: hour)
+        wallClock?.update(hour: hour)
         tick(dt: dt)
         do {
             let output = try RealityRenderer.CameraOutput(.singleProjection(colorTexture: texture))

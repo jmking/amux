@@ -21,6 +21,8 @@ enum WorldLabel {
         var text: String
         var glyph: String? = nil
         var glyphColor: NSColor = .white
+        /// A product mark drawn where the glyph would go, in place of it.
+        var icon: NSImage? = nil
         var dot: NSColor? = nil
         var textColor: NSColor = .white
         var background: NSColor? = NSColor(white: 0.06, alpha: 0.86)
@@ -65,7 +67,8 @@ enum WorldLabel {
         let gap: CGFloat = 6
         let dotD: CGFloat = spec.dot == nil ? 0 : 7
         let textSize = text.size()
-        let glyphSize = glyph?.size() ?? .zero
+        let iconSide: CGFloat = spec.icon == nil ? 0 : ceil(textSize.height * 0.95)
+        let glyphSize = spec.icon != nil ? CGSize(width: iconSide, height: iconSide) : (glyph?.size() ?? .zero)
         var w = padX * 2 + textSize.width
         if dotD > 0 { w += dotD + gap }
         if glyphSize.width > 0 { w += glyphSize.width + gap * 0.7 }
@@ -92,7 +95,12 @@ enum WorldLabel {
             NSBezierPath(ovalIn: CGRect(x: x, y: (size.height - dotD) / 2, width: dotD, height: dotD)).fill()
             x += dotD + gap
         }
-        if let glyph {
+        if let icon = spec.icon {
+            let r = CGRect(x: x, y: (size.height - iconSide) / 2, width: iconSide, height: iconSide)
+            NSGraphicsContext.current?.imageInterpolation = .high
+            icon.draw(in: r, from: .zero, operation: .sourceOver, fraction: 1)
+            x += iconSide + gap * 0.7
+        } else if let glyph {
             glyph.draw(at: CGPoint(x: x, y: (size.height - glyphSize.height) / 2))
             x += glyphSize.width + gap * 0.7
         }

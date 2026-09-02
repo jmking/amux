@@ -304,6 +304,44 @@ enum WorldPrimitives {
         return root
     }
 
+    /// A flat slab of any planar outline: `top` is the outline (any winding),
+    /// extruded downward along its normal by `thickness`. Used for the roof,
+    /// whose two pitched planes have to meet along a hip.
+    static func prism(_ top: [SIMD3<Float>], thickness t: Float, color: NSColor, roughness: Float = 0.95) -> ModelEntity {
+        var positions: [SIMD3<Float>] = [], normals: [SIMD3<Float>] = [], indices: [UInt32] = []
+        var n = simd_normalize(simd_cross(top[1] - top[0], top[2] - top[0]))
+        var outline = top
+        if n.y < 0 { outline.reverse(); n = -n }
+        let bottom = outline.map { $0 - n * t }
+        let centroid = outline.reduce(SIMD3<Float>(0, 0, 0), +) / Float(outline.count)
+        func face(_ pts: [SIMD3<Float>], normal: SIMD3<Float>) {
+            let base = UInt32(positions.count)
+            positions += pts
+            normals += Array(repeating: normal, count: pts.count)
+            for i in 1..<(pts.count - 1) { indices += [base, base + UInt32(i), base + UInt32(i + 1)] }
+        }
+        face(outline, normal: n)
+        face(bottom.reversed(), normal: -n)
+        for i in 0..<outline.count {
+            let j = (i + 1) % outline.count
+            var side = [outline[i], bottom[i], bottom[j], outline[j]]
+            var sn = simd_normalize(simd_cross(side[1] - side[0], side[2] - side[0]))
+            let mid = (outline[i] + outline[j]) / 2
+            if simd_dot(sn, mid - centroid) < 0 { side.reverse(); sn = -sn }
+            face(side, normal: sn)
+        }
+        var d = MeshDescriptor()
+        d.positions = MeshBuffers.Positions(positions)
+        d.normals = MeshBuffers.Normals(normals)
+        d.primitives = .triangles(indices)
+        var m = PhysicallyBasedMaterial()
+        m.baseColor = .init(tint: color)
+        m.roughness = .init(floatLiteral: roughness)
+        m.faceCulling = .none
+        let mesh = (try? MeshResource.generate(from: [d])) ?? .generateBox(size: 0.01)
+        return ModelEntity(mesh: mesh, materials: [m])
+    }
+
     /// A floor lamp: weighted base, thin pole, a drum shade that the daylight
     /// pass makes glow after dark, and a bulb where its light comes from.
     static func floorLamp(height: Float = 1.55) -> (lamp: Entity, shade: ModelEntity, bulbAt: SIMD3<Float>) {
