@@ -324,7 +324,7 @@ final class WorldActor {
                 // stop here a moment, turned to whatever we stopped for
                 dwellUntil = clock + leg.dwell
                 targetYaw = Self.yaw(from: next, to: SIMD3(WorldRoom.Den.coatRack.x, 0, WorldRoom.Den.coatRack.z))
-                Task { [weak self] in
+                Task {
                     try? await Task.sleep(for: .seconds(Double(leg.dwell) * 0.5))
                     leg.onReach?()
                 }
