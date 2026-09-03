@@ -754,7 +754,7 @@ final class AppModel: ObservableObject {
     private var branchByDir: [String: String] = [:]
     private var detectBusy = false
 
-    static let version = "0.4.0"
+    static let version = "0.5.0"
 
     // ProcessInfo.hostName does blocking DNS — this doesn't
     static let cachedHostname: String = {
