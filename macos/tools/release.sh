@@ -23,6 +23,8 @@ SIGN_IDENTITY="${SIGN_IDENTITY:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-amux-notary}"
 
 swift build -c release
+# git does not keep empty directories, so a fresh checkout has no MacOS folder
+mkdir -p dist/Amux.app/Contents/MacOS
 cp .build/release/amux dist/Amux.app/Contents/MacOS/amux
 rm -rf dist/Amux.app/Contents/Resources/amux_amux.bundle
 cp -R .build/release/amux_amux.bundle dist/Amux.app/Contents/Resources/
