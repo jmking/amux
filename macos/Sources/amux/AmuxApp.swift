@@ -77,7 +77,7 @@ struct AmuxApp: App {
             Button("Command Palette…") { model.paletteOpen = true }
                 .keyboardShortcut("k")
             Button(model.sidebarCollapsed ? "Show Sidebar" : "Hide Sidebar") {
-                withAnimation(.easeOut(duration: 0.15)) { model.sidebarCollapsed.toggle() }
+                model.toggleSidebar()
             }
             .keyboardShortcut("0")
             Button(mode == "dark" ? "Switch to Light Mode" : "Switch to Dark Mode") {

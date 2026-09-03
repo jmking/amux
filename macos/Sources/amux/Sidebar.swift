@@ -54,7 +54,7 @@ struct SidebarView: View {
     // Narrow status rail when collapsed: one dot per space.
     private var collapsedRail: some View {
         VStack(spacing: 10) {
-            Button { withAnimation(.easeOut(duration: 0.15)) { model.sidebarCollapsed = false } } label: {
+            Button { model.toggleSidebar() } label: {
                 Image(systemName: "sidebar.left").font(.system(size: 12))
                     .frame(width: 24, height: 22)
                     .contentShape(Rectangle())

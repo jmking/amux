@@ -105,7 +105,7 @@ struct CommandPaletteView: View {
             })
             acts.append(PaletteAction(label: "close pane", kind: "pane") { model.requestClosePane(p) })
         }
-        acts.append(PaletteAction(label: "toggle sidebar", kind: "action") { model.sidebarCollapsed.toggle() })
+        acts.append(PaletteAction(label: "toggle sidebar", kind: "action") { model.toggleSidebar() })
         acts.append(PaletteAction(label: "toggle light / dark", kind: "action") {
             let d = UserDefaults.standard
             d.set((d.string(forKey: "mode") ?? "dark") == "dark" ? "light" : "dark", forKey: "mode")

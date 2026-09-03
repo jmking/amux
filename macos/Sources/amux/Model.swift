@@ -327,7 +327,6 @@ final class AppModel: ObservableObject {
     @Published var notifications: [NotificationItem] = []
     @Published var unseenNotifications = 0
     @Published var activeSheet: ActiveSheet?
-    @Published var dragRatios: [String: Double] = [:]
     @Published var agentSortPriority = UserDefaults.standard.bool(forKey: "agentSortPriority") {
         didSet { UserDefaults.standard.set(agentSortPriority, forKey: "agentSortPriority") }
     }
@@ -353,6 +352,101 @@ final class AppModel: ObservableObject {
     /// Not @Published: it is written during view update and only ever read by
     /// the drop tracker below.
     var paneFrames: [String: CGRect] = [:]
+
+    /// Layout changes that arrive as a stream rather than a step: a divider
+    /// drag, a window live resize, an animated relayout. Panes reflow live
+    /// through all of it, but the pty is told the new size once, when the last
+    /// stream closes, so a shell or TUI repaints once instead of every frame.
+    /// Not @Published: PaneRuntime reads it during layout, and publishing it
+    /// would re-render the app on every drag event.
+    private(set) var layoutStreams = 0
+    private var liveResizingWindows = Set<ObjectIdentifier>()
+    private var resizeObservers: [NSObjectProtocol] = []
+
+    func beginLayoutStream() {
+        layoutStreams += 1
+        if AmuxTerminalView.trace { FileHandle.standardError.write("amux: stream begin (\(layoutStreams))\n".data(using: .utf8)!) }
+    }
+
+    func endLayoutStream() {
+        layoutStreams = max(0, layoutStreams - 1)
+        if AmuxTerminalView.trace { FileHandle.standardError.write("amux: stream end (\(layoutStreams))\n".data(using: .utf8)!) }
+        guard layoutStreams == 0 else { return }
+        // The mouse-up that closes a drag can be dequeued in the same event
+        // pass as the last drag event, before SwiftUI has laid that ratio out,
+        // so cols/rows may be one frame stale here. A zero-delay timer fires
+        // after the run loop's before-waiting observers, which is where Core
+        // Animation commits and SwiftUI lays out (a main-queue block would run
+        // before them): the final layout's own sizeChanged flushes at once now
+        // that no stream is open, and this then finds nothing pending. One
+        // winsize, not two.
+        let t = Timer(timeInterval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.layoutStreams == 0 else { return }
+                for rt in self.runtimes.values { rt.flushPendingWinSize() }
+            }
+        }
+        RunLoop.main.add(t, forMode: .common)
+    }
+
+    /// A divider drag survives deactivation: AppKit keeps routing its
+    /// mouseDragged/mouseUp here, and the mouseUp closes the stream. So a
+    /// stream is only stuck once no button is held, and deactivation itself
+    /// usually happens on a click into another app, with the button down. Wait
+    /// for the button to come up before deciding.
+    private func resetStuckStreams(attempt: Int) {
+        guard layoutStreams > 0, liveResizingWindows.isEmpty else { return }
+        if NSEvent.pressedMouseButtons != 0 {
+            guard attempt < 50 else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                MainActor.assumeIsolated { self?.resetStuckStreams(attempt: attempt + 1) }
+            }
+            return
+        }
+        layoutStreams = 0
+        for rt in runtimes.values { rt.flushPendingWinSize() }
+    }
+
+    /// The slide is short, but every pane resizes on each of its frames; it is
+    /// a stream, so the shells hear about the new width once it has settled.
+    func toggleSidebar() {
+        beginLayoutStream()
+        withAnimation(.easeOut(duration: 0.15), completionCriteria: .removed) {
+            sidebarCollapsed.toggle()
+        } completion: { [weak self] in
+            self?.endLayoutStream()
+        }
+    }
+
+    /// Window live resize is a stream too, bracketed by AppKit's own
+    /// notifications. The resign-active backstop covers a drag whose mouse-up
+    /// never arrived: it must not leave every later resize on the trailing timer.
+    private func installResizeStreamMonitors() {
+        let nc = NotificationCenter.default
+        resizeObservers.append(nc.addObserver(
+            forName: NSWindow.willStartLiveResizeNotification, object: nil, queue: .main
+        ) { [weak self] n in
+            MainActor.assumeIsolated {
+                guard let self, let w = n.object as? NSWindow,
+                      self.runtimes.values.contains(where: { $0.view.window === w }) else { return }
+                if self.liveResizingWindows.insert(ObjectIdentifier(w)).inserted { self.beginLayoutStream() }
+            }
+        })
+        resizeObservers.append(nc.addObserver(
+            forName: NSWindow.didEndLiveResizeNotification, object: nil, queue: .main
+        ) { [weak self] n in
+            MainActor.assumeIsolated {
+                guard let self, let w = n.object as? NSWindow,
+                      self.liveResizingWindows.remove(ObjectIdentifier(w)) != nil else { return }
+                self.endLayoutStream()
+            }
+        })
+        resizeObservers.append(nc.addObserver(
+            forName: NSApplication.didResignActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resetStuckStreams(attempt: 0) }
+        })
+    }
     /// Drop target chosen by our own tracking rather than by AppKit. Only web
     /// panes use this; see `startDropTracking`.
     @Published var trackedDropPane: String?
@@ -601,27 +695,30 @@ final class AppModel: ObservableObject {
         // dropped on a tab strip: join that pane's tabs at the insertion point
         if let stripGroup {
             let src = String(payload.dropFirst(payload.hasPrefix("tab:") ? 4 : 5))
-            withAnimation(settleStrip) {
+            beginLayoutStream()
+            withAnimation(settleStrip, completionCriteria: .removed) {
                 if let (_, g) = locateGroup(src), g == stripGroup {
                     moveTab(src, toIndex: stripIndex ?? 0)
                 } else {
                     moveTab(src, toGroup: stripGroup, atIndex: stripIndex)
                 }
-            }
+            } completion: { [weak self] in self?.endLayoutStream() }
             return
         }
         guard let target, let edge else { return }
         // Panes are laid out with animatable frame and offset, so animating the
         // tree rewrite makes them slide into their new places. Kept brief: the
-        // panes resize as they move, and a terminal resize is not free.
+        // panes resize as they move, and a terminal resize is not free. The
+        // slide is a layout stream, so each pty is told its size once it lands.
         let settle = SwiftUI.Animation.spring(response: 0.28, dampingFraction: 0.86)
         if payload.hasPrefix("pane:") {
             let src = String(payload.dropFirst(5))
             guard src != target else { return }
-            withAnimation(settle) {
+            beginLayoutStream()
+            withAnimation(settle, completionCriteria: .removed) {
                 if edge == "center" { swapPanes(src, target) }
                 else { movePane(src, toEdge: edge, of: target) }
-            }
+            } completion: { [weak self] in self?.endLayoutStream() }
         } else if payload.hasPrefix("tab:") {
             let src = String(payload.dropFirst(4))
             // Dropping a tab on its own pane's edge splits that pane and takes
@@ -630,10 +727,11 @@ final class AppModel: ObservableObject {
                (locateGroup(src).flatMap { focusedWorkspace?.layout?.group(id: $0.1)?.tabs.count } ?? 1) < 2 {
                 return
             }
-            withAnimation(settle) {
+            beginLayoutStream()
+            withAnimation(settle, completionCriteria: .removed) {
                 if edge == "center" { movePane(src, intoGroupOf: target) }
                 else { movePane(src, toEdge: edge, of: target) }
-            }
+            } completion: { [weak self] in self?.endLayoutStream() }
         }
     }
 
@@ -697,6 +795,7 @@ final class AppModel: ObservableObject {
         started = true
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         installFocusMonitor()
+        installResizeStreamMonitors()
         restoreState()
         publish()
         detectTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in

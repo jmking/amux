@@ -25,6 +25,9 @@ final class WorldMetalView: NSView {
     var onZoom: ((Float) -> Void)?
     var onMagnify: ((Float) -> Void)?
     var onResize: ((CGSize) -> Void)?
+    /// The drawable was just re-made at a new size; a frame is wanted now, not
+    /// at the next display-link tick.
+    var onDrawableSizeChanged: (() -> Void)?
     var onWindowChange: (() -> Void)?
 
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
@@ -33,6 +36,10 @@ final class WorldMetalView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         layerContentsRedrawPolicy = .never
+        // Between a resize and the next frame the layer still shows the old
+        // drawable. Anchored, it stays sharp and the exposed edge is a strip of
+        // background; scaled, the whole room squashes for a frame.
+        layerContentsPlacement = .topLeft
     }
 
     required init?(coder: NSCoder) { fatalError("not used") }
@@ -43,6 +50,7 @@ final class WorldMetalView: NSView {
         l.pixelFormat = .bgra8Unorm_srgb
         l.framebufferOnly = true
         l.isOpaque = true
+        l.contentsGravity = .topLeft
         l.backgroundColor = CGColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1)
         return l
     }
@@ -71,8 +79,10 @@ final class WorldMetalView: NSView {
         let scale = window?.backingScaleFactor ?? 2
         metalLayer.contentsScale = scale
         let size = CGSize(width: max(1, bounds.width * scale), height: max(1, bounds.height * scale))
-        if metalLayer.drawableSize != size { metalLayer.drawableSize = size }
+        let changed = metalLayer.drawableSize != size
+        if changed { metalLayer.drawableSize = size }
         onResize?(bounds.size)
+        if changed { onDrawableSizeChanged?() }
     }
 
     override func mouseDragged(with event: NSEvent) { onOrbit?(Float(event.deltaX)) }
@@ -106,6 +116,13 @@ final class WorldRuntime: ObservableObject {
     private weak var container: NSView?
     private var link: CADisplayLink?
     private var lastFrame: CFTimeInterval = 0
+    /// A frame has been handed to the renderer and not presented yet.
+    private var inFlight = false
+    /// A resize asked for a frame while one was in flight or too soon after
+    /// the last; draw it the moment that clears, so no size change is ever
+    /// left to the 30 fps tick.
+    private var catchUpPending = false
+    private var catchUpArmed = false
     private var timer: Timer?
     private var observers: [NSObjectProtocol] = []
     private var demoTick = 0
@@ -184,6 +201,11 @@ final class WorldRuntime: ObservableObject {
         v.onZoom = { [weak self] dy in self?.scene.camera.zoom(byScrollDelta: dy) }
         v.onMagnify = { [weak self] m in self?.scene.camera.zoom(byFactor: 1 + m) }
         v.onResize = { [weak self] size in self?.scene.viewResized(to: size) }
+        // async: this fires inside AppKit's layout pass, which is no place to
+        // drive the renderer from
+        v.onDrawableSizeChanged = { [weak self] in
+            DispatchQueue.main.async { self?.draw(now: CACurrentMediaTime(), force: true) }
+        }
         v.onWindowChange = { [weak self, weak v] in
             guard let self, let v else { return }
             if let w = v.window { self.watchOcclusion(of: w) }
@@ -217,18 +239,65 @@ final class WorldRuntime: ObservableObject {
     }
 
     @objc private func frame(_ link: CADisplayLink) {
-        MainActor.assumeIsolated {
-            guard let view, view.window != nil, !view.isHidden else { return }
-            let now = link.targetTimestamp
-            // hold to the rate even if the link calls more often
-            if lastFrame != 0, now - lastFrame < (1.0 / Self.frameRate) * 0.9 { return }
-            let dt = lastFrame == 0 ? Float(1.0 / Self.frameRate) : Float(min(0.1, now - lastFrame))
-            lastFrame = now
-            guard let drawable = view.metalLayer.nextDrawable() else { return }
-            let presented = scene.render(into: drawable.texture, dt: dt, hour: Float(sceneHour)) { drawable.present() }
-            if !presented {
-                // nothing to draw yet (the room is still being built): the
-                // loading state is showing, and the drawable goes back unused
+        // link.timestamp is the vsync this callback belongs to: on the same
+        // clock as CACurrentMediaTime and never in the future, unlike
+        // targetTimestamp, which would starve every forced frame between ticks.
+        MainActor.assumeIsolated { draw(now: link.timestamp, force: false) }
+    }
+
+    /// One frame. `force` is a resize catching up: it relaxes the 30 fps
+    /// pacing (but never overlaps a frame already in flight, and never asks
+    /// for more than a display can show) so the new size is on screen within
+    /// a refresh instead of up to 33 ms later.
+    private func draw(now: CFTimeInterval, force: Bool) {
+        guard let view, view.window != nil, !view.isHidden else { return }
+        if inFlight {
+            if force { catchUpPending = true }
+            return
+        }
+        // hold to the rate even if the link calls more often; a forced frame
+        // is capped at the panel's rate, since more would only queue drawables
+        // and block nextDrawable() on the main thread mid-drag
+        let panelHz = Double(view.window?.screen?.maximumFramesPerSecond ?? 60)
+        let minInterval = force ? 1.0 / panelHz : (1.0 / Self.frameRate) * 0.9
+        if lastFrame != 0, now - lastFrame < minInterval {
+            if force { armCatchUp(after: minInterval - (now - lastFrame)) }
+            return
+        }
+        let dt = lastFrame == 0 ? Float(1.0 / Self.frameRate) : Float(min(0.1, max(0, now - lastFrame)))
+        lastFrame = now
+        guard let drawable = view.metalLayer.nextDrawable() else { return }
+        inFlight = true
+        catchUpPending = false
+        let presented = scene.render(into: drawable.texture, dt: dt, hour: Float(sceneHour)) { [weak self] in
+            drawable.present()
+            Task { @MainActor in self?.framePresented() }
+        }
+        if !presented {
+            // nothing to draw yet (the room is still being built): the
+            // loading state is showing, and the drawable goes back unused
+            inFlight = false
+        }
+    }
+
+    private func framePresented() {
+        inFlight = false
+        if catchUpPending {
+            catchUpPending = false
+            draw(now: CACurrentMediaTime(), force: true)
+        }
+    }
+
+    /// A forced frame that came too soon after the last is owed, not dropped:
+    /// nothing else would draw the new size before the next 30 fps tick.
+    private func armCatchUp(after delay: CFTimeInterval) {
+        guard !catchUpArmed else { return }
+        catchUpArmed = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0.001, delay)) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.catchUpArmed = false
+                self.draw(now: CACurrentMediaTime(), force: true)
             }
         }
     }

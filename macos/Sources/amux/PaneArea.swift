@@ -28,7 +28,7 @@ struct TabBarView: View {
     var body: some View {
         HStack(spacing: 4) {
             if !model.sidebarCollapsed {
-                Button { withAnimation(.easeOut(duration: 0.15)) { model.sidebarCollapsed = true } } label: {
+                Button { model.toggleSidebar() } label: {
                     Image(systemName: "sidebar.left").font(.system(size: 12))
                         .frame(width: 24, height: 22)
                         .contentShape(Rectangle())
@@ -235,6 +235,7 @@ func loadDragPayload(_ providers: [NSItemProvider], _ handle: @escaping (String)
 /// A pane's own tab strip, the way cmux arranges things: the tabs belong to
 /// this pane, and the create/split cluster acts on it.
 struct PaneTabStrip: View {
+    static let height: CGFloat = 30
     @ObservedObject var model: AppModel
     let ws: WorkspaceState
     let group: PaneGroup
@@ -262,7 +263,7 @@ struct PaneTabStrip: View {
             PaneChromeButtons(model: model, paneId: group.focusedPaneId, size: 10)
         }
         .padding(.horizontal, 6)
-        .frame(height: 30)
+        .frame(height: Self.height)
         .background(focused ? pal.panel : pal.panel.opacity(0.6))
         .contentShape(Rectangle())
         .onTapGesture { model.focusGroup(group.groupId) }
@@ -306,17 +307,43 @@ private struct GroupPlacement: Identifiable {
 }
 
 private struct DividerPlacement: Identifiable {
+    let wsId: String
     let path: String
+    /// Which split sits at `path`: its direction and the first group on each
+    /// side. Paths are positional, so a workspace switch or a split collapsing
+    /// mid-drag could land a different split on the same path; with the shape
+    /// in the identity that is a new divider (torn down, drag cancelled) rather
+    /// than the same view re-targeted under the pointer.
+    let shape: String
+    /// The 7pt gap between the two panes.
     let rect: CGRect
     let horizontal: Bool
     let parentRect: CGRect
     let gap: CGFloat
-    var id: String { path }
+    /// The ratio `rect` was laid out from, live or stored.
+    let ratio: Double
+    /// The gap is a thin thing to ask a cursor to land on, so the hit strip
+    /// reaches past it into a terminal neighbour, where the reach lands on the
+    /// card's padding. It never reaches over a web or world view: those are
+    /// AppKit views of their own, and which one wins the hit is not something
+    /// to depend on.
+    let slopA: CGFloat
+    let slopB: CGFloat
+    var id: String { wsId + "|" + path + "|" + shape }
+    var hitRect: CGRect {
+        horizontal
+            ? CGRect(x: rect.minX - slopA, y: rect.minY, width: rect.width + slopA + slopB, height: rect.height)
+            : CGRect(x: rect.minX, y: rect.minY - slopA, width: rect.width, height: rect.height + slopA + slopB)
+    }
 }
 
 struct PaneAreaView: View {
     @ObservedObject var model: AppModel
     @Environment(\.palette) private var pal
+    /// Ratios of the splits being dragged right now, keyed as `walk` keys them.
+    /// Deliberately not on the model: published there, every frame of a drag
+    /// re-rendered the sidebar and each tab strip along with the panes.
+    @State private var liveRatios: [String: Double] = [:]
 
     var body: some View {
         GeometryReader { geo in
@@ -324,18 +351,44 @@ struct PaneAreaView: View {
             let area = CGRect(origin: .zero, size: geo.size).insetBy(dx: inset, dy: inset)
             ZStack(alignment: .topLeading) {
                 if let ws = model.focusedWorkspace, let layout = ws.layout {
-                    let (groups, dividers) = computeLayout(ws: ws, layout: layout, area: area)
+                    let (groups, dividers) = computeLayout(ws: ws, layout: layout, area: area, ratios: liveRatios)
                     ForEach(groups) { g in
-                        let r = CGRect(x: g.rect.minX.rounded(), y: g.rect.minY.rounded(),
-                                       width: g.rect.width.rounded(), height: g.rect.height.rounded())
+                        let r = snap(g.rect)
                         PaneGroupView(model: model, ws: ws, group: g.group,
                                       focused: ws.focusedGroupId == g.group.groupId,
                                       size: r.size)
-                            .frame(width: r.width, height: r.height)
+                            .frame(width: r.width, height: r.height, alignment: .topLeading)
                             .offset(x: r.minX, y: r.minY)
                     }
+                    // Mid-drag the panes follow the divider live: a terminal reflows
+                    // and redraws in the same frame as its card, the way Terminal.app
+                    // does. The pty hears about it once, when the drag ends (see
+                    // PaneRuntime.sizeChanged), so the shell redraws its prompt once.
                     ForEach(dividers) { d in
-                        DividerView(model: model, ws: ws, placement: d)
+                        let key = ws.id + "|" + d.path
+                        DividerView(placement: d,
+                                    onBegin: { model.beginLayoutStream() },
+                                    onDrag: { liveRatios[key] = $0 },
+                                    onEnd: { r in
+                                        if let r { model.setRatio(workspaceId: ws.id, path: d.path, ratio: r) }
+                                        // Hand the ratio back to the layout tree; a leftover
+                                        // entry would shadow the stored value, and the keys are
+                                        // positional, so it could land on a different split later.
+                                        liveRatios.removeValue(forKey: key)
+                                        model.endLayoutStream()
+                                    },
+                                    onClick: { p in
+                                        // The grab zone reaches over the panes' padding; a
+                                        // click there is a click on the pane.
+                                        let q = CGPoint(x: d.hitRect.minX + p.x, y: d.hitRect.minY + p.y)
+                                        if let g = groups.first(where: { snap($0.rect).contains(q) }) {
+                                            model.focusGroup(g.group.groupId)
+                                        }
+                                    })
+                            .frame(width: d.hitRect.width, height: d.hitRect.height)
+                            // Panes snap their frames to whole points; a divider left on a
+                            // fraction wobbles against them by a pixel as the drag moves.
+                            .position(x: d.hitRect.midX.rounded(), y: d.hitRect.midY.rounded())
                     }
                 }
                 if model.state != nil && (model.state?.workspaces.isEmpty ?? false) {
@@ -346,19 +399,26 @@ struct PaneAreaView: View {
         .background(pal.bg)
     }
 
-    private func computeLayout(ws: WorkspaceState, layout: LayoutNode, area: CGRect)
-        -> ([GroupPlacement], [DividerPlacement]) {
+    private func snap(_ r: CGRect) -> CGRect {
+        CGRect(x: r.minX.rounded(), y: r.minY.rounded(), width: r.width.rounded(), height: r.height.rounded())
+    }
+
+    /// `ratios` overrides the stored ratio of any split it has a key for; pass
+    /// it empty to lay out from the tree as persisted.
+    private func computeLayout(ws: WorkspaceState, layout: LayoutNode, area: CGRect,
+                               ratios: [String: Double]) -> ([GroupPlacement], [DividerPlacement]) {
         var groups: [GroupPlacement] = []
         var divs: [DividerPlacement] = []
         if let zoomed = ws.zoomedGroupId, let g = layout.group(id: zoomed) {
             groups.append(GroupPlacement(group: g, rect: area))
             return (groups, divs)
         }
-        walk(node: layout, rect: area, path: "", ws: ws, groups: &groups, divs: &divs)
+        walk(node: layout, rect: area, path: "", ws: ws, ratios: ratios, groups: &groups, divs: &divs)
         return (groups, divs)
     }
 
     private func walk(node: LayoutNode, rect: CGRect, path: String, ws: WorkspaceState,
+                      ratios: [String: Double],
                       groups: inout [GroupPlacement], divs: inout [DividerPlacement]) {
         switch node {
         case .group(let g):
@@ -366,30 +426,43 @@ struct PaneAreaView: View {
         case .split(let dir, let serverRatio, let a, let b):
             let gap: CGFloat = 7
             let key = ws.id + "|" + path
-            let ratio = model.dragRatios[key] ?? serverRatio
+            let ratio = ratios[key] ?? serverRatio
             let childPathA = path.isEmpty ? "a" : path + ".a"
             let childPathB = path.isEmpty ? "b" : path + ".b"
+            let rectA: CGRect, rectB: CGRect, divRect: CGRect
             if dir == "row" {
                 let usable = rect.width - gap
                 let aw = round(usable * ratio)
-                walk(node: a, rect: CGRect(x: rect.minX, y: rect.minY, width: aw, height: rect.height),
-                     path: childPathA, ws: ws, groups: &groups, divs: &divs)
-                divs.append(DividerPlacement(
-                    path: path, rect: CGRect(x: rect.minX + aw, y: rect.minY, width: gap, height: rect.height),
-                    horizontal: true, parentRect: rect, gap: gap))
-                walk(node: b, rect: CGRect(x: rect.minX + aw + gap, y: rect.minY, width: usable - aw, height: rect.height),
-                     path: childPathB, ws: ws, groups: &groups, divs: &divs)
+                rectA = CGRect(x: rect.minX, y: rect.minY, width: aw, height: rect.height)
+                divRect = CGRect(x: rect.minX + aw, y: rect.minY, width: gap, height: rect.height)
+                rectB = CGRect(x: rect.minX + aw + gap, y: rect.minY, width: usable - aw, height: rect.height)
             } else {
                 let usable = rect.height - gap
                 let ah = round(usable * ratio)
-                walk(node: a, rect: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: ah),
-                     path: childPathA, ws: ws, groups: &groups, divs: &divs)
-                divs.append(DividerPlacement(
-                    path: path, rect: CGRect(x: rect.minX, y: rect.minY + ah, width: rect.width, height: gap),
-                    horizontal: false, parentRect: rect, gap: gap))
-                walk(node: b, rect: CGRect(x: rect.minX, y: rect.minY + ah + gap, width: rect.width, height: usable - ah),
-                     path: childPathB, ws: ws, groups: &groups, divs: &divs)
+                rectA = CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: ah)
+                divRect = CGRect(x: rect.minX, y: rect.minY + ah, width: rect.width, height: gap)
+                rectB = CGRect(x: rect.minX, y: rect.minY + ah + gap, width: rect.width, height: usable - ah)
             }
+            // Children first, so the divider can see what it sits between.
+            let startA = groups.count
+            walk(node: a, rect: rectA, path: childPathA, ws: ws, ratios: ratios, groups: &groups, divs: &divs)
+            let startB = groups.count
+            walk(node: b, rect: rectB, path: childPathB, ws: ws, ratios: ratios, groups: &groups, divs: &divs)
+            divs.append(DividerPlacement(
+                wsId: ws.id, path: path,
+                shape: dir + ":" + (a.groupIds.first ?? "") + ":" + (b.groupIds.first ?? ""),
+                rect: divRect, horizontal: dir == "row", parentRect: rect, gap: gap, ratio: ratio,
+                slopA: terminalsOnly(groups[startA..<startB]) ? 4 : 0,
+                slopB: terminalsOnly(groups[startB...]) ? 4 : 0))
+        }
+    }
+
+    /// Whether every visible tab in these groups is a terminal, whose card
+    /// padding the divider's grab zone can safely reach over.
+    private func terminalsOnly(_ gs: ArraySlice<GroupPlacement>) -> Bool {
+        gs.allSatisfy { p in
+            let kind = p.group.focused?.kind ?? "term"
+            return kind != "web" && kind != "world"
         }
     }
 }
@@ -408,7 +481,7 @@ struct PaneGroupView: View {
     @AppStorage("mode") private var mode = "dark"
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             PaneTabStrip(model: model, ws: ws, group: group, focused: focused)
             ZStack(alignment: .topLeading) {
                 ForEach(group.tabs, id: \.paneId) { leaf in
@@ -421,6 +494,7 @@ struct PaneGroupView: View {
                         .zIndex(visible ? 1 : 0)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .background(Color(nsColor: TermThemes.effective(termThemeName, mode: mode).bgNS))
         .clipShape(RoundedRectangle(cornerRadius: Palette.Radius.card))
@@ -463,49 +537,31 @@ struct PaneGroupView: View {
     }
 }
 
-private struct DividerView: View {
-    @ObservedObject var model: AppModel
-    let ws: WorkspaceState
+/// Bridges the AppKit divider into the pane area. The gesture, the cursor and
+/// the ratio maths live in SplitDividerNSView; this only feeds it the current
+/// placement and hands its callbacks back to the layout.
+private struct DividerView: NSViewRepresentable {
     let placement: DividerPlacement
+    let onBegin: () -> Void
+    let onDrag: (Double) -> Void
+    let onEnd: (Double?) -> Void
+    let onClick: (CGPoint) -> Void
     @Environment(\.palette) private var pal
-    @State private var hovering = false
-    @State private var dragging = false
 
-    var body: some View {
+    func makeNSView(context: Context) -> SplitDividerNSView { SplitDividerNSView() }
+
+    func updateNSView(_ v: SplitDividerNSView, context: Context) {
         let d = placement
-        Rectangle()
-            .fill(Color.clear)
-            .frame(width: d.rect.width, height: d.rect.height)
-            .overlay {
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(hovering || dragging ? pal.spot : .clear)
-                    .frame(width: d.horizontal ? 2 : nil, height: d.horizontal ? nil : 2)
-            }
-            .offset(x: d.rect.minX, y: d.rect.minY)
-            .contentShape(Rectangle())
-            .onHover { h in
-                hovering = h
-                if h { (d.horizontal ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).set() }
-                else { NSCursor.arrow.set() }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 1)
-                    .onChanged { g in
-                        dragging = true
-                        let key = ws.id + "|" + d.path
-                        let pos = d.horizontal
-                            ? d.rect.minX + g.translation.width - d.parentRect.minX
-                            : d.rect.minY + g.translation.height - d.parentRect.minY
-                        let span = (d.horizontal ? d.parentRect.width : d.parentRect.height) - d.gap
-                        model.dragRatios[key] = min(0.9, max(0.1, pos / span))
-                    }
-                    .onEnded { _ in
-                        dragging = false
-                        let key = ws.id + "|" + d.path
-                        if let ratio = model.dragRatios[key] {
-                            model.setRatio(workspaceId: ws.id, path: d.path, ratio: ratio)
-                        }
-                    })
+        v.horizontal = d.horizontal
+        v.ratio = d.ratio
+        v.span = (d.horizontal ? d.parentRect.width : d.parentRect.height) - d.gap
+        v.slopA = d.slopA
+        v.gap = d.gap
+        v.highlight = NSColor(pal.spot)
+        v.onBegin = onBegin
+        v.onDrag = onDrag
+        v.onEnd = onEnd
+        v.onClick = onClick
     }
 }
 
@@ -629,8 +685,10 @@ struct PaneView: View {
                         paneId: leaf.paneId, model: model, isActive: isActive)
             } else {
                 header
-                TerminalHost(paneTerminal: model.terminal(for: leaf.paneId))
-                    .padding(.leading, 6).padding(.vertical, 4)
+                // 4pt of trailing padding keeps the divider's grab zone off the
+                // terminal's own I-beam cursor rect, so the two never fight.
+                TerminalHost(paneTerminal: model.terminal(for: leaf.paneId), isActive: isActive)
+                    .padding(.leading, 6).padding(.trailing, 4).padding(.vertical, 4)
             }
         }
         .onHover { hovering = $0 }
