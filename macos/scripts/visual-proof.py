@@ -4,6 +4,7 @@ The movie presents empty-state/tab chrome, command palette, and sheet in both mo
 This is a deterministic component showcase, not a recording of navigation gestures.
 """
 import importlib.util, os, subprocess, sys
+sys.dont_write_bytecode = True
 from pathlib import Path
 spec = importlib.util.spec_from_file_location("build_check", Path(__file__).with_name("build-check.py"))
 bc = importlib.util.module_from_spec(spec)
