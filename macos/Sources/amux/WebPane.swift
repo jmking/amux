@@ -258,7 +258,7 @@ struct BrowserToolbar: View {
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(RoundedRectangle(cornerRadius: 7).fill(pal.bg))
                     .overlay(RoundedRectangle(cornerRadius: 7)
-                        .strokeBorder(pal.spot, lineWidth: 2))
+                        .strokeBorder(pal.focus, lineWidth: 2))
                     .focused($urlFocused)
                     .onSubmit { runtime.navigate(urlText) }
                     .onExitCommand {
@@ -289,7 +289,7 @@ struct BrowserToolbar: View {
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ChromeButtonStyle())
                 .help(runtime.url?.absoluteString ?? "")
             }
 
@@ -304,7 +304,7 @@ struct BrowserToolbar: View {
         }
         .padding(.horizontal, 8)
         .frame(height: 34)
-        .background(pal.panel)
+        .background(pal.chrome)
         .contentShape(Rectangle())
         .onDrag {
             model.beginDrag("pane:\(paneId)")
@@ -339,7 +339,7 @@ struct BrowserToolbar: View {
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChromeButtonStyle())
         .foregroundStyle(enabled ? pal.dim : pal.faint2.opacity(0.5))
         .disabled(!enabled)
     }
@@ -351,7 +351,7 @@ struct BrowserToolbar: View {
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChromeButtonStyle())
         .foregroundStyle(pal.faint)
         .help(help)
     }

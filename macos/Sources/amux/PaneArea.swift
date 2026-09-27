@@ -33,7 +33,7 @@ struct TabBarView: View {
                         .frame(width: 24, height: 22)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain).foregroundStyle(pal.faint)
+                .buttonStyle(ChromeButtonStyle()).foregroundStyle(pal.faint)
                 .help("Hide sidebar (⌘0)")
                 .padding(.trailing, 2)
             }
@@ -49,7 +49,7 @@ struct TabBarView: View {
             .foregroundStyle(pal.faint2)
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(pal.bg)
+        .background(pal.chrome)
     }
 
     private func clusterButton(_ icon: String, _ help: String, action: @escaping () -> Void) -> some View {
@@ -59,7 +59,7 @@ struct TabBarView: View {
                 .frame(width: 24, height: 22)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChromeButtonStyle())
         .foregroundStyle(pal.faint)
         .help(help)
     }
@@ -78,7 +78,7 @@ struct TabBarView: View {
                     }
                 }
         }
-        .buttonStyle(.plain).foregroundStyle(pal.faint)
+        .buttonStyle(ChromeButtonStyle()).foregroundStyle(pal.faint)
         .popover(isPresented: $showBell, arrowEdge: .bottom) {
             BellPopover(model: model, dismiss: { showBell = false })
         }
@@ -128,7 +128,7 @@ struct BellPopover: View {
                                 .padding(.horizontal, 12).padding(.vertical, 7)
                                 .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(ChromeButtonStyle())
                             Divider()
                         }
                     }
@@ -186,7 +186,7 @@ struct TabChip: View {
                     .frame(width: 10, height: 10)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ChromeButtonStyle())
             .opacity(hovering ? 0.75 : 0)
             .allowsHitTesting(hovering)
             .help("Close tab")
@@ -196,7 +196,10 @@ struct TabChip: View {
         .background(UnevenRoundedRectangle(
             topLeadingRadius: 7, bottomLeadingRadius: 0,
             bottomTrailingRadius: 0, topTrailingRadius: 7)
-            .fill(active ? pal.mass : (hovering ? pal.panel : .clear)))
+            .fill(active ? pal.mass : (hovering ? pal.hover : .clear)))
+        .overlay(alignment: .bottom) {
+            if active { Rectangle().fill(pal.spot).frame(height: 2) }
+        }
         .contentShape(Rectangle())
         // A count:2 gesture stacked on a count:1 makes SwiftUI wait out the whole
         // double-click interval before it will admit a click was single. Recognize
@@ -264,7 +267,7 @@ struct PaneTabStrip: View {
         }
         .padding(.horizontal, 6)
         .frame(height: Self.height)
-        .background(focused ? pal.panel : pal.panel.opacity(0.6))
+        .background(focused ? pal.chrome : pal.panel)
         .contentShape(Rectangle())
         .onTapGesture { model.focusGroup(group.groupId) }
         .background(FrameReporter { model.stripFrames[group.groupId] = $0 })
@@ -500,7 +503,7 @@ struct PaneGroupView: View {
         .clipShape(RoundedRectangle(cornerRadius: Palette.Radius.card))
         .overlay(dropHighlight)
         .overlay(RoundedRectangle(cornerRadius: Palette.Radius.card)
-            .strokeBorder(focused ? pal.spot : pal.line2, lineWidth: 1))
+            .strokeBorder(focused ? pal.focus : pal.line2, lineWidth: 1))
         .background(PaneFrameReporter(model: model, paneId: group.focusedPaneId))
         .contentShape(Rectangle())
         .onTapGesture { model.focusGroup(group.groupId) }
@@ -624,7 +627,7 @@ struct PaneChromeButtons: View {
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChromeButtonStyle())
         .foregroundStyle(pal.faint)
         .help(help)
     }
@@ -716,7 +719,7 @@ struct PaneView: View {
         .lineLimit(1)
         .padding(.horizontal, 9)
         .frame(height: 26)
-        .background(pal.panel.opacity(0.55))
+        .background(pal.chrome)
         .contentShape(Rectangle())
         .onDrag {
             model.beginDrag("pane:\(leaf.paneId)")
@@ -754,7 +757,7 @@ struct PaneView: View {
                 .frame(width: 18, height: 16)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChromeButtonStyle())
         .foregroundStyle(pal.faint)
         .help(help)
     }
@@ -804,11 +807,8 @@ struct EmptyStateView: View {
             } label: {
                 Text("+ new space")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(pal.spotInk)
-                    .padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: Palette.Radius.row).fill(pal.spot))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ChromeButtonStyle(prominent: true))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
