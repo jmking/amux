@@ -4,11 +4,11 @@ import UniformTypeIdentifiers
 struct StateDot: View {
     let state: String
     @Environment(\.palette) private var pal
-    @AppStorage("mode") private var mode = "dark"
+    @Environment(\.colorScheme) private var colorScheme
     @State private var pulsing = false
 
     var body: some View {
-        let color = AgentStateColor.color(state, light: mode == "light")
+        let color = AgentStateColor.color(state, light: colorScheme == .light)
         Circle()
             .fill(state == "idle" ? Color.clear : color)
             .overlay(Circle().strokeBorder(color, lineWidth: state == "idle" ? 1.5 : 0))
@@ -30,8 +30,7 @@ struct SectionHeader: View {
     @Environment(\.palette) private var pal
 
     var body: some View {
-        // No accent glyph: colour is reserved for the state dots, so the
-        // headers stay quiet and the eye goes to the rows.
+        // Pink surfaces carry the identity; dots retain semantic colors.
         Text(title.uppercased())
             .font(.system(size: 10, weight: .semibold))
             .tracking(1.6)
@@ -59,7 +58,7 @@ struct SidebarView: View {
                     .frame(width: 24, height: 22)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain).foregroundStyle(pal.faint)
+            .buttonStyle(ChromeButtonStyle()).foregroundStyle(pal.faint)
             .help("Show sidebar (⌘0)")
             ForEach(model.state?.workspaces ?? [], id: \.id) { ws in
                 Button {
@@ -73,7 +72,7 @@ struct SidebarView: View {
                     .background(Circle().fill(
                         ws.id == model.state?.focusedWorkspaceId ? pal.mass : .clear))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ChromeButtonStyle())
                 .help(ws.label)
             }
             Spacer()
@@ -81,7 +80,7 @@ struct SidebarView: View {
         .padding(.top, 10)
         .frame(width: 36)
         .frame(maxHeight: .infinity)
-        .background(pal.panel)
+        .background(pal.chrome)
     }
 
     private var expanded: some View {
@@ -95,7 +94,7 @@ struct SidebarView: View {
                             Button { model.activeSheet = .newSpace } label: {
                                 Image(systemName: "plus").font(.system(size: 10, weight: .semibold))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(ChromeButtonStyle())
                             .foregroundStyle(pal.faint)
                             .help("New space (⌘N)")
                         }
@@ -126,7 +125,7 @@ struct SidebarView: View {
                                     .padding(.horizontal, 8).padding(.vertical, 3)
                                     .background(Capsule().fill(pal.mass.opacity(0.7)))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(ChromeButtonStyle())
                             .foregroundStyle(pal.faint2)
                             .help("Toggle agent ordering: grouped by space, or blocked-first attention queue")
                         }
@@ -140,7 +139,7 @@ struct SidebarView: View {
             Spacer(minLength: 0)
         }
         .frame(width: 250)
-        .background(pal.panel)
+        .background(pal.chrome)
     }
 
 
@@ -212,7 +211,7 @@ struct SpaceRow: View {
                 Button { model.requestCloseSpace(ws) } label: {
                     Image(systemName: "xmark").font(.system(size: 8))
                 }
-                .buttonStyle(.plain).foregroundStyle(pal.faint2)
+                .buttonStyle(ChromeButtonStyle()).foregroundStyle(pal.faint2)
                 .help("Close space")
             } else {
                 StateDot(state: model.workspaceAggregateState(ws))
@@ -223,7 +222,7 @@ struct SpaceRow: View {
         // reads calmer than one highlight jumping around an empty column.
         .background(
             RoundedRectangle(cornerRadius: Palette.Radius.row)
-                .fill(pal.mass.opacity(active ? 1 : (hovering || dropTargeted ? 0.7 : 0.4))))
+                .fill(active ? pal.mass : (hovering || dropTargeted ? pal.hover : pal.panel)))
         .overlay(alignment: .leading) {
             if active {
                 RoundedRectangle(cornerRadius: 1.5).fill(pal.spot)
@@ -294,7 +293,7 @@ struct AgentRowView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(RoundedRectangle(cornerRadius: Palette.Radius.row)
-            .fill(pal.mass.opacity(hovering ? 0.7 : 0.4)))
+            .fill(hovering ? pal.hover : pal.panel))
         .padding(.horizontal, 10)
         .contentShape(Rectangle())
         .onTapGesture {

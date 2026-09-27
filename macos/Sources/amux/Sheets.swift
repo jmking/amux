@@ -30,6 +30,10 @@ struct SheetChrome<Content: View>: View {
         }
         .padding(18)
         .frame(width: 440)
+        .foregroundStyle(pal.ink)
+        .background(pal.panel)
+        .tint(pal.spot)
+        .buttonStyle(ChromeButtonStyle())
     }
 }
 
@@ -44,10 +48,10 @@ struct NewSpaceSheet: View {
     var body: some View {
         SheetChrome("new space") {
             TextField("space name (defaults to folder name)", text: $name)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             HStack {
                 TextField("directory", text: $dir)
-                    .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                    .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
                 Button("Choose…") { chooseDirectory(start: dir) { dir = $0 } }
             }
             if FileManager.default.fileExists(atPath: dir + "/.git") {
@@ -61,6 +65,7 @@ struct NewSpaceSheet: View {
                     model.createWorkspace(label: name.trimmingCharacters(in: .whitespaces), cwd: dir)
                     dismiss()
                 }
+                .buttonStyle(ChromeButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -87,9 +92,9 @@ struct StartAgentSheet: View {
                 }
             }
             TextField("optional name, e.g. reviewer", text: $name)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             TextField("extra CLI args (optional)", text: $args)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             Picker("where", selection: $location) {
                 Text("in this pane").tag("current")
                 Text("in a new split (right)").tag("right")
@@ -102,6 +107,7 @@ struct StartAgentSheet: View {
                     startAgent()
                     dismiss()
                 }
+                .buttonStyle(ChromeButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -138,7 +144,7 @@ struct RunCommandSheet: View {
     var body: some View {
         SheetChrome("run command") {
             TextField("e.g. npm test", text: $command)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             Text("sent to the pane followed by Enter")
                 .font(Fonts.uiMonoSmall).foregroundStyle(.secondary)
             HStack {
@@ -149,6 +155,7 @@ struct RunCommandSheet: View {
                     if !cmd.isEmpty { model.runCommand(paneId, command: cmd) }
                     dismiss()
                 }
+                .buttonStyle(ChromeButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -169,13 +176,13 @@ struct NewWorktreeSheet: View {
         SheetChrome("new worktree") {
             HStack {
                 TextField("path to git repo", text: $repo)
-                    .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                    .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
                 Button("Choose…") { chooseDirectory(start: repo.isEmpty ? nil : repo) { repo = $0 } }
             }
             TextField("new branch name", text: $branch)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             TextField("base ref (default HEAD)", text: $base)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             Text("a new branch and worktree are created, then opened as a space")
                 .font(Fonts.uiMonoSmall).foregroundStyle(.secondary)
             HStack {
@@ -187,6 +194,7 @@ struct NewWorktreeSheet: View {
                                          base: baseRef.isEmpty ? nil : baseRef)
                     dismiss()
                 }
+                .buttonStyle(ChromeButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
                 .disabled(repo.isEmpty || branch.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -214,7 +222,7 @@ struct RenameSheet: View {
     var body: some View {
         SheetChrome(title) {
             TextField("name", text: $name)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             if case .pane = target {
                 Text("leave empty to go back to showing the running program")
                     .font(Fonts.uiMonoSmall).foregroundStyle(.secondary)
@@ -234,6 +242,7 @@ struct RenameSheet: View {
                     }
                     dismiss()
                 }
+                .buttonStyle(ChromeButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -264,7 +273,7 @@ struct SpaceEmojiSheet: View {
                 }
             }
             TextField("emoji (or clear to use the state dot)", text: $emoji)
-                .textFieldStyle(.roundedBorder).font(Fonts.uiMono)
+                .textFieldStyle(ChromeTextFieldStyle()).font(Fonts.uiMono)
             HStack {
                 Spacer()
                 Button("cancel") { dismiss() }.keyboardShortcut(.cancelAction)
@@ -272,6 +281,7 @@ struct SpaceEmojiSheet: View {
                     model.setSpaceIcon(ws.id, icon: emoji.trimmingCharacters(in: .whitespaces))
                     dismiss()
                 }
+                .buttonStyle(ChromeButtonStyle(prominent: true))
                 .keyboardShortcut(.defaultAction)
             }
         }

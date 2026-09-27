@@ -21,6 +21,10 @@ struct CommandPaletteView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(pal.ink)
                 .padding(14)
+                .background(pal.chrome)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(focused ? pal.focus : pal.line2).frame(height: 2)
+                }
                 .focused($focused)
                 .onSubmit { runSelected() }
                 .onChange(of: query) { _, _ in selection = 0 }
@@ -33,12 +37,12 @@ struct CommandPaletteView: View {
                             Spacer()
                             Text(action.kind.uppercased())
                                 .font(Fonts.uiMonoTiny).tracking(1)
-                                .foregroundStyle(pal.faint2)
+                                .foregroundStyle(i == selection ? pal.spotInk : pal.faint2)
                         }
                         .padding(.horizontal, 11).padding(.vertical, 7)
                         .background(RoundedRectangle(cornerRadius: Palette.Radius.row)
-                            .fill(i == selection ? pal.mass : .clear))
-                        .foregroundStyle(i == selection ? pal.ink : pal.dim)
+                            .fill(i == selection ? pal.spot : .clear))
+                        .foregroundStyle(i == selection ? pal.spotInk : pal.dim)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             model.paletteOpen = false

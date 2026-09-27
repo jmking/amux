@@ -445,6 +445,7 @@ struct RootView: View {
             }
         }
         .background(pal.bg)
+        .tint(pal.spot)
         .sheet(item: $model.activeSheet) { sheet in
             sheetView(sheet)
                 .environment(\.palette, pal)
@@ -475,6 +476,7 @@ struct RootView: View {
 }
 
 struct SettingsView: View {
+    @Environment(\.palette) private var pal
     @ObservedObject var model: AppModel
     @AppStorage("mode") private var mode = "dark"
     @AppStorage("termTheme") private var termTheme = "amux"
@@ -507,6 +509,10 @@ struct SettingsView: View {
         }
         .padding(20)
         .frame(width: 420)
+        .foregroundStyle(pal.ink)
+        .background(pal.panel)
+        .tint(pal.spot)
+        .preferredColorScheme(mode == "light" ? .light : .dark)
     }
 
     private func reapplyTerminalStyles() {

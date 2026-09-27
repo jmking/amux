@@ -17,21 +17,24 @@ struct Palette {
     let spot: SwiftUI.Color
     let spotInk: SwiftUI.Color
 
-    // Soft charcoal rather than near-black, so panels read as raised surfaces
-    // instead of holes. Colour is spent almost entirely on the state dots: the
-    // accent is desaturated and only marks selection.
+    // Opaque pink surfaces; semantic agent and terminal colors stay independent.
+    let chrome: SwiftUI.Color
+    let hover: SwiftUI.Color
+    let focus: SwiftUI.Color
     static let darkMode = Palette(
-        bg: SwiftUI.Color(hex: 0x18181a), panel: SwiftUI.Color(hex: 0x232326), mass: SwiftUI.Color(hex: 0x313137),
-        ink: SwiftUI.Color(hex: 0xf0f0f2), dim: SwiftUI.Color(hex: 0xd2d2d8), faint: SwiftUI.Color(hex: 0x9a9aa3),
-        faint2: SwiftUI.Color(hex: 0x7a7a83), line: SwiftUI.Color(hex: 0x2a2a2e), line2: SwiftUI.Color(hex: 0x3a3a41),
-        spot: SwiftUI.Color(hex: 0x6dbfae), spotInk: SwiftUI.Color(hex: 0x18181a))
+        bg: SwiftUI.Color(hex: 0x260f1c), panel: SwiftUI.Color(hex: 0x451329), mass: SwiftUI.Color(hex: 0x762544),
+        ink: SwiftUI.Color(hex: 0xfff5fa), dim: SwiftUI.Color(hex: 0xffe0ed), faint: SwiftUI.Color(hex: 0xffcce1),
+        faint2: SwiftUI.Color(hex: 0xffcce1), line: SwiftUI.Color(hex: 0x873451), line2: SwiftUI.Color(hex: 0xb45179),
+        spot: SwiftUI.Color(hex: 0xff66ad), spotInk: SwiftUI.Color(hex: 0x260f1c),
+        chrome: SwiftUI.Color(hex: 0xa51553), hover: SwiftUI.Color(hex: 0x873052), focus: SwiftUI.Color(hex: 0xffb6d8))
 
-    // The same restraint in reverse: warm-neutral greys, no colour cast.
+    // Bright pink chrome with deep berry text in light appearance.
     static let lightMode = Palette(
-        bg: SwiftUI.Color(hex: 0xfafafb), panel: SwiftUI.Color(hex: 0xf1f1f3), mass: SwiftUI.Color(hex: 0xe5e5e9),
-        ink: SwiftUI.Color(hex: 0x1c1d20), dim: SwiftUI.Color(hex: 0x3f4145), faint: SwiftUI.Color(hex: 0x6e7176),
-        faint2: SwiftUI.Color(hex: 0x94979c), line: SwiftUI.Color(hex: 0xe8e8eb), line2: SwiftUI.Color(hex: 0xdadade),
-        spot: SwiftUI.Color(nsColor: .controlAccentColor), spotInk: .white)
+        bg: SwiftUI.Color(hex: 0xffedf5), panel: SwiftUI.Color(hex: 0xffd3e6), mass: SwiftUI.Color(hex: 0xffa3cc),
+        ink: SwiftUI.Color(hex: 0x37091f), dim: SwiftUI.Color(hex: 0x50112e), faint: SwiftUI.Color(hex: 0x641434),
+        faint2: SwiftUI.Color(hex: 0x641434), line: SwiftUI.Color(hex: 0xd46a98), line2: SwiftUI.Color(hex: 0xb33971),
+        spot: SwiftUI.Color(hex: 0xa90050), spotInk: SwiftUI.Color(hex: 0xffffff),
+        chrome: SwiftUI.Color(hex: 0xff8cbd), hover: SwiftUI.Color(hex: 0xffb9d8), focus: SwiftUI.Color(hex: 0x85003e))
 
     /// Corner radii. Rounder than typical AppKit chrome: the rows read as soft
     /// cards rather than list cells.
@@ -255,5 +258,62 @@ extension EnvironmentValues {
     var palette: Palette {
         get { self[PaletteKey.self] }
         set { self[PaletteKey.self] = newValue }
+    }
+}
+
+// Retains native button activation and keyboard shortcuts.
+struct ChromeButtonStyle: ButtonStyle {
+    var prominent = false
+    @Environment(\.palette) private var pal
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        ChromeButtonBody(configuration: configuration, prominent: prominent, pal: pal, enabled: enabled)
+    }
+    private struct ChromeButtonBody: View {
+        let configuration: ButtonStyleConfiguration
+        let prominent: Bool
+        let pal: Palette
+        let enabled: Bool
+        @State private var hovering = false
+        @Environment(\.isFocused) private var focused
+        var body: some View {
+            configuration.label
+                .padding(.horizontal, prominent ? 12 : 4)
+                .padding(.vertical, prominent ? 7 : 3)
+                .foregroundStyle(prominent ? pal.spotInk : pal.ink)
+                .background(RoundedRectangle(cornerRadius: Palette.Radius.chip)
+                    .fill(prominent ? pal.spot : (hovering || configuration.isPressed ? pal.hover : pal.mass)))
+                .brightness(configuration.isPressed ? -0.08 : (hovering && prominent ? 0.08 : 0))
+                .overlay(RoundedRectangle(cornerRadius: Palette.Radius.chip)
+                    .strokeBorder(pal.line2, lineWidth: 1))
+                .overlay {
+                    if focused {
+                        RoundedRectangle(cornerRadius: Palette.Radius.chip + 2)
+                            .stroke(pal.bg, lineWidth: 5)
+                            .overlay(RoundedRectangle(cornerRadius: Palette.Radius.chip + 2)
+                                .stroke(pal.focus, lineWidth: 2))
+                            .padding(-2)
+                    }
+                }
+                .opacity(enabled ? 1 : 0.45)
+                .onHover { hovering = $0 }
+        }
+    }
+}
+
+/// Explicit field surfaces also keep sheets independent of native material colors.
+struct ChromeTextFieldStyle: TextFieldStyle {
+    @Environment(\.palette) private var pal
+    @FocusState private var focused: Bool
+
+    func _body(configuration: TextField<_Label>) -> some View {
+        configuration
+            .textFieldStyle(.plain)
+            .foregroundStyle(pal.ink)
+            .padding(.horizontal, 8).padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: Palette.Radius.chip).fill(pal.bg))
+            .overlay(RoundedRectangle(cornerRadius: Palette.Radius.chip)
+                .strokeBorder(focused ? pal.focus : pal.line2, lineWidth: focused ? 2 : 1))
+            .focused($focused)
     }
 }

@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "changes": "Bold pink chrome for dark/light appearances across sidebar, tabs, pane/browser headers, command palette, sheets, buttons, fields, settings and empty state. Explicit hover/focus tokens and active tab underlines. Agent semantic definitions and terminal themes preserved.",
+    "validation": {
+      "compile": "Full app compile and link passed using macos/scripts/build-check.py. Standard SwiftPM build blocked by sandbox atomic-write failures.",
+      "contrast": "Passed: minimum chrome text 5.29:1 dark, 5.76:1 light; accent text >=4.5:1 and focus >=3:1.",
+      "visual": "Native previews inspected for both modes, including command palette and sheets. Recording and screenshot commands prepared; final artifacts await app-owned output paths."
+    },
+    "limitations": [
+      "Proof is a deterministic native component showcase of three held captures, not a live navigation interaction test."
+    ],
+    "proofPreference": "Checks + recording",
+    "base": "aae89f713437bfd78967933fbd2cf39ff1075ed7"
+  },
+  "needsRecording": true,
+  "rationale": "Visual system change requires the requested recording plus before/after PNGs. Native SwiftUI fixtures cover both appearances without opening terminals or saved sessions.",
+  "checks": [
+    {
+      "name": "Chrome contrast",
+      "command": "python3 macos/scripts/check-palette.py"
+    },
+    {
+      "name": "Full app compile and link",
+      "command": "python3 macos/scripts/build-check.py"
+    },
+    {
+      "name": "Whitespace",
+      "command": "git diff --check"
+    }
+  ],
+  "recordingCommand": "python3 macos/scripts/visual-proof.py record",
+  "screenshotsCommand": "python3 macos/scripts/visual-proof.py screenshots"
+}
